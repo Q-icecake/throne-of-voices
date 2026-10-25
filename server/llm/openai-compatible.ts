@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import type { ProviderConfig } from './config.ts';
+import type { RequestPacer } from './pacer.ts';
 import type { CallBudget } from './budget.ts';
 import type { ProviderInput } from './types.ts';
 import { ProviderError } from './types.ts';
@@ -21,9 +22,12 @@ const wireSchema = JSON.parse(JSON.stringify(OUTPUT_SCHEMA, (key, value: unknown
 export class OpenAICompatibleProvider extends RemoteProvider {
   #endpoint: string;
   #model: string;
+  #maxOutputTokens: number;
   constructor(config: OpenAICompatibleConfig, transport: typeof fetch = globalThis.fetch, budget?: CallBudget,
-    key = process.env.OPENAI_COMPAT_API_KEY ?? '', onModelRaw?: ModelRawObserver) {
-    super(config, key, transport, budget, onModelRaw);
+    key = process.env.OPENAI_COMPAT_API_KEY ?? '', onModelRaw?: ModelRawObserver, pacer?: RequestPacer) {
+    super(config, key, transport, budget, onModelRaw, pacer);
+    this.#maxOutputTokens = config.maxOutputTokens ?? 2048;
+    if (!Number.isSafeInteger(this.#maxOutputTokens) || this.#maxOutputTokens < 1 || this.#maxOutputTokens > 32768) throw new ProviderError('auth');
     let url: URL;
     try { url = new URL(config.baseUrl); } catch { throw new ProviderError('auth'); }
     if ((url.protocol !== 'https:' && !(url.protocol === 'http:' && ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname))) ||
@@ -34,7 +38,7 @@ export class OpenAICompatibleProvider extends RemoteProvider {
     const { diagnosticKind: _localKind, ...payload } = input;
     return [this.#endpoint, { method: 'POST', redirect: 'error', signal,
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-      body: JSON.stringify({ model: this.#model, messages: [{ role: 'system', content: systemPrompt },
+      body: JSON.stringify({ model: this.#model, max_tokens: this.#maxOutputTokens, messages: [{ role: 'system', content: systemPrompt },
         { role: 'user', content: JSON.stringify(payload) }], response_format: {
           type: 'json_schema', json_schema: { name: 'interpretation', strict: true, schema: wireSchema },
         } }),

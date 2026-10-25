@@ -1,6 +1,7 @@
 import { mkdirSync, readFileSync, statSync, writeFileSync, renameSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { defaultUsageFile } from './usage-file.ts';
+import { retryDelay } from './retry-delay.ts';
 import { ProviderError } from './types.ts';
 import type { ProviderErrorCode } from './types.ts';
 import { SecretGuard } from './secrets.ts';
@@ -34,7 +35,7 @@ const finishes = new Set(['STOP', 'MAX_TOKENS', 'SAFETY', 'RECITATION', 'OTHER',
 export type GeminiDiagnostic = LlmDiagnostic;
 export interface DiagnosticAttempt {
   network(error: NetworkError): void;
-  observe(httpStatus: number, value: unknown): void;
+  observe(httpStatus: number, value: unknown, retryAfterSeconds?: number): void;
   finish(resultCode: string): void;
 }
 type DiagnosticContext = Pick<LlmDiagnostic, 'callKind' | 'model' | 'retries' | 'dailyCalls' | 'sessionCalls'> & Partial<Pick<LlmDiagnostic, 'networkMode' | 'route'>>;
@@ -62,27 +63,29 @@ export class GeminiDiagnostics {
     const started = performance.now(), timestamp = new Date().toISOString();
     let httpStatus: number | null = null, value: unknown, done = false;
     let networkError: NetworkError | null = null;
+    let retryAfterSeconds: number | undefined;
     return {
       network: error => { if (!done && httpStatus === null) networkError = safeNetworkError(error, guard); },
-      observe: (status, envelope) => { if (!done) { httpStatus = status; value = envelope; } },
+      observe: (status, envelope, delay) => { if (!done) { httpStatus = status; value = envelope; retryAfterSeconds = delay; } },
       finish: resultCode => {
         if (done) return; done = true;
         // The deadline can win even when a transport ignores cancellation entirely.
         if (httpStatus === null && !networkError && ['timeout', 'aborted', 'stale'].includes(resultCode))
           networkError = safeNetworkError({ name: resultCode === 'timeout' ? 'TimeoutError' : 'AbortError', code: null }, guard);
-        this.write(httpStatus, value, guard, { ...context, timestamp, resultCode, latencyMs: Math.round(performance.now() - started) }, networkError);
+        this.write(httpStatus, value, guard, { ...context, timestamp, resultCode, latencyMs: Math.round(performance.now() - started) }, networkError, retryAfterSeconds);
         value = undefined;
       },
     };
   }
   write(httpStatus: number | null, value: unknown, guard: Pick<SecretGuard, 'reflects'>,
-    context?: DiagnosticContext & Pick<LlmDiagnostic, 'timestamp' | 'resultCode' | 'latencyMs'>, networkError: NetworkError | null = null) {
+    context?: DiagnosticContext & Pick<LlmDiagnostic, 'timestamp' | 'resultCode' | 'latencyMs'>, networkError: NetworkError | null = null, retryAfterSeconds?: number) {
     const envelope = record(value), error = record(envelope.error), usage = record(envelope.usageMetadata);
     const candidate = record(Array.isArray(envelope.candidates) ? envelope.candidates[0] : null);
     const safeEnum = (item: unknown, allowed: Set<string>) =>
       typeof item === 'string' && allowed.has(item) && !guard.reflects(item) ? item : null;
     const details = Array.isArray(error.details) ? error.details : [];
     const diagnostic: GeminiDiagnostic = { source: this.#source,
+      ...(httpStatus === 429 && retryAfterSeconds !== undefined ? { retryAfterSeconds } : {}),
       networkMode: context?.networkMode ?? 'auto', route: context?.route ?? 'direct',
       networkError: httpStatus === null && networkError ? safeNetworkError(networkError, guard) : null,
       timestamp: context?.timestamp ?? new Date().toISOString(),
@@ -128,6 +131,7 @@ export function googleHttpError(status: number): ProviderErrorCode {
 export async function readGeminiResponse(response: Response, signal: AbortSignal,
   guard: Pick<SecretGuard, 'reflects'>, diagnostic?: DiagnosticAttempt): Promise<unknown> {
   let envelope: unknown;
+  let delay: number | undefined;
   diagnostic?.observe(response.status, undefined);
   const reader = response.body?.getReader();
   const cancel = () => { void reader?.cancel().catch(() => {}); };
@@ -152,11 +156,18 @@ export async function readGeminiResponse(response: Response, signal: AbortSignal
       if (response.ok) throw error instanceof ProviderError ? error : new ProviderError('parse');
       // Malformed/reflected error text never overrides the known HTTP status.
     }
-    if (!response.ok) throw new ProviderError(googleHttpError(response.status));
+    if (!response.ok) {
+      const error = new ProviderError(googleHttpError(response.status));
+      if (response.status === 429) {
+        delay = retryDelay(response.headers.get('retry-after'), envelope, guard);
+        error.retryAfterSeconds = delay;
+      }
+      throw error;
+    }
     return envelope;
   } finally {
     signal.removeEventListener('abort', cancel); cancel();
-    diagnostic?.observe(response.status, envelope);
+    diagnostic?.observe(response.status, envelope, delay);
   }
 }
 

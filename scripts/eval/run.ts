@@ -13,6 +13,7 @@ import type { NetworkMode } from '../../shared/contracts.ts';
 import { confusion, decode, score } from './score.ts';
 import type { EvalCase, Sample, Score, Source } from './types.ts';
 import type { SecretGuard } from '../../server/llm/secrets.ts';
+import { estimatePacedDuration } from '../../server/llm/pacer.ts';
 import { captureModelRaw, MODEL_RAW_MAX_BYTES } from './capture.ts';
 
 export interface Row {
@@ -168,6 +169,7 @@ export async function promptVersion() {
 export function parseOptions(args: string[]) {
   let mode: 'mock' | 'scripted' | 'live' | undefined, script: string | undefined;
   let split: 'dev' | 'final' = 'dev';
+  let rpm: number | undefined;
   let limit: number | undefined, ids: string[] | undefined, networkMode: NetworkMode = 'auto', proxy: string | undefined;
   const limits: Limits = { maxCalls: Infinity };
   for (let i = 0; i < args.length; i++) {
@@ -180,6 +182,8 @@ export function parseOptions(args: string[]) {
       const value = args[++i]; if (value !== 'dev' && value !== 'final') throw new Error('CLI_SPLIT'); split = value;
     } else if (arg === '--limit') {
       limit = Number(args[++i]); if (!Number.isSafeInteger(limit) || limit <= 0) throw new Error('CLI_LIMIT');
+    } else if (arg === '--rpm') {
+      rpm = Number(args[++i]); if (!Number.isSafeInteger(rpm) || rpm < 1 || rpm > 10000) throw new Error('CLI_RPM');
     } else if (arg === '--ids') {
       const value = args[++i];
       if (ids || !value || !/^E\d{3}(?:,E\d{3})*$/.test(value)) throw new Error('CLI_IDS');
@@ -200,7 +204,7 @@ export function parseOptions(args: string[]) {
   if (limit !== undefined && split !== 'dev') throw new Error('CLI_LIMIT_DEV_ONLY');
   if (ids && (split !== 'dev' || limit !== undefined)) throw new Error('CLI_IDS_DEV_ONLY');
   if (limits.budgetUsd !== undefined && (limits.inputPrice === undefined || limits.outputPrice === undefined)) throw new Error('CLI_PRICES');
-  return { mode, script, split, limit, ids, limits, networkMode, proxy };
+  return { mode, script, split, limit, ids, limits, networkMode, proxy, rpm };
 }
 
 export function selectCases(fixtures: EvalCase[], limit?: number, ids?: string[]): EvalCase[] {
@@ -253,15 +257,18 @@ export async function main(args = process.argv.slice(2), runtime: {
 } = {}): Promise<number> {
   const log = runtime.log ?? console.log, env = runtime.env ?? process.env;
   if (!args.length) { log('평가 미실행 · 외부 호출 0회. --mock 또는 --scripted tests/fixtures/eval-scripted-good.json 사용. --live는 키·모델·양수 호출 상한 설정 후 별도 실행.'); return 0; }
-  const { mode, script, split, limit, ids, limits, networkMode, proxy } = parseOptions(args);
+  const { mode, script, split, limit, ids, limits, networkMode, proxy, rpm } = parseOptions(args);
   const allFixtures = await loadCases(split), fixtures = selectCases(allFixtures, limit, ids);
   let source: Source | undefined;
   if (mode === 'mock') source = mockSource();
   if (mode === 'scripted') source = scriptedSource(JSON.parse(await readFile(resolve(script!), 'utf8')), split);
-  if (mode === 'live') source = liveSource(limits.maxCalls, env, limits, { ...runtime.live, networkMode, proxy });
+  if (mode === 'live') source = liveSource(limits.maxCalls, env, limits, { ...runtime.live, networkMode, proxy, rpm });
   if (!source) { log(liveConfigurationHelp(env.LLM_PROVIDER)); return 2; }
   const plannedCalls = mode === 'live' ? Math.min(fixtures.length, limits.maxCalls) : 0;
   log(`예정 호출 수 ${plannedCalls} (상한; 사례 ${fixtures.length}); 최대 토큰: 누적 관측 ${limits.maxTokens ?? '미설정'}, 요청별 출력 ${source.maxOutputTokens ?? '공급자 설정'}; 재시도 0; 네트워크 ${source.networkPolicy ?? 'offline'}; 일일 카운터 ${source.counterPolicy ?? 'offline'}.`);
+  const pacingRpm = rpm ?? Number(env.LLM_RPM_LIMIT ?? 12);
+  const estimatedMs = plannedCalls ? estimatePacedDuration(plannedCalls, pacingRpm) : 0;
+  if (mode === 'live') log(`분당 상한(RPM) ${pacingRpm}; 예상 소요 ${Math.ceil(estimatedMs / 1000)}초 (빈 60초 창·응답당 2.3초 가정; TPM 대기·서버 응답에 따라 증가).`);
   // No confirmation prompt: invoking --live is the user's explicit execution choice.
   const result = await evaluate(fixtures, source, limits);
   const version = await promptVersion();
@@ -272,7 +279,7 @@ export async function main(args = process.argv.slice(2), runtime: {
     stages: { modelRaw: 'decoded model JSON before usage replacement and adapter validation; fixture/mock for offline sources',
       adapterOutput: 'provider return after its guards; legacy raw/rawScore are adapter aliases', validated: 'validateProposal(adapterOutput); engine/display guards not executed' },
     limits: { ...limits, maxCalls: Number.isFinite(limits.maxCalls) ? limits.maxCalls : null, limit: limit ?? null, ids: ids ?? null }, totalCases: fixtures.length,
-    availableCases: allFixtures.length, plannedCalls, networkPolicy: source.networkPolicy ?? 'offline',
+    availableCases: allFixtures.length, plannedCalls, pacing: mode === 'live' ? { rpm: pacingRpm, estimatedMs, assumedLatencyMs: 2300 } : null, networkPolicy: source.networkPolicy ?? 'offline',
     counterPolicy: source.counterPolicy ?? 'offline', maxOutputTokens: source.maxOutputTokens ?? null,
     fixtureHash: createHash('sha256').update(JSON.stringify(fixtures)).digest('hex'), ...result };
   const sheet = humanSheet(fixtures, result.rows, source.secretGuard);

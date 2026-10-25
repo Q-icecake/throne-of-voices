@@ -1,5 +1,7 @@
 // V1 integration seam: provider selection and settings belong to the neutral factory.
 import { configuredProvider, geminiConfig, providerConfig } from '../../server/llm/config.ts';
+import { RequestPacer } from '../../server/llm/pacer.ts';
+import type { PacerClock } from '../../server/llm/pacer.ts';
 import { CallBudget } from '../../server/llm/budget.ts';
 import { isolatedUsageFile, PLAY_USAGE_FILE } from '../../server/llm/usage-file.ts';
 import { ProviderError } from '../../server/llm/types.ts';
@@ -14,7 +16,7 @@ import type { Sample } from './types.ts';
 
 export interface LiveRuntime {
   transport?: typeof fetch; budgetFile?: string; networkMode?: NetworkMode; proxy?: string;
-  readSystemProxy?: SystemProxyReader;
+  readSystemProxy?: SystemProxyReader; rpm?: number; pacerClock?: PacerClock;
 }
 
 /** Addresses never enter prompts or metadata; reject accidental reflection at export boundaries too. */
@@ -95,7 +97,7 @@ export function liveSource(maxCalls: number, env: NodeJS.ProcessEnv = process.en
   const format = env.LLM_PROVIDER;
   if ((format !== 'gemini' && format !== 'openai-compatible') || !Number.isSafeInteger(maxCalls) || maxCalls <= 0) return undefined;
   // The CLI is one attempt per case, regardless of inherited retry settings.
-  const settings = { ...env, LLM_RETRIES: '0' };
+  const settings = { ...env, LLM_RETRIES: '0', ...(runtime.rpm !== undefined ? { LLM_RPM_LIMIT: String(runtime.rpm) } : {}) };
   const config = format === 'gemini' ? geminiConfig(settings) : providerConfig(settings, env.OPENAI_COMPAT_MODEL_ID ?? '');
   if (!config || config.dailyLimit <= 0 || config.sessionLimit <= 0) return undefined;
   if (format !== 'gemini' && (runtime.proxy || runtime.networkMode && runtime.networkMode !== 'auto'))
@@ -137,6 +139,7 @@ export function liveSource(maxCalls: number, env: NodeJS.ProcessEnv = process.en
   const budgetFile = runtime.budgetFile ?? (isolated ? isolatedUsageFile() : env.LLM_USAGE_FILE || PLAY_USAGE_FILE);
   let capture: Pick<Sample, 'modelRaw' | 'modelRawStatus'> = { modelRawStatus: 'not-received' };
   const selected = configuredProvider(settings, transport, { budget: new ObservedBudget(config, budgetFile), network: router,
+    pacer: new RequestPacer({ rpmLimit: config.rpmLimit ?? 12, tpmLimit: config.tpmLimit ?? 200000, maxWaitMs: Infinity }, runtime.pacerClock),
     onModelRaw: raw => { capture = captureModelRaw(raw, secretGuard); } });
   if (!selected.provider) return undefined;
   const provider = selected.provider;
@@ -151,7 +154,7 @@ export function liveSource(maxCalls: number, env: NodeJS.ProcessEnv = process.en
       network = undefined;
       capture = { modelRawStatus: 'not-received' };
       let raw: unknown, error: string | undefined, neutralError: string | undefined;
-      try { raw = await provider.interpret(input, AbortSignal.timeout(config.timeoutMs)); secretGuard.assertSafe(raw); }
+      try { raw = await provider.interpret(input, new AbortController().signal); secretGuard.assertSafe(raw); }
       catch (e) { raw = undefined; error = budgetStop ?? errorCode(e); neutralError = e instanceof ProviderError ? e.neutralCode : 'server'; }
       if (capture.modelRawStatus === 'blocked') { raw = undefined; error = 'MODEL_RAW_BLOCKED'; }
       const observed = attempts.slice(first);

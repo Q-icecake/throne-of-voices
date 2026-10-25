@@ -1,4 +1,5 @@
 import type { ProviderConfig } from './config.ts';
+import { RequestPacer } from './pacer.ts';
 import { CallBudget } from './budget.ts';
 import type { InterpretationProvider, ProviderInput, ProviderUsage, AttemptUsage, ProviderErrorCode } from './types.ts';
 import { ProviderError, PROVIDER_MESSAGES, abortError, providerMessage } from './types.ts';
@@ -22,6 +23,7 @@ export abstract class RemoteProvider implements InterpretationProvider {
   #settings: ProviderConfig;
   #transport: typeof fetch;
   #budget: CallBudget;
+  #pacer: RequestPacer;
   #guard: SecretGuard;
   #usage?: ProviderUsage;
   #failureMessage?: string;
@@ -32,13 +34,14 @@ export abstract class RemoteProvider implements InterpretationProvider {
     if (this.#usage?.errorCode) return `[${this.#usage.errorCode}] ${this.#failureMessage ?? PROVIDER_MESSAGES[this.#usage.errorCode]} Mock으로 전환하지 않았습니다.`;
     return 'AI 연결 설정됨 · 라이브 미검증';
   }
-  constructor(settings: ProviderConfig, key: string, transport: typeof fetch, budget = new CallBudget(settings), onModelRaw?: ModelRawObserver) {
+  constructor(settings: ProviderConfig, key: string, transport: typeof fetch, budget = new CallBudget(settings), onModelRaw?: ModelRawObserver, pacer?: RequestPacer) {
     if (!settings.model || ![settings.timeoutMs, settings.retries, settings.dailyLimit, settings.sessionLimit]
       .every(value => Number.isSafeInteger(value) && value >= 0) || settings.timeoutMs < 1 || settings.timeoutMs > 15000 ||
       settings.retries > 100 || settings.dailyLimit > 10000 || settings.sessionLimit > 10000) throw new ProviderError('auth');
     this.#key = key; this.#settings = { ...settings }; this.#transport = transport; this.#budget = budget;
     this.#guard = new SecretGuard(key);
     this.#onModelRaw = onModelRaw;
+    this.#pacer = pacer ?? new RequestPacer({ rpmLimit: settings.rpmLimit ?? 12, tpmLimit: settings.tpmLimit ?? 200000, maxWaitMs: settings.maxWaitMs ?? 8000 });
     if (/[\r\n]/.test(key) || (key && this.#guard.reflects(settings.model))) throw new ProviderError('auth');
   }
   protected abstract request(input: ProviderInput, signal: AbortSignal, key: string): [string, RequestInit];
@@ -61,10 +64,12 @@ export abstract class RemoteProvider implements InterpretationProvider {
     let reservations = 0, error: ProviderError | undefined;
     try {
       if (!this.#key) throw new ProviderError('auth');
+      const tokens = Buffer.byteLength(String(this.request(input, signal, this.#key)[1].body ?? ''), 'utf8') + (this.#settings.maxOutputTokens ?? 2048);
+      await this.#pacer.acquire(tokens, signal, () => { this.#budget.reserve(); reservations++; });
       return await withDeadline(async bounded => {
         for (let index = 0; index <= this.#settings.retries; index++) {
           bounded.throwIfAborted();
-          this.#budget.reserve(); reservations++;
+          if (index > 0) await this.#pacer.acquire(tokens, bounded, () => { this.#budget.reserve(); reservations++; });
           const attempt = { inputTokens: null, outputTokens: null, latencyMs: 0, errorCode: null,
             started: performance.now() } as typeof attempts[number];
           attempts.push(attempt);

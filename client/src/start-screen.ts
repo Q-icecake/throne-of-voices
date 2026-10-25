@@ -4,6 +4,7 @@ import type { ConnectionTestResult, LlmStatus } from '../../shared/contracts.ts'
 import { NETWORK_MODE_LABELS, NETWORK_ROUTE_LABELS, networkAdvice } from '../../shared/network.ts';
 
 export const TEST_LABELS: Record<ConnectionTestResult, string> = {
+  pacing: '분당 호출 한도에 가까워 잠시 후 다시 시도',
   network: 'Google 서버에 연결하지 못함(네트워크·DNS·방화벽·프록시 확인)', tls: 'TLS/인증서 문제',
   untested: '시험 전', ok: '정상', auth: '키 오류', model: '모델 없음(404)', rate_limited: 'Google 한도 초과(429)',
   daily_limit: '로컬 일일 상한(UTC) 도달', session_limit: '로컬 세션 상한 도달',
@@ -39,17 +40,17 @@ export async function enterStartScreen(): Promise<void> {
           <p>키·입력 프록시는 서버 메모리만 사용(종료 시 삭제). 브라우저·디스크 저장 없음. VPN 끔·TUN·전역: 직접 연결 / 시스템 프록시형: 자동.</p>
           <p id="local-usage" class="start-field-note" role="status" aria-live="polite">로컬 사용량 확인 중…</p>
           <button id="reset-usage" aria-describedby="reset-usage-note">오늘 로컬 카운터 초기화</button>
-          <p id="reset-usage-note" class="start-field-note">Google 쪽 실제 사용량은 바뀌지 않습니다. 서버 세션 사용량과 상한은 유지됩니다.</p>
+          <p id="reset-usage-note" class="start-field-note">Google 쪽 실제 사용량은 바뀌지 않습니다. 세션·상한 유지.<br>Google 일일 한도는 500(무료, 계정·모델별로 다를 수 있음).</p>
         </div>
         <div>
           <h2>② 연결 정보</h2>
           <form id="ai-settings-form" autocomplete="off">
-            <label for="ai-model">모델 ID</label><input id="ai-model" name="model" maxlength="200" required autocomplete="off" spellcheck="false" placeholder="콘솔에서 확인한 모델 ID">
+            <div class="start-model-row"><div><label for="ai-model">모델 ID</label><input id="ai-model" name="model" maxlength="200" required autocomplete="off" spellcheck="false" placeholder="콘솔에서 확인한 모델 ID"></div><div><label for="ai-rpm">분당 상한(RPM)</label><input id="ai-rpm" name="rpm" type="number" min="1" max="10000" step="1" value="12" required title="AI Studio의 비율 제한 화면에서 모델별 RPM 확인"></div></div>
             <div class="start-proxy-label"><label for="ai-key">API 키</label><p id="key-source" class="start-field-note">키 미설정</p></div><input id="ai-key" name="key" type="password" maxlength="512" autocomplete="off" spellcheck="false" placeholder="새 키 입력 (저장된 키는 표시하지 않음)">
-            <div class="start-network-row"><div><label for="ai-limit">호출 상한 (일일 / 세션)</label><input id="ai-limit" name="limit" type="number" min="0" max="10000" step="1" value="30" required></div>
+            <div class="start-network-row"><div><label for="ai-limit">일일·세션 상한</label><input id="ai-limit" name="limit" type="number" min="0" max="10000" step="1" value="30" required></div>
             <div><label for="ai-network">연결 방식</label><select id="ai-network" name="networkMode"><option value="auto">자동 (권장)</option><option value="proxy">VPN·프록시 사용</option><option value="direct">직접 연결 (VPN 끔 / TUN·전역 모드)</option></select></div>
             <div id="proxy-field" hidden><div class="start-proxy-label"><label for="ai-proxy">프록시 주소</label><label title="입력 프록시를 지우고 환경변수·시스템 설정을 자동 감지"><input id="clear-proxy" type="checkbox"> 지우기</label></div><input id="ai-proxy" name="proxyAddress" type="password" maxlength="2048" autocomplete="off" spellcheck="false" placeholder="예시 127.0.0.1:7890 · http:// 생략 가능"></div></div>
-            <p class="start-field-note">UTC 기준 각 30회 · 0은 차단 · 시험·실패도 차감</p>
+            <p class="start-field-note">UTC 각 30회 · 0은 차단 · 시험·실패도 차감<br>AI Studio의 비율 제한 화면에서 모델별 RPM 확인</p>
             <button id="save-settings" type="submit">설정 적용</button>
           </form>
           <div class="start-test-row"><h2>③ 연결 시험</h2><button id="test-connection">연결 시험</button><p id="test-result" role="status" aria-live="polite">시험 전</p></div>
@@ -68,17 +69,18 @@ export async function enterStartScreen(): Promise<void> {
   let status: LlmStatus = { networkMode: 'auto', route: 'direct', proxyDetected: false, keyConfigured: false, keySource: 'none', model: '', limit: 30, testResult: 'untested', mode: 'mock', dailyCalls: -1, dailyLimit: 30, sessionCalls: 0, sessionLimit: 30 };
   let dirty = false, busy = false;
   const model = el<HTMLInputElement>('ai-model'), key = el<HTMLInputElement>('ai-key'), limit = el<HTMLInputElement>('ai-limit');
+  const rpm = el<HTMLInputElement>('ai-rpm');
   const network = el<HTMLSelectElement>('ai-network'), proxy = el<HTMLInputElement>('ai-proxy'), clearProxy = el<HTMLInputElement>('clear-proxy');
   async function request<T>(path: string, body?: unknown): Promise<T> {
     const response = await fetch(`/api/llm/${path}`, { method: body === undefined ? 'GET' : 'POST', cache: 'no-store',
-      ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }), signal: AbortSignal.timeout(path === 'test' ? 18000 : 5000) });
+      ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }), signal: AbortSignal.timeout(path === 'test' ? 26000 : 5000) });
     if (!response.ok) throw new Error('로컬 설정 요청에 실패했습니다. 입력 형식과 서버 실행 상태를 확인하세요.');
     return await response.json() as T;
   }
   function render() {
-    const testLabel = status.testResult === 'daily_limit' ? `${TEST_LABELS.daily_limit}: 오늘 ${status.dailyCalls}/${status.dailyLimit}`
+    const testLabel = status.testResult === 'rate_limited' && status.retryAfterSeconds !== undefined ? `Google 분당 한도(429): ${status.retryAfterSeconds}초 후 다시` : status.testResult === 'daily_limit' ? `${TEST_LABELS.daily_limit}: 오늘 ${status.dailyCalls}/${status.dailyLimit}`
       : status.testResult === 'session_limit' ? `${TEST_LABELS.session_limit}: ${status.sessionCalls}/${status.sessionLimit}` : TEST_LABELS[status.testResult];
-    el('local-usage').textContent = `오늘(UTC) 로컬 호출 ${status.dailyCalls < 0 ? '확인 불가' : status.dailyCalls}/${status.dailyLimit} · 이번 서버 세션 ${status.sessionCalls}/${status.sessionLimit}`;
+    el('local-usage').textContent = `오늘(UTC) 로컬 호출 ${status.dailyCalls < 0 ? '확인 불가' : status.dailyCalls}/${status.dailyLimit} · 이번 서버 세션 ${status.sessionCalls}/${status.sessionLimit} · 최근 1분 ${status.minuteCalls ?? 0}/${status.rpmLimit ?? 12}`;
     el('home-ai-status').textContent = !status.keyConfigured ? 'AI 미연결 · Mock' : status.testResult === 'ok' ? 'AI 연결 확인됨' : status.testResult === 'untested' ? 'AI 설정됨 · 시험 전' : `AI 연결 오류 · ${TEST_LABELS[status.testResult]}`;
     el('key-source').textContent = status.keySource === 'env' ? '환경변수 키 사용 중' : status.keySource === 'screen' ? '화면 입력 키 사용 중 · 서버 메모리' : '키 미설정';
     el('test-result').textContent = status.testResult === 'timeout' && status.lastDiagnostic?.networkError ? '연결 시간 초과' : testLabel;
@@ -119,19 +121,19 @@ export async function enterStartScreen(): Promise<void> {
   }
   async function save() {
     if (!el<HTMLFormElement>('ai-settings-form').reportValidity()) throw new Error('INVALID_SETTINGS');
-    const payload = { model: model.value.trim(), key: key.value, limit: Number(limit.value), networkMode: network.value, proxyAddress: proxy.value, clearProxy: clearProxy.checked };
+    const payload = { model: model.value.trim(), key: key.value, limit: Number(limit.value), rpm: Number(rpm.value), networkMode: network.value, proxyAddress: proxy.value, clearProxy: clearProxy.checked };
     // fetch serializes synchronously; immediately remove the credential from the DOM and payload.
     const pending = request<LlmStatus>('settings', payload); key.value = ''; payload.key = ''; proxy.value = ''; payload.proxyAddress = ''; clearProxy.checked = false;
     status = await pending; dirty = false;
   }
-  for (const input of [model, key, limit, network, proxy, clearProxy]) input.addEventListener('input', () => { dirty = true; status.testResult = 'untested'; status.networkError = null; render(); });
+  for (const input of [model, key, limit, rpm, network, proxy, clearProxy]) input.addEventListener('input', () => { dirty = true; status.testResult = 'untested'; status.networkError = null; render(); });
   el('open-settings').onclick = () => show('settings'); el('open-guide').onclick = () => show('guide');
   root.querySelectorAll<HTMLButtonElement>('[data-home]').forEach(button => { button.onclick = () => { key.value = ''; proxy.value = ''; show('home'); }; });
   const escape = (event: KeyboardEvent) => { if (event.key === 'Escape' && !busy) { key.value = ''; proxy.value = ''; show('home'); } };
   document.addEventListener('keydown', escape);
   el<HTMLFormElement>('ai-settings-form').onsubmit = event => { event.preventDefault(); void run(save); };
   el('test-connection').onclick = () => void run(async () => { if (dirty) await save(); el('test-result').textContent = '연결 시험 중…'; const result = await request<{ status: LlmStatus }>('test', {}); status = result.status; });
-  el('clear-key').onclick = () => void run(async () => { key.value = ''; proxy.value = ''; clearProxy.checked = false; status = await request<LlmStatus>('clear', {}); dirty = false; model.value = status.model; limit.value = String(status.limit); network.value = status.networkMode; });
+  el('clear-key').onclick = () => void run(async () => { key.value = ''; proxy.value = ''; clearProxy.checked = false; status = await request<LlmStatus>('clear', {}); dirty = false; model.value = status.model; limit.value = String(status.limit); rpm.value = String(status.rpmLimit ?? 12); network.value = status.networkMode; });
   el('reset-usage').onclick = () => void run(async () => { status = await request<LlmStatus>('reset-usage', { confirm: true }); });
   return await new Promise<void>(resolve => {
     const start = (mode: 'mock' | 'ai') => void run(async () => {
@@ -140,7 +142,7 @@ export async function enterStartScreen(): Promise<void> {
     });
     for (const id of ['start-mock', 'settings-mock', 'guide-mock']) el(id).onclick = () => start('mock');
     el('start-ai').onclick = () => start('ai');
-    void run(async () => { status = await request<LlmStatus>('status'); model.value = status.model; limit.value = String(status.limit); network.value = status.networkMode; });
+    void run(async () => { status = await request<LlmStatus>('status'); model.value = status.model; limit.value = String(status.limit); rpm.value = String(status.rpmLimit ?? 12); network.value = status.networkMode; });
     el('start-title').focus();
   });
 }

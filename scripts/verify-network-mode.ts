@@ -7,6 +7,7 @@ import { createServer as portProbe } from 'node:net';
 import { chromium } from 'playwright-core';
 import type { Page } from 'playwright-core';
 import { createServer } from 'vite';
+import { RequestPacer } from '../server/llm/pacer.ts';
 import { createGameServer } from '../server/http.ts';
 import { listenForFetch } from './test-server.ts';
 import type { NetworkRoute } from '../shared/contracts.ts';
@@ -18,8 +19,9 @@ const address = 'http://ui-private:ui-password@127.0.0.1:18937';
 const secrets = [key, 'ui-private', 'ui-password', '18937', 'env-proxy-private.invalid', 'system-private.invalid'];
 const probe = portProbe(), webPort = await listenForFetch(probe); await new Promise<void>(resolve => probe.close(() => resolve()));
 let env: NodeJS.ProcessEnv = {}, system = { enabled: false, server: '', pac: false }, refusal = false, calls = 0;
-const api = createGameServer(undefined, webPort, { env, readSystemProxy: () => system, budgetFile: join(temp, 'usage.json'), transport: async () => {
-  calls++;
+let pacingNow = 0;
+const api = createGameServer(undefined, webPort, { env, pacer: new RequestPacer(undefined, { now: () => pacingNow, sleep: async ms => { pacingNow += ms; } }), readSystemProxy: () => system, budgetFile: join(temp, 'usage.json'), transport: async () => {
+  calls++; pacingNow += 60000;
   if (refusal) throw new TypeError(address, { cause: { code: 'ECONNREFUSED', address: '127.0.0.1', port: 18937 } });
   return Response.json({ candidates: [{ finishReason: 'STOP', content: { parts: [{ text: 'OK' }] } }] });
 } });

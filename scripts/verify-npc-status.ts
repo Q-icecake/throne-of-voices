@@ -8,6 +8,7 @@ import { GameEngine } from '../server/engine.ts';
 import { createGameServer } from '../server/http.ts';
 import { OpenAICompatibleProvider } from '../server/llm/openai-compatible.ts';
 import { CallBudget } from '../server/llm/budget.ts';
+import { RequestPacer } from '../server/llm/pacer.ts';
 import { npcSettings } from '../server/llm/context-policy.ts';
 import { ProviderError } from '../server/llm/types.ts';
 import type { ProviderInput, ProviderErrorCode } from '../server/llm/types.ts';
@@ -16,11 +17,15 @@ const output = 'artifacts/npc-status';
 await mkdir(output, { recursive: true });
 let fault: ProviderErrorCode | 'good' | 'partial' | 'order' = 'good';
 const captured: ProviderInput[] = [];
+// These scenarios test NPC failures, each in a fresh simulated minute. The
+// pacing-specific tests exercise refusal and clock holding without wall waits.
+let pacingNow = 0;
 const config = { model: 'offline-fixture', baseUrl: 'http://127.0.0.1:9/v1', timeoutMs: 150, retries: 0, dailyLimit: 10000, sessionLimit: 10000 };
 class FixtureBudget extends CallBudget {
   override reserve() { if (fault === 'budget') throw new ProviderError('budget'); }
 }
 const transport: typeof fetch = async (_url, init) => {
+  pacingNow += 60000;
   const body = JSON.parse(String(init!.body));
   const input: ProviderInput = JSON.parse(body.messages[1].content);
   captured.push(input);
@@ -44,7 +49,8 @@ const transport: typeof fetch = async (_url, init) => {
   }) } }], usage: { prompt_tokens: 123, completion_tokens: 45 } });
 };
 // Explicit synthetic credential and in-memory reservation: no process keys or external transport.
-const provider = new OpenAICompatibleProvider(config, transport, new FixtureBudget(config), 'synthetic-P9qR7sT3uV6wX2yZ');
+const provider = new OpenAICompatibleProvider(config, transport, new FixtureBudget(config), 'synthetic-P9qR7sT3uV6wX2yZ', undefined,
+  new RequestPacer(undefined, { now: () => pacingNow, sleep: async ms => { pacingNow += ms; } }));
 const engine = new GameEngine(undefined, undefined, provider, 200, provider.status, { mode: 'manual' }, { ...npcSettings({}), meeting: true });
 const api = createGameServer(engine, 5286);
 const vite = await createServer({ logLevel: 'error', server: { port: 5286, strictPort: true, proxy: { '/api': 'http://127.0.0.1:3116' } } });

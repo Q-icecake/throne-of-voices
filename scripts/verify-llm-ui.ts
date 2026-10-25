@@ -22,7 +22,8 @@ const perViewport = () => [
   { ...order, intent: 'ambiguous', proposedActions: [], unresolvedQuestions: ['대상을 다시 알려 주시겠습니까?'] },
   () => new Promise(() => {}), order,
   { ...order, intent: 'question', proposedActions: [], dialogue: '장부에 기록된 정보만으로 판단해야 합니다. '.repeat(40) },
-  new ProviderError('truncated'), new ProviderError('request'),
+  new ProviderError('truncated'), new ProviderError('request'), new ProviderError('pacing'),
+  Object.assign(new ProviderError('rate_limited'), { retryAfterSeconds: 8 }),
   order,
 ];
 const provider = new ScriptedProvider(...perViewport(), ...perViewport());
@@ -111,7 +112,7 @@ try {
     assert.ok(await page.locator('#reply').evaluate(el => el.scrollHeight > el.clientHeight));
     await page.screenshot({ path: `${output}/ai-long-answer-${size}.png` });
     checks.push({ size, check: 'long AI answer scrolls within its own region and never overlaps command panel' });
-    for (const [code, label] of [['truncated', '응답이 잘림'], ['request', '요청 형식 거부(400)']] as const) {
+    for (const [code, label] of [['truncated', '응답이 잘림'], ['request', '요청 형식 거부(400)'], ['pacing', '분당 호출 한도에 가까워'], ['rate_limited', 'Google 분당 한도(429): 8초']] as const) {
       const before = JSON.stringify({ tasks: engine.view().tasks, drafts: engine.view().drafts });
       await page.fill('#speech-input', text); await page.click('#speech-submit');
       await page.locator('#error:not([hidden])').filter({ hasText: label }).waitFor();

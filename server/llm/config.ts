@@ -4,6 +4,8 @@ import { OpenAICompatibleProvider } from './openai-compatible.ts';
 import type { ThinkingMode } from './gemini-response.ts';
 import { NetworkRouter } from './network-routing.ts';
 import type { CallBudget } from './budget.ts';
+import { rateLimits } from './pacer.ts';
+import type { RequestPacer, RateLimits } from './pacer.ts';
 import type { ModelRawObserver } from './remote.ts';
 
 export interface ProviderConfig {
@@ -12,6 +14,9 @@ export interface ProviderConfig {
   retries: number;
   dailyLimit: number;
   sessionLimit: number;
+  rpmLimit?: number;
+  tpmLimit?: number;
+  maxWaitMs?: number;
   maxOutputTokens?: number;
   thinkingMode?: ThinkingMode;
 }
@@ -20,7 +25,9 @@ export function providerConfig(env: NodeJS.ProcessEnv, model: string): ProviderC
     const value = env[key] === undefined ? fallback : Number(env[key]);
     return Number.isSafeInteger(value) && value >= 0 ? value : NaN;
   };
-  const config = { model, timeoutMs: integer('LLM_TIMEOUT_MS', 15000), retries: integer('LLM_RETRIES', 0),
+  let rate: RateLimits;
+  try { rate = rateLimits(env); } catch { return undefined; }
+  const config = { ...rate, model, timeoutMs: integer('LLM_TIMEOUT_MS', 15000), retries: integer('LLM_RETRIES', 0),
     dailyLimit: integer('LLM_DAILY_CALL_LIMIT', 0), sessionLimit: integer('LLM_SESSION_CALL_LIMIT', 0) };
   if (!model || /[\s\x00-\x1f\x7f]/.test(model) || model.length > 200 ||
     Object.values(config).some(v => typeof v === 'number' && !Number.isFinite(v)) ||
@@ -51,7 +58,7 @@ export function geminiGenerationSettings(env: NodeJS.ProcessEnv): Pick<ProviderC
 }
 export interface ProviderSelection { provider?: InterpretationProvider; status: string; timeoutMs: number }
 export function configuredProvider(env: NodeJS.ProcessEnv = process.env, transport: typeof fetch = globalThis.fetch,
-  runtime: { budget?: CallBudget; network?: NetworkRouter; onModelRaw?: ModelRawObserver } = {}): ProviderSelection {
+  runtime: { budget?: CallBudget; network?: NetworkRouter; onModelRaw?: ModelRawObserver; pacer?: RequestPacer } = {}): ProviderSelection {
   const mock = (status: string): ProviderSelection => ({ status, timeoutMs: 15000 });
   if (!env.LLM_PROVIDER || env.LLM_PROVIDER === 'mock') return mock('AI 미연결, Mock 사용 중');
   if (!['gemini', 'openai-compatible'].includes(env.LLM_PROVIDER)) return mock('AI 설정 오류, Mock 사용 중');
@@ -61,8 +68,8 @@ export function configuredProvider(env: NodeJS.ProcessEnv = process.env, transpo
   const config = gemini ? geminiConfig(env) : providerConfig(env, env.OPENAI_COMPAT_MODEL_ID ?? '');
   if (!config) return mock('AI 설정 오류, Mock 사용 중');
   try {
-    const provider = gemini ? new GeminiProvider({ ...config, retries: 0 }, transport, runtime.budget, key, undefined, runtime.network ?? new NetworkRouter(env), runtime.onModelRaw) :
-      new OpenAICompatibleProvider({ ...config, baseUrl: env.OPENAI_COMPAT_BASE_URL ?? '' }, transport, runtime.budget, key, runtime.onModelRaw);
+    const provider = gemini ? new GeminiProvider({ ...config, retries: 0 }, transport, runtime.budget, key, undefined, runtime.network ?? new NetworkRouter(env), runtime.onModelRaw, runtime.pacer) :
+      new OpenAICompatibleProvider({ ...config, baseUrl: env.OPENAI_COMPAT_BASE_URL ?? '' }, transport, runtime.budget, key, runtime.onModelRaw, runtime.pacer);
     return { provider, status: provider.status, timeoutMs: config.timeoutMs };
   } catch { return mock('AI 설정 오류, Mock 사용 중'); }
 }

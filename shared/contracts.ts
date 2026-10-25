@@ -217,7 +217,7 @@ export interface TalkResponse {
   /** Optional v0.2 metadata; legacy clients can ignore it. No prompt content. */
   speakers?: { id: CharacterId; source: 'AI' | 'offline'; fallback?: boolean }[];
   failureCode?: 'timeout' | 'rate_limited' | 'auth' | 'schema' | 'server' | 'budget' | 'aborted' |
-    'truncated' | 'empty' | 'request' | 'model' | 'google_server' | 'parse' | 'network' | 'tls';
+    'truncated' | 'empty' | 'request' | 'model' | 'google_server' | 'parse' | 'network' | 'tls' | 'pacing';
   usage?: { inputChars: number; inputBytes: number; inputTokens: number | null; outputTokens: number | null; externalCalls: number | null };
 
   source: 'offline' | 'AI' | 'mixed';
@@ -229,8 +229,13 @@ export interface TalkResponse {
 }
 /** Public start-screen settings. Credentials are never part of this contract. */
 export type ConnectionTestResult = 'daily_limit' | 'session_limit' | 'untested' | 'ok' | 'auth' | 'model' | 'rate_limited' | 'timeout' | 'schema' | 'server' | 'budget' | 'stale' |
-  'truncated' | 'empty' | 'request' | 'google_server' | 'parse' | 'network' | 'tls';
+  'truncated' | 'empty' | 'request' | 'google_server' | 'parse' | 'network' | 'tls' | 'pacing';
 export interface LlmStatus {
+  minuteCalls?: number;
+  minuteTokens?: number;
+  rpmLimit?: number;
+  tpmLimit?: number;
+  retryAfterSeconds?: number;
   networkMode: NetworkMode;
   route: NetworkRoute;
   networkError?: NetworkError | null;
@@ -251,6 +256,7 @@ export interface LlmStatus {
 }
 /** Only sanitized metadata; never request/response text or credentials. */
 export interface LlmDiagnostic {
+  retryAfterSeconds?: number;
   networkMode: NetworkMode;
   route: NetworkRoute;
   source: 'live' | 'test';

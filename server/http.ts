@@ -96,7 +96,7 @@ export function parseCommand(value: Record<string, unknown>): CommandRequest {
 export function createGameServer(engine?: GameEngine | GameEngine<InterpretationProvider | undefined>, webPort = 5173, runtimeOptions: RuntimeOptions = {}) {
   const runtime = new RuntimeSettings(runtimeOptions);
   if (!engine) {
-    const config = configuredProvider();
+    const config = configuredProvider(runtimeOptions.env ?? process.env, runtimeOptions.transport ?? globalThis.fetch, { pacer: runtime.pacer });
     engine = new GameEngine(undefined, undefined, config.provider, config.timeoutMs, config.status, { mode: 'auto', ready: false });
   }
   let game = engine;
@@ -154,13 +154,15 @@ export function createGameServer(engine?: GameEngine | GameEngine<Interpretation
         const body = await readObject(request);
         switch (path) {
           case '/api/llm/settings': {
-            const extended = exactKeys(body, ['model', 'key', 'limit', 'networkMode', 'proxyAddress', 'clearProxy']);
-            if ((!exactKeys(body, ['model', 'key', 'limit']) && !extended) || typeof body.model !== 'string' || !/^[a-zA-Z0-9._-]{1,200}$/.test(body.model) ||
+            const rpmKeys = Object.hasOwn(body, 'rpm') ? ['rpm'] : [];
+            const extended = exactKeys(body, ['model', 'key', 'limit', 'networkMode', 'proxyAddress', 'clearProxy', ...rpmKeys]);
+            if ((!exactKeys(body, ['model', 'key', 'limit', ...rpmKeys]) && !extended) || typeof body.model !== 'string' || !/^[a-zA-Z0-9._-]{1,200}$/.test(body.model) ||
               typeof body.key !== 'string' || body.key.length > 512 || /[\s\x00-\x1f\x7f]/.test(body.key) ||
               extended && (!['auto', 'proxy', 'direct'].includes(String(body.networkMode)) || typeof body.proxyAddress !== 'string' || typeof body.clearProxy !== 'boolean') ||
+              rpmKeys.length > 0 && (typeof body.rpm !== 'number' || !Number.isSafeInteger(body.rpm) || body.rpm < 1 || body.rpm > 10000) ||
               typeof body.limit !== 'number' || !Number.isSafeInteger(body.limit) || body.limit < 0 || body.limit > 10000) throw new HttpError(400, 'INVALID_SETTINGS');
             try { runtime.configure(body.model, body.key, body.limit, extended ? body.networkMode as 'auto' | 'proxy' | 'direct' : undefined,
-              extended ? body.proxyAddress as string : '', extended && body.clearProxy === true); } catch { throw new HttpError(400, 'INVALID_SETTINGS'); }
+              extended ? body.proxyAddress as string : '', extended && body.clearProxy === true, body.rpm as number | undefined); } catch { throw new HttpError(400, 'INVALID_SETTINGS'); }
             replaceGame(); return json(response, 200, runtime.status());
           }
           case '/api/llm/test':

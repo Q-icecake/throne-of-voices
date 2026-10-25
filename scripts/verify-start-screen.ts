@@ -9,6 +9,7 @@ import { chromium } from 'playwright-core';
 import type { Page } from 'playwright-core';
 import { createServer } from 'vite';
 import { createGameServer } from '../server/http.ts';
+import { RequestPacer } from '../server/llm/pacer.ts';
 import { SecretGuard } from '../server/llm/secrets.ts';
 import { listenForFetch } from './test-server.ts';
 import { networkAdvice } from '../shared/network.ts';
@@ -29,13 +30,15 @@ const networkCases = [
   ['CERT_HAS_EXPIRED', 'TLS/인증서 문제'], ['ERR_TLS_CERT_ALTNAME_INVALID', 'TLS/인증서 문제'],
   ['AbortError', '연결 시간 초과'], ['TimeoutError', '연결 시간 초과'],
 ] as const;
-let calls = 0, reply: number | 'timeout' | 'schema' | 'truncated' | 'thinking' | typeof networkCases[number][0] = 200;
+let pacingNow = 0;
+let calls = 0, reply: number | 'timeout' | 'schema' | 'truncated' | 'thinking' | 'retry-delay' | typeof networkCases[number][0] = 200;
 let proxyEnv: NodeJS.ProcessEnv = {};
 const privateMarker = 'PRIVATE_PLAYER_PROMPT_032';
 const usageMetadata = { promptTokenCount: 12, candidatesTokenCount: 4, thoughtsTokenCount: 32 };
-function freshApi() { return createGameServer(undefined, webPort, { env: proxyEnv, budgetFile: join(temp, 'usage.json'), timeoutMs: 80, transport: async (_url, init) => {
+function freshApi() { return createGameServer(undefined, webPort, { env: proxyEnv, pacer: new RequestPacer(undefined, { now: () => pacingNow, sleep: async ms => { pacingNow += ms; } }), budgetFile: join(temp, 'usage.json'), timeoutMs: 80, transport: async (_url, init) => {
   calls++; assert.equal(new Headers(init?.headers).get('x-goog-api-key'), fakeKey);
   if (reply === 'timeout') return await new Promise<Response>(() => {});
+  if (reply === 'retry-delay') return Response.json({ error: { details: [{ '@type': 'type.googleapis.com/google.rpc.RetryInfo', retryDelay: '7.2s' }] } }, { status: 429, headers: { 'retry-after': '5' } });
   if (reply === 'schema') return new Response('invalid');
   if (reply === 'truncated') return Response.json({ candidates: [{ finishReason: 'MAX_TOKENS', content: { parts: [] } }], usageMetadata });
   if (reply === 'thinking') return Response.json({ candidates: [{ finishReason: 'STOP', content: { parts: [{ thought: true, text: 'OK' }] } }] });
@@ -140,10 +143,10 @@ try {
     assert.equal(resetLogs.filter((event: { kind: string }) => event.kind === 'llm-usage-reset').length, 1);
     await page.screenshot({ path: `${usageOutput}/reset-${size}.png` });
     assert.match(await page.locator('.start-field-note').allTextContents().then(values => values.join(' ')), /사고·출력 합계 최대 256토큰/);
-    for (const [response, label] of [[200, '정상'], [401, '키 오류'], [404, '모델 없음(404)'], [429, 'Google 한도 초과(429)'], ['timeout', '연결 시간 초과'], ['schema', '응답 파싱 실패'],
+    for (const [response, label] of [[200, '정상'], [401, '키 오류'], [404, '모델 없음(404)'], [429, 'Google 한도 초과(429)'], ['retry-delay', 'Google 분당 한도(429): 8초 후 다시'], ['timeout', '연결 시간 초과'], ['schema', '응답 파싱 실패'],
       [400, '요청 형식 거부(400)·모델 설정 불일치'], [500, 'Google 서버 오류(5xx)'], [503, 'Google 서버 오류(5xx)'],
       ['truncated', '응답이 잘림(출력 한도·사고 토큰)'], ['thinking', '응답 없음(사고만 반환 또는 빈 응답)'], ...networkCases] as const) {
-      reply = response; const beforeCall = calls;
+      pacingNow += 60000; reply = response; const beforeCall = calls;
       await page.click('#test-connection'); await page.locator('#test-connection:not([disabled])').waitFor();
       assert.equal(calls, beforeCall + 1);
       guard.assertSafe(await page.content()); guard.assertSafe(await page.evaluate(() => JSON.stringify(localStorage)));
@@ -158,7 +161,7 @@ try {
       assert.match(summary, new RegExp(diagnostic.resultCode)); assert.ok(summary.includes(`${diagnostic.latencyMs}ms`));
       assert.ok(summary.includes('offline-model')); assert.ok(summary.includes(diagnostic.finishReason ?? '—'));
       const network = networkCases.some(([code]) => code === response);
-      assert.equal(diagnostic.httpStatus, typeof response === 'number' ? response : response === 'timeout' || network ? null : 200);
+      assert.equal(diagnostic.httpStatus, response === 'retry-delay' ? 429 : typeof response === 'number' ? response : response === 'timeout' || network ? null : 200);
       assert.equal(diagnostic.source, 'test');
       if (network) {
         assert.ok(summary.includes(diagnostic.networkError.code ?? diagnostic.networkError.name));
@@ -173,9 +176,10 @@ try {
       if (response === 400) assert.ok(summary.includes('Invalid JSON payload received.'));
       if (response === 200 || response === 'truncated') assert.ok(summary.includes('12/4/32'));
       evidence.push({ size, injected: response, displayed: label, calls: 1 });
-      if ([400, 404, 500, 'schema', 'truncated', 'thinking'].includes(response)) await measure(page, `error-${response}`, size);
+      if ([400, 404, 500, 'schema', 'truncated', 'thinking', 'retry-delay'].includes(response)) await measure(page, `error-${response}`, size);
       if ([200, 400, 404, 500, 'truncated'].includes(response)) await page.screenshot({ path: `${diagnosticOutput}/settings-${response}-${size}.png` });
     }
+    pacingNow += 60000;
     const longModel = 'offline-model-' + 'x'.repeat(186);
     await page.fill('#ai-model', longModel); reply = 400;
     await page.click('#test-connection'); await page.locator('#test-connection:not([disabled])').waitFor();
@@ -183,6 +187,16 @@ try {
     assert.equal((await (await page.request.get(base + '/api/llm/status')).json()).lastDiagnostic.model, longModel);
     await measure(page, 'long-diagnostic', size);
     await page.screenshot({ path: `${diagnosticOutput}/settings-long-${size}.png` });
+    await page.fill('#ai-rpm', '1'); await page.click('#save-settings'); await page.locator('#save-settings:not([disabled])').waitFor();
+    const pacingBefore = calls, usageBefore = await readFile(join(temp, 'usage.json'), 'utf8');
+    await page.click('#test-connection'); await page.locator('#test-connection:not([disabled])').waitFor();
+    assert.equal(calls, pacingBefore); assert.match(await page.locator('#test-result').innerText(), /분당 호출 한도에 가까워/);
+    assert.equal(await readFile(join(temp, 'usage.json'), 'utf8'), usageBefore);
+    assert.equal((await (await page.request.get(base + '/api/llm/status')).json()).minuteCalls, 1);
+    await measure(page, 'pacing-refusal', size);
+    pacingNow += 60000; reply = 200;
+    await page.click('#test-connection'); await page.locator('#test-connection:not([disabled])').waitFor();
+    assert.equal(calls, pacingBefore + 1); assert.equal(await page.locator('#test-result').innerText(), '정상');
     await page.click('#clear-key'); await page.locator('#clear-key:not([disabled])').waitFor(); assert.equal(await page.locator('#start-ai').isDisabled(), true);
     const beforeClearTest = calls; await page.click('#test-connection'); await page.locator('#test-connection:not([disabled])').waitFor(); assert.equal(calls, beforeClearTest);
     await page.keyboard.press('Escape'); await page.click('#open-guide'); await measure(page, 'guide', size);

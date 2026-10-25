@@ -49,6 +49,7 @@
 @media (max-height: 850px) {
   .start-screen { padding: 16px; line-height: 1.45; }
   .start-screen .start-card { padding: 18px 28px; }
+  .start-screen [data-start-page="settings"] { padding-block: 12px; }
   .start-screen .start-home { padding: 56px 28px; }
   .start-screen .start-head { padding-bottom: 10px; margin-bottom: 12px; }
   .start-screen p { margin-bottom: 12px; }
@@ -61,3 +62,5 @@
   .start-screen [data-start-page="settings"] #ai-settings-form { margin-bottom: 2px; }
   .start-screen [data-start-page="settings"] .start-settings-footer { margin-top: 6px; padding-top: 6px; }
 }
+
+.start-screen .start-model-row { display: grid; grid-template-columns: minmax(0, 1fr) 140px; gap: 12px; }

@@ -98,12 +98,13 @@ test('035 CLI options default to dev/auto; limit is positive integer and dev-onl
 });
 
 test('035 full CLI prints plan before transport, limits 20 deterministic cases, exports scores and masked route', async t => {
-  const f = setup(t); const output: string[] = []; let calls = 0;
+  const f = setup(t); const output: string[] = []; let calls = 0, now = 0;
   const status = await main(['--live', '--split', 'dev', '--limit', '20', '--max-calls', '20', '--network', 'proxy', '--proxy', manual], {
     env: { ...settings(), GEMINI_MAX_OUTPUT_TOKENS: '4096', GEMINI_THINKING_MODE: 'default' },
     log: value => output.push(value), outputRoot: join(f.dir, 'reports'), live: { budgetFile: f.budgetFile,
+      pacerClock: { now: () => now, sleep: async ms => { now += ms; } },
       transport: async (_url, init) => {
-        assert.equal(output.length, 1); assert.match(output[0]!, /예정 호출 수 20/); assert.match(output[0]!, /4096/);
+        assert.equal(output.length, 2); assert.match(output[1]!, /분당 상한\(RPM\) 12; 예상 소요/); assert.match(output[0]!, /예정 호출 수 20/); assert.match(output[0]!, /4096/);
         const body = JSON.parse(String(init?.body)); assert.equal(body.generationConfig.maxOutputTokens, 4096);
         return success(cases[calls++]!.id);
       } },

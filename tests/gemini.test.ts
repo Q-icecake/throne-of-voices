@@ -46,6 +46,7 @@ test('Gemini environment config has no default model or nonzero call allowance',
   assert.equal(geminiConfig({}), undefined);
   assert.deepEqual(geminiConfig({ GEMINI_MODEL_ID: 'configured-model' }), {
     model: 'configured-model', timeoutMs: 15000, retries: 0, dailyLimit: 0, sessionLimit: 0,
+    rpmLimit: 12, tpmLimit: 200000, maxWaitMs: 8000,
   });
   for (const env of [{ LLM_TIMEOUT_MS: '15001' }, { LLM_TIMEOUT_MS: '0' }, { LLM_RETRIES: '-1' },
     { LLM_DAILY_CALL_LIMIT: 'NaN' }, { LLM_SESSION_CALL_LIMIT: '1.5' }, { GEMINI_MODEL_ID: '../bad?key=x' }]) {

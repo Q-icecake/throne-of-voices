@@ -43,7 +43,7 @@ export interface InterpretationProvider {
   readonly lastUsage?: ProviderUsage;
 }
 export type ProviderErrorCode = 'timeout' | 'rate_limited' | 'auth' | 'schema' | 'server' | 'budget' | 'aborted' |
-  'truncated' | 'empty' | 'request' | 'model' | 'google_server' | 'parse' | 'network' | 'tls';
+  'truncated' | 'empty' | 'request' | 'model' | 'google_server' | 'parse' | 'network' | 'tls' | 'pacing';
 export interface AttemptUsage {
   inputTokens: number | null;
   outputTokens: number | null;
@@ -59,6 +59,7 @@ export interface ProviderUsage extends AttemptUsage {
   attemptUsage: AttemptUsage[];
 }
 export const PROVIDER_MESSAGES: Record<ProviderErrorCode, string> = {
+  pacing: '분당 호출 한도에 가까워 잠시 후 다시 시도해 주세요. 입력은 보존되며 호출은 차감되지 않았습니다.',
   network: '공급자 서버에 연결하지 못함(네트워크·DNS·방화벽·프록시 확인).',
   tls: 'TLS/인증서 문제. 네트워크와 인증서 설정을 확인해 주세요.',
   timeout: 'AI 응답 시간이 초과되었습니다.', rate_limited: 'AI 공급자 한도 초과(429). 추가 호출을 중단했습니다.',
@@ -72,7 +73,7 @@ export const PROVIDER_MESSAGES: Record<ProviderErrorCode, string> = {
   google_server: 'Google 서버 오류(5xx). 잠시 후 다시 시도해 주세요.',
   parse: '응답 파싱 실패. 응답 형식과 모델 설정을 확인해 주세요.',
 };
-const legacy = { timeout: 'PROVIDER_TIMEOUT', rate_limited: 'CALL_LIMIT', auth: 'PROVIDER_ERROR', schema: 'INVALID_PROPOSAL',
+const legacy = { pacing: 'CALL_LIMIT', timeout: 'PROVIDER_TIMEOUT', rate_limited: 'CALL_LIMIT', auth: 'PROVIDER_ERROR', schema: 'INVALID_PROPOSAL',
   server: 'PROVIDER_ERROR', budget: 'CALL_LIMIT', aborted: 'PROVIDER_TIMEOUT',
   truncated: 'INVALID_PROPOSAL', empty: 'INVALID_PROPOSAL', request: 'PROVIDER_ERROR', model: 'PROVIDER_ERROR',
   google_server: 'PROVIDER_ERROR', parse: 'INVALID_PROPOSAL', network: 'PROVIDER_ERROR', tls: 'PROVIDER_ERROR' } as const;
@@ -81,6 +82,7 @@ export class ProviderError extends Error {
   readonly code: 'PROVIDER_ERROR' | 'PROVIDER_TIMEOUT' | 'CALL_LIMIT' | 'INVALID_PROPOSAL';
   readonly neutralCode: ProviderErrorCode;
   usage?: ProviderUsage;
+  retryAfterSeconds?: number;
   readonly budgetDetail?: { scope: 'daily' | 'session'; calls: number; limit: number };
   constructor(code: ProviderError['code'] | ProviderErrorCode, budgetDetail?: ProviderError['budgetDetail']) {
     const mapped = code in legacy ? legacy[code as ProviderErrorCode] : code as ProviderError['code'];
@@ -90,6 +92,7 @@ export class ProviderError extends Error {
   }
 }
 export function providerMessage(error: ProviderError): string {
+  if (error.neutralCode === 'rate_limited' && error.retryAfterSeconds !== undefined) return `Google 분당 한도(429): ${error.retryAfterSeconds}초 후 다시 시도해 주세요.`;
   const detail = error.budgetDetail;
   if (error.neutralCode === 'budget' && detail) return detail.scope === 'daily'
     ? `로컬 일일 상한(UTC) 도달: 오늘 ${detail.calls}/${detail.limit}`

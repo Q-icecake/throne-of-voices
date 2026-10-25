@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { ProviderConfig } from './config.ts';
+import type { RequestPacer } from './pacer.ts';
 import type { CallBudget } from './budget.ts';
 import type { ProviderInput } from './types.ts';
 import { OUTPUT_SCHEMA } from './validator.ts';
@@ -24,8 +25,8 @@ export class GeminiProvider extends RemoteProvider {
   #network?: NetworkRouter;
   protected override parseErrorCode = 'parse' as const;
   constructor(config: GeminiConfig, transport: typeof fetch = globalThis.fetch, budget?: CallBudget,
-    key = process.env.GEMINI_API_KEY ?? '', diagnostics = new GeminiDiagnostics(budget ? join(dirname(budget.storageFile), 'llm-diagnostics.jsonl') : undefined), network?: NetworkRouter, onModelRaw?: ModelRawObserver) {
-    super(config, key, transport, budget, onModelRaw); this.#model = config.model; this.#diagnostics = diagnostics;
+    key = process.env.GEMINI_API_KEY ?? '', diagnostics = new GeminiDiagnostics(budget ? join(dirname(budget.storageFile), 'llm-diagnostics.jsonl') : undefined), network?: NetworkRouter, onModelRaw?: ModelRawObserver, pacer?: RequestPacer) {
+    super(config, key, transport, budget, onModelRaw, pacer); this.#model = config.model; this.#diagnostics = diagnostics;
     this.#network = network;
     const maxOutputTokens = config.maxOutputTokens ?? GAME_MAX_TOKENS;
     if (!Number.isSafeInteger(maxOutputTokens) || maxOutputTokens < 256 || maxOutputTokens > 32768 ||
