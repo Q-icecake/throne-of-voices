@@ -135,7 +135,8 @@ export class Opening {
           if (this.statuses[id === 'T05' ? 'T04' : 'T06'] !== 'fired') continue;
           const person = id === 'T05' ? 'zhang-zhao' : 'zhou-yu';
           if (!world.characters.find(c => c.id === person)!.available || world.tasks.some(t => t.assignee === person && !['completed', 'stopped'].includes(t.stage))) continue;
-          world.audience.requested.push(person); break;
+          if (!world.audience.requested.includes(person)) world.audience.requested.push(person);
+          break;
         }
         case 'T06': this.deliver(world, 'D-zhouyu', ['player', 'zhang-hong'], now); break;
         case 'T09': case 'T10':
@@ -184,4 +185,3 @@ export class Opening {
     this.#fire(world, 'T08', '요청한 공동 회의가 열렸습니다.', emit, undefined, source);
   }
 }
-

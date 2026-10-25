@@ -33,7 +33,7 @@
     {
       "id": "S01",
       "title": "기본 동선과 선택 회의",
-      "status": "시험 설계 · M4/M5 통합 자동 플레이 미실행",
+      "status": "시험 설계 · M6 실제 실행 결과는 artifacts/m6/playthrough.json 참조",
       "setup": "f187315의 초기 명령·자원 fixture를 보존하고 M5 사건만 연결한 미래 하네스; 세션별 초기화",
       "steps": [
         {
@@ -225,7 +225,7 @@
     {
       "id": "S02",
       "title": "주유 먼저",
-      "status": "시험 설계 · M4/M5 통합 자동 플레이 미실행",
+      "status": "시험 설계 · M6 실제 실행 결과는 artifacts/m6/playthrough.json 참조",
       "setup": "f187315의 초기 명령·자원 fixture를 보존하고 M5 사건만 연결한 미래 하네스; 세션별 초기화",
       "steps": [
         {
@@ -392,7 +392,7 @@
     {
       "id": "S03",
       "title": "첫 2분 안에 유비 접촉",
-      "status": "시험 설계 · M4/M5 통합 자동 플레이 미실행",
+      "status": "시험 설계 · M6 실제 실행 결과는 artifacts/m6/playthrough.json 참조",
       "setup": "f187315의 초기 명령·자원 fixture를 보존하고 M5 사건만 연결한 미래 하네스; 세션별 초기화",
       "steps": [
         {
@@ -561,7 +561,7 @@
     {
       "id": "S04",
       "title": "노숙과 회의 생략",
-      "status": "시험 설계 · M4/M5 통합 자동 플레이 미실행",
+      "status": "시험 설계 · M6 실제 실행 결과는 artifacts/m6/playthrough.json 참조",
       "setup": "f187315의 초기 명령·자원 fixture를 보존하고 M5 사건만 연결한 미래 하네스; 세션별 초기화",
       "steps": [
         {
@@ -708,7 +708,7 @@
     {
       "id": "S05",
       "title": "아무 결정도 안 함",
-      "status": "시험 설계 · M4/M5 통합 자동 플레이 미실행",
+      "status": "시험 설계 · M6 실제 실행 결과는 artifacts/m6/playthrough.json 참조",
       "setup": "f187315의 초기 명령·자원 fixture를 보존하고 M5 사건만 연결한 미래 하네스; 세션별 초기화",
       "steps": [
         {
@@ -840,7 +840,7 @@
     {
       "id": "S06",
       "title": "이미 답한 뒤 T11 시점 도달",
-      "status": "시험 설계 · M4/M5 통합 자동 플레이 미실행",
+      "status": "시험 설계 · M6 실제 실행 결과는 artifacts/m6/playthrough.json 참조",
       "setup": "f187315의 초기 명령·자원 fixture를 보존하고 M5 사건만 연결한 미래 하네스; 세션별 초기화",
       "steps": [
         {
@@ -955,7 +955,7 @@
             "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
             "evidence": "docs/COMMANDS.md; server/clock.ts"
           },
-          "expected": "미답 요청·미결 초안이 없으므로 T12도 취소",
+          "expected": "답한 조조 사안은 T12에서 제외; 아직 남은 장조·주유 접견 요청은 요약에 유지",
           "eventIds": [],
           "documentIds": [],
           "dialogueTags": []
@@ -988,7 +988,7 @@
     {
       "id": "S07",
       "title": "같은 입력 재현과 중복 확인",
-      "status": "시험 설계 · M4/M5 통합 자동 플레이 미실행",
+      "status": "시험 설계 · M6 실제 실행 결과는 artifacts/m6/playthrough.json 참조",
       "setup": "f187315의 초기 명령·자원 fixture를 보존하고 M5 사건만 연결한 미래 하네스; 세션별 초기화",
       "steps": [
         {
@@ -1146,7 +1146,7 @@
     {
       "id": "S08",
       "title": "문서 열람 후 대화와 명시적 공유",
-      "status": "시험 설계 · M4/M5 통합 자동 플레이 미실행",
+      "status": "시험 설계 · M6 실제 실행 결과는 artifacts/m6/playthrough.json 참조",
       "setup": "f187315의 초기 명령·자원 fixture를 보존하고 M5 사건만 연결한 미래 하네스; 세션별 초기화",
       "steps": [
         {
@@ -1320,7 +1320,7 @@
     {
       "id": "S09",
       "title": "접견 연기와 무시",
-      "status": "시험 설계 · M4/M5 통합 자동 플레이 미실행",
+      "status": "시험 설계 · M6 실제 실행 결과는 artifacts/m6/playthrough.json 참조",
       "setup": "f187315의 초기 명령·자원 fixture를 보존하고 M5 사건만 연결한 미래 하네스; 세션별 초기화",
       "steps": [
         {
@@ -1454,7 +1454,7 @@
     {
       "id": "S10",
       "title": "보류 기한 뒤 재촉 한 번",
-      "status": "시험 설계 · M4/M5 통합 자동 플레이 미실행",
+      "status": "시험 설계 · M6 실제 실행 결과는 artifacts/m6/playthrough.json 참조",
       "setup": "f187315의 초기 명령·자원 fixture를 보존하고 M5 사건만 연결한 미래 하네스; 세션별 초기화",
       "steps": [
         {
@@ -1641,7 +1641,7 @@
     {
       "id": "S11",
       "title": "활성 시간과 도움 조건",
-      "status": "시험 설계 · M4/M5 통합 자동 플레이 미실행",
+      "status": "시험 설계 · M6 실제 실행 결과는 artifacts/m6/playthrough.json 참조",
       "setup": "f187315의 초기 명령·자원 fixture를 보존하고 M5 사건만 연결한 미래 하네스; 세션별 초기화",
       "steps": [
         {
@@ -1811,7 +1811,7 @@
     {
       "id": "S12",
       "title": "확인하지 않은 초안과 취소",
-      "status": "시험 설계 · M4/M5 통합 자동 플레이 미실행",
+      "status": "시험 설계 · M6 실제 실행 결과는 artifacts/m6/playthrough.json 참조",
       "setup": "f187315의 초기 명령·자원 fixture를 보존하고 M5 사건만 연결한 미래 하네스; 세션별 초기화",
       "steps": [
         {

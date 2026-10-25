@@ -6,7 +6,8 @@ import { createServer } from 'vite';
 import { createGameServer } from '../server/http.ts';
 import type { PlayerView } from '../shared/contracts.ts';
 
-const output = 'artifacts/m5/browser';
+const outIndex = process.argv.indexOf('--out');
+const output = outIndex < 0 ? 'artifacts/m5/browser' : process.argv[outIndex + 1]!;
 await mkdir(output, { recursive: true });
 const server = createGameServer(undefined, 5273); server.listen(3101, '127.0.0.1'); await once(server, 'listening');
 const vite = await createServer({ logLevel: 'error', server: { port: 5273, strictPort: true, proxy: { '/api': 'http://127.0.0.1:3101' } } }); await vite.listen();

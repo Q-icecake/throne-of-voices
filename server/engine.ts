@@ -189,6 +189,10 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
       this.#record('relationship', `${name}: 판단 근거를 직접 공유해 존중이 조금 높아짐`, null);
       return respond(`${name}에게 문서를 보여 주었습니다. 열람과 공유는 별도 기록입니다.`);
     }
+    // A present audience may be ended and queued for later. An absent person
+    // without a request has nothing to defer; do not manufacture an invitation.
+    if (request.type === 'defer' && !world.audience.requested.includes(id) && !world.audience.participants.includes(id))
+      return respond(`${name}의 접견 요청이 없어 연기하지 않았습니다. 직접 부르기는 가능합니다.`);
     world.audience.participants = world.audience.participants.filter(p => p !== id);
     world.characters.find(c => c.id === id)!.location = HOME_LOCATIONS[id];
     if (request.type === 'decline') world.audience.requested = world.audience.requested.filter(p => p !== id);

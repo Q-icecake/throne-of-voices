@@ -1,4 +1,4 @@
-param([ValidateSet('install', 'dev', 'test', 'typecheck', 'build', 'snapshot')][string]$Task = 'dev')
+param([ValidateSet('install', 'dev', 'test', 'typecheck', 'build', 'snapshot', 'verify')][string]$Task = 'dev')
 $ErrorActionPreference = 'Stop'
 Push-Location $PSScriptRoot
 try {
@@ -26,6 +26,7 @@ try {
       & $nodeExecutable node_modules/vite/bin/vite.js build
     }
     'snapshot' { & $nodeExecutable scripts/snapshot.ts }
+    'verify' { & $nodeExecutable scripts/verify-all.ts }
   }
   exit $LASTEXITCODE
 } finally { Pop-Location }

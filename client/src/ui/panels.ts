@@ -20,7 +20,7 @@ export function audiencePanel(state: PlayerView, busy: boolean, act: (request: A
       state.audience.requested.includes(person.id) ? h('button', { type: 'button', 'data-decline': person.id, disabled: busy, onclick: () => act({ type: 'decline', characterId: person.id }) }, '요청 거절') : null,
       state.audience.participants.includes(person.id) ? h('button', { type: 'button', 'data-dismiss': person.id, disabled: busy, onclick: () => act({ type: 'dismiss', characterId: person.id }) }, '퇴실') : null));
   }
-  return h('div', { class: 'audience-panel' }, h('p', {}, '연기하면 요청 맨 뒤로 이동합니다. 모두 연기해도 현재 순서대로 접견할 수 있습니다. 회의는 두세 명을 선택해 여십시오.'),
+  return h('div', { class: 'audience-panel' }, h('p', {}, '연기하면 요청 맨 뒤로 이동합니다. 접견 중이면 퇴실 후 다시 요청하며, 요청도 접견도 없으면 연기하지 않습니다. 직접 호출은 가능합니다. 회의는 두세 명을 선택해 여십시오.'),
     next ? h('button', { type: 'button', id: 'next-audience', disabled: busy, onclick: () => act({ type: 'invite', participants: [next] }) }, `요청 순서대로 접견 · ${state.characters.find(c => c.id === next)!.name}`) : null, choices,
     h('button', { type: 'button', id: 'start-meeting', disabled: busy, onclick: () => {
       if (selected.size < 2 || selected.size > 3) { notice.textContent = '회의에는 두세 명을 선택해 주십시오.'; return; }

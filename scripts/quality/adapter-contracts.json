@@ -1,0 +1,193 @@
+{
+  "S01": {
+    "steps": [
+      "051e1d2ea801a9a205024d232839fc72016b0ba72bdf5da650c15a76e32ce6e8",
+      "cd97369355ca1bec45aead8ab630264a8bdfc74b4a6e5baf9495f42397e5f0d4",
+      "9e5f5743e10397d827284f47698eaf43b2e49d4894608f5c811ffd2c78ddb899",
+      "b24355adce8cd5acf68040f19b3266260b83b24bae080c202109db13a9635c0c",
+      "596bdbee94e928107382b33835ad51ca5a72f86b5530f1d8afcc4eb25e03cb77",
+      "25defa47a379cbed8a5d93466ffae1686c46ed0ad12091d5becf13d2a56251cd",
+      "fa0529ddce5bb166b901156caf7b2135d7ad15f74d8b40a2892013c92ae5d6c0",
+      "59c374d5a265bf337ee04b35b8e81e0e5cd2f4116477364f5ee9fcd97289ea13"
+    ],
+    "forbidden": [
+      "계획을 냈는데 T09·T10 강제 발생",
+      "권한 없는 회의 참가자에게 비밀 타진 원문·회신 전달",
+      "동맹·참전 자동 확정"
+    ]
+  },
+  "S02": {
+    "steps": [
+      "051e1d2ea801a9a205024d232839fc72016b0ba72bdf5da650c15a76e32ce6e8",
+      "e5b7ccb666361beace49b7b23c25574888c0fa79172742ccecae5b600123e7a6",
+      "daa3ae16001f0aaeb2818f880e59d9b30fded3781f564dd0a4ae51d67852f814",
+      "b61242ca8c08250bb0512ab20a8fc47f974ca5afb8453c01b3f55fb9f0e35949",
+      "d2784e2af544bff4f501f530c191a008924a98736e4ce796ee0672b58611bcd1",
+      "c585907b19212351a8469c10da1d13f7ce326074255699a9b59429dfec2c8ff2",
+      "c351a4e5d8d2946e020a53f1290dae6b28c9fd175da067284266b3063b9ba8fd"
+    ],
+    "forbidden": [
+      "T07 중복 접견 요청",
+      "장조 접견 전에는 주유 접견 불가",
+      "노숙 출발 보고"
+    ]
+  },
+  "S03": {
+    "steps": [
+      "051e1d2ea801a9a205024d232839fc72016b0ba72bdf5da650c15a76e32ce6e8",
+      "4489298b897d57ce55dfcfa31474cd01da63eaef8b915ec03b73c25a4acac179",
+      "79887e7373fae5a3b5e4933264d95fbfb1eeb5dfd7654cf6daab1c40cee59a34",
+      "b11c9025ec3090e6984766f11c5c2d68ef15784ecca489315a55af872fe50278",
+      "8b36ae2e77312e4839a747623fd36aa58ac48d3a9b39932c26aed38d5f769d67",
+      "de164e6326af4be96205f483e839ca0fcb922cb16ff58a145679ea8c3c8d83a8",
+      "2d79c000450206dce2057873cea4b09202a27d63db32dfb351a6b4f669745008"
+    ],
+    "forbidden": [
+      "25000ms 이전 출발 보고",
+      "접견·급보를 기다리라는 실행 차단",
+      "T10 암시와 자동 노숙 입실",
+      "공개 Provider 입력에 비밀 보고 첨부"
+    ]
+  },
+  "S04": {
+    "steps": [
+      "051e1d2ea801a9a205024d232839fc72016b0ba72bdf5da650c15a76e32ce6e8",
+      "cd97369355ca1bec45aead8ab630264a8bdfc74b4a6e5baf9495f42397e5f0d4",
+      "f6d2f2e04967e2c72e1e25560382cdde432fe25cad35093464ad017d354c2c6b",
+      "54a944217603ebaec7fa2b176f8f20580197bd5a6b2e64f1e55f80e27dd227aa",
+      "865733a3a9b098bfafec2418d63466bf229e5de6074b17da8e5087154160f4bf",
+      "39b86cb30eaa6600c6b5ec91b6d1f52e3d3565cb4365adfba6a65112663459b4"
+    ],
+    "forbidden": [
+      "T08·T10 강제 실행",
+      "유비 접촉을 안 했는데 노숙 출발·회신",
+      "유비 동맹 없음을 실패로 판정"
+    ]
+  },
+  "S05": {
+    "steps": [
+      "051e1d2ea801a9a205024d232839fc72016b0ba72bdf5da650c15a76e32ce6e8",
+      "cd97369355ca1bec45aead8ab630264a8bdfc74b4a6e5baf9495f42397e5f0d4",
+      "dc0f4662fb4976669ff8284ed087abd98506eac40cca8f168811560ae7e03049",
+      "265bbc0f5938740ae567daa0daab3da0e4c50714b9015ea24b34b213a2913815",
+      "2f0913613724e53fcbdd8ca69dcf1f2d99b993cfa61d34b115ee9cac90a9ca8e"
+    ],
+    "forbidden": [
+      "T08·T09·T10 자동 발생",
+      "T13·T14 발생",
+      "자원 소모·노숙 출발·자동 패배",
+      "T11 반복"
+    ]
+  },
+  "S06": {
+    "steps": [
+      "051e1d2ea801a9a205024d232839fc72016b0ba72bdf5da650c15a76e32ce6e8",
+      "cd97369355ca1bec45aead8ab630264a8bdfc74b4a6e5baf9495f42397e5f0d4",
+      "2a06c2b65cf6395ec01937215ebd478db1d25ade17d24d311488909408d625ad",
+      "9badf37144474d47b9e453cc8078664ef54f759ae4cd520007f1c8e8e2f3f4ec",
+      "fdfed1a3191f718fb59eb0d439bd0ce8cf483b076a44eabc97c39923396bf3b5",
+      "aed5120fb9f2cf68baf757148ad049ed1829a0013a5e429b5c7e2da852a1f760"
+    ],
+    "forbidden": [
+      "T11 발화",
+      "요청을 pending으로 되돌리기",
+      "T12에 답한 조조 사안 포함",
+      "회신 문구를 항복·동맹으로 확장"
+    ]
+  },
+  "S07": {
+    "steps": [
+      "051e1d2ea801a9a205024d232839fc72016b0ba72bdf5da650c15a76e32ce6e8",
+      "cd97369355ca1bec45aead8ab630264a8bdfc74b4a6e5baf9495f42397e5f0d4",
+      "c92a187bfa0584f03d95a864472279ab0335588cb2ef24d610165410981a702c",
+      "7800e3028e13317409d9b2ceb83fde3f8e6115b2d61140611861b507ab324dc3",
+      "eecae4c29de31f7020e9942b5db045524c7f1c7759675c1aed5545c55e928b86",
+      "c0b487f3098d59158a1c987cca17c26f3e72be783555d07a244e9ee063ea2399"
+    ],
+    "forbidden": [
+      "중복 확인으로 추가 작업·추가 소모",
+      "초기화 뒤 이전 사건·대사 선택 인덱스 잔존",
+      "재현 차이를 임의 삭제해 비교 통과"
+    ]
+  },
+  "S08": {
+    "steps": [
+      "051e1d2ea801a9a205024d232839fc72016b0ba72bdf5da650c15a76e32ce6e8",
+      "cd97369355ca1bec45aead8ab630264a8bdfc74b4a6e5baf9495f42397e5f0d4",
+      "b5459313a197f84bc1dd9f1c3dffd0d95a86b9d8076c71db37bb569378b1344e",
+      "f958174b020394e55b7d3951a752c35f2bf67b66fe8f03a6490148c5a6cc1f56",
+      "655338a0a01ea93c50c85adc1826d063ffd5a0c4582c23c3fd43cf1ce36a0169",
+      "b6a38e96470eb210928c217f2874cc0a2b768a87e8c71b97d5a659c918868b2c",
+      "5602c81a2287e960e665671883b2e92b45b5638ba81458d7a1dd77d23ea88134"
+    ],
+    "forbidden": [
+      "열람·접견만으로 노숙에게 급보 전달",
+      "허용 목록 밖의 건의문 노출",
+      "문서 열람 뒤 타진 자동 시작"
+    ]
+  },
+  "S09": {
+    "steps": [
+      "051e1d2ea801a9a205024d232839fc72016b0ba72bdf5da650c15a76e32ce6e8",
+      "cd97369355ca1bec45aead8ab630264a8bdfc74b4a6e5baf9495f42397e5f0d4",
+      "e369ea672d6c227dbb5728aa30d9d5043d22416ba9c2c1a5538bc562fb80e76f",
+      "44711b33de490a769dbbc1dfcada91895e9c0df98960459a798e73f4784cd280",
+      "a8796f459c10ad22497fbb527731bae94754a4b18b9fe244f7a59dba91cf0205"
+    ],
+    "forbidden": [
+      "T05·T07 반복",
+      "무시를 동의·거절·명령으로 추정",
+      "장조 접견 전 주유 호출 차단",
+      "입력·현재 문서 강제 교체"
+    ]
+  },
+  "S10": {
+    "steps": [
+      "051e1d2ea801a9a205024d232839fc72016b0ba72bdf5da650c15a76e32ce6e8",
+      "cd97369355ca1bec45aead8ab630264a8bdfc74b4a6e5baf9495f42397e5f0d4",
+      "a6271cb2f6b0a7ec0d2542f09d377a15414c8dd20fb20ed360eeaa4b20b71000",
+      "5570a5cc4f0a63c6ceecc6efa1f64ee3c855f03940cbe8a105a384ceea9831a3",
+      "6735abbd141f9179ecbd75e6f80eddb3d65b907efc7f3abfa50b992d2a02764d",
+      "8489e8e111e7223c435bec64d5208d92283ec43ed27210e1c65eaac31f0c54b8",
+      "84453f8f59d0a0235d496e6418a64099704ae6fd68e5d3d76e4775d00ee09bd6",
+      "ce283aec2a2e494ec4dae04f49c3619a8bb2a8d1751e659860795a0e4a514eb3"
+    ],
+    "forbidden": [
+      "보류 중 T11 조기 발화",
+      "기한 도달을 answered·항복으로 처리",
+      "같은 요청에 T11 재발화"
+    ]
+  },
+  "S11": {
+    "steps": [
+      "051e1d2ea801a9a205024d232839fc72016b0ba72bdf5da650c15a76e32ce6e8",
+      "e45d7053c56ca8278e0145206c1979f83e6e0b5457a2dd0865b3f4410757c9e0",
+      "3a812fc0aa6b70b9766983f417e6f60787a7aeca0860fdd1678d1a72b4de89d3",
+      "12d3a6712c1caab59e81459cd6bdb2d5c86853fde72fd2badc4295c84df8c90c",
+      "d11f8d1a14348b761e553785948e60aece8ceb8f0dfa3e08a9ffc560266eedae",
+      "6bf736992cbba357dc636298c270d2596d805f91701f5f7666a2014f0b42dafe",
+      "c31165e43cc7639ccab6c0173d461989716899dcb1040c3a64efb29c9f9637fc"
+    ],
+    "forbidden": [
+      "벽시간만으로 T02 도착",
+      "힌트로 초안·작업·접견 자동 생성",
+      "T09·T10 반복",
+      "대기 중 사용자 입력 소실"
+    ]
+  },
+  "S12": {
+    "steps": [
+      "051e1d2ea801a9a205024d232839fc72016b0ba72bdf5da650c15a76e32ce6e8",
+      "cd97369355ca1bec45aead8ab630264a8bdfc74b4a6e5baf9495f42397e5f0d4",
+      "833e9e58d53b6b242d83dbf2a530efd9e4d251fbc7882d3c8e40e2f2f2befd69",
+      "d4194d7cd450e0521949ee6cbca30f58bfe380a143e7cc09bb481f0a850cc492",
+      "7cee4e4961fd2bfee98bc0a9a2a8690dc92dfb5985766207b38c984bc52b68b0"
+    ],
+    "forbidden": [
+      "T13·T14 발생",
+      "노숙 출발·회신",
+      "군량 소모",
+      "패널 닫기만으로 실행"
+    ]
+  }
+}

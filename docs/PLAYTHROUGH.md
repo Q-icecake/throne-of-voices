@@ -1,4 +1,6 @@
-﻿# 첫 15분 플레이 가이드 (M5 초안)
+﻿# 오프닝 자동 플레이 변형 (M6)
+
+최신 사람용 가이드는 [PLAY_GUIDE.md](PLAY_GUIDE.md), 전체 결과는 [QA_MATRIX.md](QA_MATRIX.md)를 따른다. 전체 실행: node scripts/verify-all.ts. 현재 자동 플레이는 JSON의 모든 단계, 기대 사건과 문서, 금지 항목, PB01~06을 대조한다. 기대 문구 변경은 어댑터 검토를 요구하고 누락 시나리오는 실패한다. 결과 기본 경로: artifacts/m6/playthrough.json.
 
 `node scripts/dev.ts` 또는 기존 `run.ps1`로 실행한다. 외부 LLM 호출은 필요하지 않으며 기본은 Mock 해석과 작성 대사다. 역사 내용은 시험용 재구성이고 사람의 사료 대조가 필요하다.
 
@@ -39,7 +41,7 @@
 | S11 보류·안내 | 각 보류 사유·논의 후에만 약한 안내 |
 | S12 취소 | 초안 취소 뒤 실행·소모 없음 |
 
-`node scripts/verify-m5.ts`는 별도 포트 3101/5273와 설치된 Edge headless에서 1920×1080·1366×768을 검사한다. 첫 급보와 복합 명령 후속 보고는 실제 자동 시계를 기다린다. 압박 구간은 도구의 명시적 시간 전진을 사용한다. 결과·스크린샷: `artifacts/m5/`. 기존 `scripts/screenshots.ts`와 `scripts/verify-visual.ts`도 별도로 실행한다.
+`node scripts/verify-m5.ts --out artifacts/m6/m5`는 별도 포트 3101/5273와 설치된 Edge headless에서 1920×1080·1366×768을 검사한다. 첫 급보와 복합 명령 후속 보고는 실제 자동 시계를 기다린다. 압박 구간은 도구의 명시적 시간 전진을 사용한다. 결과·스크린샷은 `artifacts/m6/m5/`에 저장한다. `verify-all`은 기존 `screenshots.ts`와 `verify-visual.ts`, M3/M4/AI/R1도 순차 실행한다.
 
 기존 `new GameEngine()`은 M1~M4 회귀용 수동 fixture를 보존한다. 개시 사건 시험은 생성자 여섯 번째 인수 `{ mode: 'manual' }`로 활성화하며, 정상 HTTP 서버는 자동·화면 준비 대기 상태로 생성한다. 시험 도구는 로컬 전용이다.
 
