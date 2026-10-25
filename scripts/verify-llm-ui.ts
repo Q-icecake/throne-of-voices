@@ -8,7 +8,8 @@ import { createGameServer } from '../server/http.ts';
 import { ScriptedProvider } from '../tests/fixtures/scripted-provider.ts';
 import type { Proposal } from '../server/llm/types.ts';
 
-const output = 'artifacts/m2';
+const outIndex = process.argv.indexOf('--out');
+const output = outIndex >= 0 ? process.argv[outIndex + 1]! : 'artifacts/m2';
 const order: Proposal = { intent: 'command', dialogue: '모델이 완료했다고 해도 실행되지 않습니다.', proposedActions: [
   { kind: 'naval-drill', target: 'jiangdong-navy', assignee: 'zhou-yu', conditions: [], restrictions: [], deadline: null }],
   unresolvedQuestions: [], referencedKnowledgeIds: [], usage: { inputTokens: 0, outputTokens: 0, externalCalls: 0, costUsd: null } };

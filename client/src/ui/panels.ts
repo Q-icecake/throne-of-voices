@@ -65,6 +65,14 @@ function stageLabel(stage: TaskView['stage']): string {
   return { delivering: '명 전달 중', 'in-progress': '수행 중', completed: '완료', preparing: '출발 준비', travelling: '사절 전달 중', 'awaiting-reply': '회신 대기', waiting: '선행 작업 대기', stopped: '중단' }[stage];
 }
 
+function draftConditions(action: CommandDraftView['actions'][number]): HTMLElement {
+  return h('ul', { class: 'restrictions draft-conditions' },
+    h('li', {}, `공개 범위: ${action.conditions.includes('secret') ? '비밀' : '공개'}`),
+    h('li', {}, `기한: ${action.deadline ?? '없음'}`),
+    h('li', {}, `제한: ${action.restrictions.map(r => r.label).join(' · ') || '없음'}`),
+    ...action.conditions.filter(c => c !== 'secret' && c !== 'public').map(c => h('li', {}, conditionLabel(c))));
+}
+
 function draftCard(draft: CommandDraftView, actions: PanelActions): HTMLElement {
   const rows: [string, string][] = [
     ['행동', draft.actionLabel], ['대상', draft.target], ['담당', draft.assignee.name], ['전달', `${draft.messenger.name} (전령)`],
@@ -72,9 +80,6 @@ function draftCard(draft: CommandDraftView, actions: PanelActions): HTMLElement 
     ['예상 소요', `전달 ${seconds(draft.estimate.deliveryMs)} + 정비 ${seconds(draft.estimate.workMs)} (시험 시계)`],
     ['예상 효과', `수군 준비도 +${draft.estimate.readinessGain} (시험 규칙)`],
   ];
-  const restrictions = draft.restrictions.length
-    ? h('ul', { class: 'restrictions' }, ...draft.restrictions.map(item => h('li', {}, item.label)))
-    : h('p', { class: 'muted' }, '제한 조건 없음');
   const editor = h('div', { class: 'revise', hidden: true },
     h('label', { for: `revise-${draft.id}` }, '지시를 고쳐 말하기'),
     h('textarea', { id: `revise-${draft.id}`, rows: '2', maxlength: '2000' }));
@@ -84,18 +89,20 @@ function draftCard(draft: CommandDraftView, actions: PanelActions): HTMLElement 
     if (editor.hidden) { editor.hidden = false; reviseButton.textContent = '수정 반영'; textarea.focus(); return; }
     if (textarea.value.trim()) actions.revise(draft, textarea.value);
   } }, '수정');
-  return h('article', { class: `draft-card ${draft.actions.length > 1 || draft.action !== 'naval-drill' || draft.unresolved.length ? 'compound' : ''}`, 'data-draft': draft.id },
+  return h('article', { class: 'draft-card compound', 'data-draft': draft.id },
     h('header', { class: 'draft-head' },
       h('h3', {}, `명령 초안 · ${draft.id}`), h('span', { class: 'version' }, `버전 ${draft.version}`)),
-    h('div', { class: 'draft-content' }, h('blockquote', { class: 'draft-quote' }, draft.text),
-    draft.actions.length > 1 || draft.action !== 'naval-drill' ? h('div', { class: 'action-list' }, ...draft.actions.map((a, i) => h('section', { class: 'action-row' },
+    h('div', { class: 'draft-content' },
+    h('div', { class: 'action-list' }, ...draft.actions.map((a, i) => h('section', { class: 'action-row' },
       h('h4', {}, `${i + 1}. ${a.actionLabel} · ${a.assignee.name}`),
-      h('ul', { class: 'restrictions' }, ...[...a.restrictions.map(r => r.label), ...a.conditions.map(conditionLabel), ...(a.deadline ? [a.deadline] : [])].map(c => h('li', {}, c))),
-      h('p', { class: 'muted' }, `군량 ${a.estimate.grain} · 전달 ${seconds(a.estimate.deliveryMs)} + 수행 ${seconds(a.estimate.workMs)}`)))) : h('div', {},
-    h('dl', { class: 'draft-rows' }, ...rows.flatMap(([label, value]) => [h('dt', {}, label), h('dd', {}, value)])),
-    h('div', { class: 'draft-restrictions' }, h('h4', {}, '제한'), restrictions)),
-    draft.unresolved.length ? h('div', {}, h('h4', {}, '미해결'), h('ul', {}, ...draft.unresolved.map(item => h('li', {}, item)))) : null,
-    editor),
+      draftConditions(a),
+      h('p', { class: 'muted' }, `군량 ${a.estimate.grain} · 전달 ${seconds(a.estimate.deliveryMs)} + 수행 ${seconds(a.estimate.workMs)}`)))),
+    h('div', { class: 'draft-details' },
+      h('blockquote', { class: 'draft-quote' }, draft.text),
+      draft.actions.length === 1 && draft.action === 'naval-drill' ? h('details', {}, h('summary', {}, '비용·효과 상세'),
+        h('dl', { class: 'draft-rows' }, ...rows.flatMap(([label, value]) => [h('dt', {}, label), h('dd', {}, value)]))) : null,
+      draft.unresolved.length ? h('p', { class: 'partial-scope' }, `표시된 행동만 실행하며 다음 요청은 제외합니다: ${draft.unresolved.join(' / ')}`) : null,
+      editor)),
     h('div', { class: 'draft-actions' },
       h('button', { type: 'button', class: 'btn btn-primary', disabled: actions.busy, onclick: () => actions.confirm(draft) }, draft.unresolved.length ? '표시된 행동만 확인 · 미해결 제외' : '확인 · 전령 보내기'),
       reviseButton,

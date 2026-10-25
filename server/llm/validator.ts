@@ -58,14 +58,27 @@ export function validateProposal(raw: unknown, input: ProviderInput): Proposal {
   const clarify = (question: string): Proposal => ({ ...proposal, intent: 'ambiguous', proposedActions: [],
     dialogue: question, unresolvedQuestions: [question] });
   if (proposal.intent === 'ambiguous' && !proposal.unresolvedQuestions.length) return clarify('어떤 대상에게 무엇을 지시할지 알려 주시겠습니까?');
-  if (proposal.intent !== 'command') return proposal;
+  const parsed = parseCompound(input.text, true);
+  if (proposal.intent !== 'command') {
+    if (parsed.actions.length && !/[?？]|어떨|어때|한다면|하면|하는\s*(?:게|것)/.test(input.text))
+      return clarify('원문의 행동과 제안 의도가 다릅니다. 실행할 행동을 다시 확인해 주세요.');
+    return proposal;
+  }
+  if (/[?？]|어떨|어때|좋을까|나을까|척(?:하|을)/.test(input.text))
+    return clarify('질문·가정과 실행 명령을 구분해야 합니다. 실제로 지시할 행동인지 확인해 주세요.');
   // Explicit assignments cannot be silently replaced by the vocabulary's default actor.
   if (/(장조|노숙|장굉)(?:은|는|에게|더러)[^.,]*수군|(?:주유|장조|장굉)(?:은|는|에게|더러)[^.,]*유비|(?:주유|노숙|장조)(?:은|는|에게|더러)[^.,]*조조/.test(input.text.replace(/장굉은\s*(?=주유에게)/g, '')))
     return clarify('지정한 담당자는 이 행동을 수행할 수 없습니다. 담당자를 다시 지정해 주세요.');
   if (!proposal.proposedActions.length || proposal.proposedActions.length > 3 ||
     new Set(proposal.proposedActions.map(a => a.kind)).size !== proposal.proposedActions.length)
     return clarify('한 초안은 서로 다른 행동 최대 세 개입니다. 나누어 확인해 주세요.');
-  const parsed = parseCompound(input.text);
+  if (parsed.unresolved.some(q => q.startsWith('공개 범위 확인 필요:')))
+    return clarify('공개·비밀 표현이 혼재하거나 부정되어 있습니다. 행동별 공개 범위를 다시 지정해 주세요.');
+  const missing = parsed.actions.filter(a => !proposal.proposedActions.some(p => p.kind === a.kind));
+  if (missing.length) {
+    const labels = { 'naval-drill': '수군 정비', 'sound-out': '유비 타진', 'hold-reply': '조조 답변 보류·회신' };
+    return clarify(`원문의 행동 일부가 빠졌습니다: ${missing.map(a => labels[a.kind]).join(', ')}. 실행 범위를 다시 지정해 주세요.`);
+  }
   if (proposal.proposedActions.some(a => a.conditions.some(c => c.startsWith('after:'))) &&
     JSON.stringify(proposal.proposedActions.map(a => a.kind)) !== JSON.stringify(parsed.actions.map(a => a.kind)))
     return clarify('선후관계가 있는 행동 순서가 원문과 다릅니다. 다시 지정해 주세요.');
@@ -75,9 +88,7 @@ export function validateProposal(raw: unknown, input: ProviderInput): Proposal {
   if (NEGATION.test(stripKnown(input.text)) || CONDITIONAL.test(stripKnown(input.text)))
     return clarify('금지·조건 또는 기한을 안전하게 반영하지 못했습니다. 조건을 구체적으로 알려 주세요.');
   for (const [index, action] of proposal.proposedActions.entries()) {
-    const source = parsed.actions.find(a => a.kind === action.kind) ?? (action.kind === 'naval-drill' ? {
-      restrictions: input.text.match(STRIKE) ? ['no-first-strike'] : [], conditions: [], deadline: null,
-    } : undefined);
+    const source = parsed.actions.find(a => a.kind === action.kind);
     if (action.conditions.some(c => !['secret', 'public', 'after:0', 'after:1'].includes(c) && !c.startsWith('message:')) ||
       (action.conditions.includes('secret') && action.conditions.includes('public')) ||
       action.conditions.some(c => c.startsWith('after:') && Number(c.slice(6)) >= index) ||
@@ -87,9 +98,7 @@ export function validateProposal(raw: unknown, input: ProviderInput): Proposal {
       JSON.stringify([...source.conditions].sort()) !== JSON.stringify([...action.conditions].sort()) || source.deadline !== action.deadline)
       return clarify('원문의 담당·대상·금지·공개 범위·기한을 보존하지 못했습니다. 다시 지정해 주세요.');
   }
-  if (parsed.actions.some(a => !proposal.proposedActions.some(p => p.kind === a.kind)))
-    return clarify('원문의 행동 일부가 빠졌습니다. 실행 범위를 다시 지정해 주세요.');
-  proposal.unresolvedQuestions = [...new Set([...proposal.unresolvedQuestions, ...(parsed.actions.length ? parsed.unresolved : [])])].slice(0, 5);
+  proposal.unresolvedQuestions = [...new Set([...proposal.unresolvedQuestions, ...parsed.unresolved])];
   if (/(장조|노숙|장굉)(에게|더러|를\s*시켜)[^.,]*수군/.test(input.text)) return clarify('현재 정비 수행자는 주유입니다. 수행자를 다시 지정해 주시겠습니까?');
   if (/(조조|유비|적군|북방)(의\s*|군\s*)?(수군|함대|병선)|조조군/.test(input.text)) return clarify('현재 정비 대상은 강동 수군입니다. 대상을 다시 지정해 주시겠습니까?');
   return proposal;

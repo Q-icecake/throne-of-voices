@@ -93,8 +93,16 @@
   .draft-card > .muted { margin: 8px 0 0; line-height: 1.4; }
 }
 
-/* Compound details scroll independently; confirmation stays in the panel. */
-.compound .draft-content { max-height: min(42vh, 350px); overflow-y: auto; overscroll-behavior: contain; }
-.action-row { border-bottom: 1px solid #786345; padding: 4px 0 8px; }
-.action-row .muted { margin: 6px 0 0; }
-@media (max-height: 850px) { .compound .draft-content { max-height: 225px; } }
+/* Keep interpreted actions above independently scrolling source/editor details. */
+.draft-content { display: flex; flex-direction: column; }
+.draft-details { max-height: 150px; overflow-y: auto; overscroll-behavior: contain; }
+.action-row { border-bottom: 1px solid #786345; padding: 3px 0 5px; }
+.action-row h4 { margin: 3px 0; }
+.action-row .muted { margin: 3px 0 0; }
+.draft-conditions { display: flex; flex-wrap: wrap; gap: 0 14px; margin: 3px 0; padding: 0; list-style: none; }
+.draft-conditions li { line-height: 1.4; }
+.partial-scope { font-size: 16px; color: #f1d39a; }
+@media (max-height: 850px) {
+  .draft-details { max-height: 50px; }
+  .action-row .muted { font-size: 16px; line-height: 1.3; }
+}

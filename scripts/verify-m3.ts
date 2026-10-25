@@ -7,7 +7,8 @@ import { createGameServer } from '../server/http.ts';
 import { GameEngine } from '../server/engine.ts';
 import type { PlayerView } from '../shared/contracts.ts';
 
-const output = 'artifacts/m3';
+const outIndex = process.argv.indexOf('--out');
+const output = outIndex >= 0 ? process.argv[outIndex + 1]! : 'artifacts/m3';
 const order = '조조에게는 당장 확답하지 말고 시간을 벌어. 노숙은 유비에게 비밀리에 연락하고, 주유는 수군을 준비시키되 먼저 공격하지는 마.';
 // Explicit offline engine, independent ports, installed Edge. No provider/network credentials.
 const api = createGameServer(new GameEngine(), 5276);
@@ -40,7 +41,7 @@ try {
       });
     }), 'all confirmation controls must be visible and unobstructed');
     await checkButtons();
-    await page.locator('.draft-content').evaluate(el => { el.scrollTop = el.scrollHeight; });
+    await page.locator('.draft-details').evaluate(el => { el.scrollTop = el.scrollHeight; });
     await checkButtons();
     await page.screenshot({ path: `${output}/compound-draft-${size}.png`, animations: 'disabled' });
     pass('three rows, source conditions, no pre-confirm task; buttons remain visible after detail scrolling');

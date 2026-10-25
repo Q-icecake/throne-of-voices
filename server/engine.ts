@@ -10,6 +10,7 @@ import type { InterpretationProvider, ProviderInput } from './llm/types.ts';
 import { ProviderError } from './llm/types.ts';
 import { interpret, toReading } from './llm/pipeline.ts';
 import { actionVocabulary, validateProposal } from './llm/validator.ts';
+import { visibility } from './compound.ts';
 import { MockLLMProvider } from './provider.ts';
 import type { LLMProvider } from './provider.ts';
 import { ACTION_RULES, DIPLOMACY_RULES, deadlineDuration, ENGAGEMENT_POLICY_LABELS, NAVAL_DRILL, RESTRICTION_LABELS } from './rules.ts';
@@ -128,14 +129,23 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
     const stale = (): CommandResponse => ({ state: this.view(), outcome: { kind: 'error', code: 'STALE_RESPONSE', input: request.text,
       reply: '이전 해석 응답을 무시했습니다. 최신 초안은 보존되었습니다. 필요하면 입력을 다시 보내 주세요.' } });
     try {
-      const input: ProviderInput = { text: request.text, knowledge: knowledgeFor(this.#world, 'player'),
+      const knowledge = knowledgeFor(this.#world, 'player');
+      // Interpretation needs only common reports. Player-authorized secret reports
+      // remain in the UI, but are not ambient context for later model requests.
+      const secretTasks = new Set(this.#world.tasks.filter(task => task.plan.conditions.includes('secret')).map(task => task.id));
+      knowledge.documents = knowledge.documents.filter(doc => !doc.taskId || !secretTasks.has(doc.taskId));
+      const input: ProviderInput = { text: request.text, knowledge,
         context: structuredClone(this.#context), actions: actionVocabulary() };
-      if (request.type === 'revise') input.context.push({ role: 'player', text: this.#world.drafts.find(draft => draft.id === request.draftId)!.text });
+      if (request.type === 'revise') {
+        const prior = this.#world.drafts.find(draft => draft.id === request.draftId)!.text;
+        if (visibility(prior) !== 'secret' && visibility(prior) !== 'ambiguous') input.context.push({ role: 'player', text: prior });
+      }
       const proposal = await interpret(this.#interpretationProvider!, input, this.#timeoutMs);
       if (version !== this.#requestVersion) return stale();
       const reading = toReading(proposal);
       const outcome = request.type === 'submit' ? this.#submit(request, reading) : this.#revise(request, reading);
-      this.#context.push({ role: 'player', text: request.text }, { role: 'assistant', text: outcome.reply });
+      if (visibility(request.text) !== 'secret' && visibility(request.text) !== 'ambiguous')
+        this.#context.push({ role: 'player', text: request.text }, { role: 'assistant', text: outcome.reply });
       this.#context = this.#context.slice(-6);
       this.#connectionStatus = this.#interpretationProvider!.status;
       return { state: this.view(), outcome };
@@ -238,7 +248,10 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
     }
     const blocked = this.#editBlock(draft, request.version);
     if (blocked) return this.#reject(blocked, request);
-    if (draft.unresolved.length && !request.acceptPartial) return this.#reject('PARTIAL_CONFIRMATION_REQUIRED', request);
+    if (draft.unresolved.length && !request.acceptPartial) {
+      const rejection = this.#reject('PARTIAL_CONFIRMATION_REQUIRED', request);
+      return { ...rejection, reply: `${rejection.reply} 제외할 요청: ${draft.unresolved.join(' / ')}` };
+    }
     // Re-check against the current world, not the world at drafting time.
     const recheck = this.#recheck(draft);
     if (recheck) {

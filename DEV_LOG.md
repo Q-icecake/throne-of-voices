@@ -1,5 +1,18 @@
 # Development Log
 
+## 2026-10-25 — J06b / 010 R1 지적 수정
+
+- 범위: R1 네 건을 실패 테스트로 재현한 뒤 수정했다. 최초 신규 서버 검사 25개 중 19개 실패·6개 기존 통과, 화면 6개 중 5개 실패·1개 통과. `비공개` 오판, 원문 없는 수군 추가, 같은 절 행동 덮어쓰기/세금 요청 소실, 단독 조건 누락 및 1366 스크롤 문제 모두 재현. 별도 잘못된 의도 검사도 실패 후 수정했다. 증거: `artifacts/r1-fixes/repro-*`.
+- 해석: 비공개·비밀·몰래·은밀히 우선 판정, 공개/비밀 혼재·부정은 확인 질문. 검증기가 원문을 다시 파싱해 행동 추가/누락·조건을 대조하며 수군 기본값을 제거했다. 기존 M2 배/병선/채비/손보기 문장은 명시 근거로 인정한다. 같은 절의 서로 다른 행동을 순서대로 수집하고 미인식 잔여 요청을 부분 실행 확인 문구에 명시한다. 기존 공개 기본 동작은 유지하고 표시한다.
+- 경계: 비밀 작업의 보고/전언 ACL 회귀 검사, 후속 Provider 입력의 비밀 보고·대화 이력·수정 전 원문 자동 첨부 차단. 현재 직접 제출한 원문은 해석 입력이며, 플레이어가 열람할 수 있는 보고는 UI에 유지한다. 공개 응답 금지 문자열과 기존 서버 계약 필드 유지.
+- UI: 단독/복합의 공개 범위·기한·제한 표시 통일, 행동 요약과 원문/상세/편집 스크롤 영역 분리. 새 초안/다른 문서가 이전 스크롤 위치를 물려받지 않게 수정. 두 해상도에서 첫 행동과 확인/수정/취소 버튼 및 실제 편집 스크롤을 검사했다. 중간 검증의 13px 본문 및 이전 패널 스크롤 회귀를 수정하고 재통과했다.
+- 최종 통과: `node --test tests/*.test.ts` **93/93** (기존 66개 테스트 수정·삭제·약화 없음, 신규 27개), `node node_modules/typescript/bin/tsc --noEmit`, `node node_modules/vite/bin/vite.js build`, `git -c safe.directory=C:/Users/q_ice/dispatch-work/throne-integrate diff --check`.
+- Edge headless 1920×1080·1366×768 통과: `node scripts/screenshots.ts --out artifacts/r1-fixes` **12/12**, `node scripts/verify-visual.ts --out artifacts/r1-fixes` **16/16**, `node scripts/verify-m3.ts --out artifacts/r1-fixes` **10/10**, `node scripts/verify-llm-ui.ts --out artifacts/r1-fixes` **12/12**, `node scripts/verify-r1.ts` **6/6**. 기존 브라우저 스크립트는 출력 경로 옵션과 새 상세 스크롤 대상만 변경하고 검사는 유지했다.
+- 증거: `artifacts/r1-fixes/`의 tests/typecheck/build 로그, metrics/browser-checks/compound-checks/llm-browser-checks/r1-browser-checks JSON, 단독·복합·편집 스크롤·보고 PNG. 1366 단독 및 복합 편집 스크롤, 1920 복합/보고 이미지를 직접 확인했다. artifacts는 기존 Git 제외 정책 유지.
+- 변경: `server/{compound,engine}.ts`, `server/llm/validator.ts`, `client/src/{main.ts,panels.css,ui/panels.ts}`, `tests/r1-fixes.test.ts`, `scripts/{verify-r1,verify-m3,verify-llm-ui}.ts`, `docs/COMMANDS.md`, 이 로그. 새 의존성/기능/M4 작업 없음.
+- 미검증: 실제 외부 API 호출 0회. 일반 한국어 의미 이해·실제 LLM 품질·실제 IME·다른 브라우저·15분 재미는 미검증. 유한 패턴은 낯선 표현을 과도하게 미해결로 남길 수 있다.
+- 제출 제한: 브랜치 `integrate/visual-assets`에 변경 보존. Git 메타데이터는 쓰기 범위 밖 원본 저장소의 `.git/worktrees/throne-integrate`에 있으며, `_common.md`는 add/commit을 시도하지 말고 리드가 커밋하도록 지시한다. add/commit/push 미실행. 소유권 불일치는 읽기 명령별 safe.directory만 사용; 전역 설정 변경·사용자 확인 팝업 없음. 다음 단계는 리드의 변경 검토·커밋 및 R1 재검토.
+
 ## 2026-10-25 — J06 / 006 M3 복합 명령
 
 - 구현: 최대 3행동 초안, `hold-reply`/`sound-out`/기존 `naval-drill`, 원문 조건 보존, 미해결 부분의 명시적 부분 실행 확인, 최신 담당자·예약 군량·기한 재검사, 작업별 소모 ID, 중복 확인/회수 방지. 기존 계약 필드와 56개 테스트는 수정·삭제하지 않았다. 새 의존성 없음.

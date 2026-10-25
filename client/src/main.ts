@@ -83,7 +83,9 @@ function renderPanel(): void {
   panel.dataset.kind = focus.panel;
   byId('panel-title').textContent = PANEL_TITLES[focus.panel];
   const scroll = panelBody.scrollTop;
-  const sameView = panelBody.dataset.view === `${focus.panel}:${focus.documentId ?? ''}`;
+  const pending = focus.panel === 'command' ? state.drafts.filter(draft => draft.status === 'awaiting-confirmation').map(draft => `${draft.id}:${draft.version}`).join(',') : '';
+  const viewKey = `${focus.panel}:${focus.documentId ?? ''}:${pending}`;
+  const sameView = panelBody.dataset.view === viewKey;
   let content: HTMLElement;
   switch (focus.panel) {
     case 'document': content = documentPanel(state, focus.documentId, panelActions()); break;
@@ -103,8 +105,8 @@ function renderPanel(): void {
       if (button) button.textContent = '수정 반영';
     }
   }
-  panelBody.dataset.view = `${focus.panel}:${focus.documentId ?? ''}`;
-  if (sameView) panelBody.scrollTop = scroll;
+  panelBody.dataset.view = viewKey;
+  panelBody.scrollTop = sameView ? scroll : 0;
   if (focus.panel === 'document') {
     const docs = documentList(state);
     seenDocuments.add((docs.find(doc => doc.id === focus.documentId) ?? docs[0]!).id);
