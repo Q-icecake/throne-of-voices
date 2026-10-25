@@ -1,4 +1,4 @@
-param([ValidateSet('install', 'dev', 'test', 'typecheck', 'build', 'snapshot', 'verify')][string]$Task = 'dev')
+﻿param([ValidateSet('install', 'dev', 'test', 'typecheck', 'build', 'snapshot', 'verify')][string]$Task = 'dev')
 $ErrorActionPreference = 'Stop'
 Push-Location $PSScriptRoot
 try {
@@ -15,7 +15,10 @@ try {
         & $pnpmCommand.Source install --frozen-lockfile --store-dir node_modules/.pnpm-store --node-linker=hoisted --package-import-method=copy
       } elseif (Test-Path -LiteralPath $bundledPnpm) {
         & $nodeExecutable $bundledPnpm install --frozen-lockfile --store-dir node_modules/.pnpm-store --node-linker=hoisted --package-import-method=copy
-      } else { throw 'pnpm 11.25.0을 설치하거나, Codex의 Node.js 환경에서 실행해 주세요.' }
+      } elseif (Get-Command npx -ErrorAction SilentlyContinue) {
+        # 다른 PC(USB 이동 후): pnpm이 없어도 npx로 고정 버전을 받아 설치한다(인터넷 필요).
+        & npx -y pnpm@11.25.0 install --frozen-lockfile --store-dir node_modules/.pnpm-store --node-linker=hoisted --package-import-method=copy
+      } else { throw 'Node.js 24 이상(npm 포함)을 설치한 뒤 다시 실행해 주세요.' }
     }
     'dev' {
       # Native child inheritance preserves HTTP(S)_PROXY/NO_PROXY verbatim. Never print their values.
