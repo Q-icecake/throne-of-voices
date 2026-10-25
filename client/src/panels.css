@@ -69,9 +69,11 @@
 .record-time, .record-id { color: #a99d80; font-variant-numeric: tabular-nums; }
 
 /* map */
-.stage[data-panel="map"] .panel { left: 50%; right: auto; transform: translateX(-50%); width: min(1100px, calc(100vw - 40px)); top: 84px; bottom: 140px; animation: none; }
+.stage[data-panel="map"] .panel { left: 50%; right: auto; transform: translateX(-50%); width: min(1100px, calc(100vw - 40px)); top: 84px; bottom: auto; max-height: calc(100vh - 224px); animation: none; }
+.stage[data-panel="map"] .panel-body { flex: 0 1 auto; }
 .map-panel { display: flex; flex-direction: column; gap: 10px; }
-.silk-map { width: 100%; max-height: calc(100vh - 360px); display: block; box-shadow: 0 0 0 6px #3a2a1a, 0 12px 40px rgba(0, 0, 0, .6); }
+.map-panel > .muted { margin: 0; }
+.silk-map { width: 100%; height: auto; aspect-ratio: 1000 / 300; max-height: calc(100vh - 360px); flex-shrink: 0; display: block; box-shadow: 0 0 0 6px #3a2a1a, 0 12px 40px rgba(0, 0, 0, .6); }
 .map-marker { cursor: pointer; }
 .map-marker:focus-visible { outline: 2px solid #9b3b2e; }
 .map-marker:hover rect, .map-marker:focus-visible rect { fill: #935f4214; stroke: #935f42; stroke-width: 1.5px; }
@@ -80,3 +82,13 @@
 /* Main reading and editing text stays at least 16px; metadata remains secondary. */
 .draft-quote, .draft-rows, .restrictions li, .revise textarea,
 .map-legend, .record-list, .btn, .link { font-size: 16px; }
+
+/* Keep the confirmation controls and preservation notice together at 1366×768. */
+@media (max-height: 850px) {
+  .stage[data-panel="command"] .panel-body { padding: 8px 12px; }
+  .draft-card { padding: 10px 12px; }
+  .draft-card .draft-quote { margin: 6px 0; padding: 6px 10px; }
+  .draft-card .draft-rows { line-height: 1.4; gap: 2px 10px; margin: 6px 0; }
+  .draft-card .draft-actions { margin: 8px 0 6px; }
+  .draft-card > .muted { margin: 8px 0 0; line-height: 1.4; }
+}

@@ -45,7 +45,7 @@ export function documentPanel(state: PlayerView, selectedId: string | null, acti
     ['근거', selected.evidence], ['관련 지역', selected.region], ['성격', '역사 검토 전 시험용 재구성'],
     ...(task ? [['관련 작업', `${task.id} · ${task.actionLabel}`] as [string, string]] : []),
   ];
-  const paper = h('article', { class: 'paper', 'aria-labelledby': 'paper-title' },
+  const paper = h('article', { class: 'paper', 'aria-labelledby': 'paper-title', 'data-document': selected.id },
     h('h3', { id: 'paper-title', class: 'paper-title' }, selected.title),
     h('p', { class: 'paper-body' }, selected.claim),
     h('dl', { class: 'paper-meta' }, ...meta.flatMap(([label, value]) => [h('dt', {}, label), h('dd', {}, value)])),

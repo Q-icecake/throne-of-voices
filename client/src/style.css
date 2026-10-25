@@ -41,6 +41,7 @@ button, textarea { font: inherit; color: inherit; }
 .layer.has-image .scene-svg { visibility: hidden; }
 /* Independent image documents keep imported SVG gradient IDs isolated. */
 .character-art { position: absolute; left: 38.1%; top: 40.7%; width: 10.31%; height: 33.33%; pointer-events: none; }
+.character-art .slot-image { filter: brightness(1.1) contrast(1.06) drop-shadow(-1px 0 1px rgba(225, 216, 170, .5)) drop-shadow(2px 3px 2px rgba(5, 12, 9, .8)); }
 .figure-zhang-hong { transform: translateX(-300px); }
 .layer-mid:has(.character-art.has-image) .figure-zhang-hong { visibility: hidden; }
 /* B's seat is at (890, 457) in 1600x900; A figures remain in 1920x1080. */
@@ -49,15 +50,19 @@ button, textarea { font: inherit; color: inherit; }
 .scene-box:has(.layer-front.has-image) #hotspot-documents { left: 2.8%; top: 76%; width: 11%; height: 7%; }
 .scene-box:has(.layer-front.has-image) #hotspot-map { left: 86.3%; top: 76%; width: 11.5%; height: 8%; }
 
-/* Camera: each depth moves by a different amount when the focus changes. */
-.stage[data-panel="document"] .layer-back, .stage[data-panel="command"] .layer-back, .stage[data-panel="record"] .layer-back { transform: scale(1.03) translateX(-2.5%); filter: brightness(.7); }
-.stage[data-panel="document"] .layer-mid, .stage[data-panel="command"] .layer-mid, .stage[data-panel="record"] .layer-mid { transform: scale(1.05) translateX(-4%); filter: brightness(.78); }
-.stage[data-panel="document"] .layer-front, .stage[data-panel="command"] .layer-front, .stage[data-panel="record"] .layer-front { transform: scale(1.08) translateX(-6%); filter: brightness(.7); }
-.stage[data-panel="map"] .layer-back { transform: scale(1.02); filter: brightness(.45) blur(1px); }
-.stage[data-panel="map"] .layer-mid { transform: scale(1.03); filter: brightness(.45) blur(1px); }
+/* The seat and seated ruler share one camera and transform origin. */
+.scene-box { --court-camera: none; }
+.layer-back, .layer-mid { transform: var(--court-camera); }
+.stage:is([data-panel="document"], [data-panel="command"], [data-panel="record"]) .scene-box { --court-camera: scale(1.03) translateX(-2.5%); }
+.stage[data-panel="document"] .layer-back, .stage[data-panel="command"] .layer-back, .stage[data-panel="record"] .layer-back { filter: brightness(.7); }
+.stage[data-panel="document"] .layer-mid, .stage[data-panel="command"] .layer-mid, .stage[data-panel="record"] .layer-mid { filter: brightness(.78); }
+/* Edge props must remain reachable when the side workspace opens. */
+.stage[data-panel="document"] .layer-front, .stage[data-panel="command"] .layer-front, .stage[data-panel="record"] .layer-front { transform: scale(1.03); filter: brightness(.7); }
+.stage[data-panel="map"] .scene-box { --court-camera: scale(1.02); }
+.stage[data-panel="map"] .layer-back, .stage[data-panel="map"] .layer-mid { filter: brightness(.45) blur(1px); }
 .stage[data-panel="map"] .layer-front { transform: scale(1.12) translateY(3%); filter: brightness(.55); }
-.stage[data-scene="S2"] .layer-mid { transform: scale(1.06) translate(-3%, 1%); }
-.stage[data-scene="S2"] .layer-back { transform: scale(1.03) translate(-1.5%, .5%); filter: brightness(.82); }
+.stage[data-scene="S2"] .scene-box { --court-camera: scale(1.03) translate(-1.5%, .5%); }
+.stage[data-scene="S2"] .layer-back { filter: brightness(.82); }
 
 .hotspot { pointer-events: auto;
   position: absolute; padding: 0; border: 0; background: transparent; cursor: pointer;
@@ -76,7 +81,7 @@ button, textarea { font: inherit; color: inherit; }
 }
 .hotspot-prop:hover .prop-label, .hotspot-prop:focus-visible .prop-label { opacity: 1; }
 .name-tag {
-  position: absolute; left: 43.25%; top: 75%; transform: translateX(-50%);
+  position: absolute; left: 43.25%; top: 73%; transform: translateX(-50%);
   padding: 1px 12px; font-size: 14px; white-space: nowrap; pointer-events: none;
   background: rgba(20, 15, 11, .78); border: 1px solid var(--panel-edge); color: #e8dcbf;
 }
