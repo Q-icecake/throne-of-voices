@@ -8,7 +8,7 @@ export function knowledgeFor(world: WorldState, viewer: KnowledgeView['viewer'])
     viewer,
     documents: world.documents.filter(doc => doc.readers.includes(viewer)).map(doc => ({
       id: doc.id, title: doc.title, claim: doc.claim, source: doc.source,
-      observedAtMs: doc.observedAtMs, arrivedAtMs: doc.arrivedAtMs,
+      observedAtMs: doc.observedAtMs, ...(doc.observedAtLabel ? { observedAtLabel: doc.observedAtLabel } : {}), arrivedAtMs: doc.arrivedAtMs,
       evidence: doc.evidence, region: doc.region, provenance: doc.provenance,
       ...(doc.taskId ? { taskId: doc.taskId } : {}),
     })),

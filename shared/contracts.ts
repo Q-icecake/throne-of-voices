@@ -15,7 +15,8 @@ export interface PublicDocument {
   title: string;
   claim: string;
   source: string;
-  observedAtMs: number;
+  observedAtMs: number | null;
+  observedAtLabel?: string;
   arrivedAtMs: number;
   evidence: string;
   region: string;
@@ -109,6 +110,7 @@ export interface LedgerView {
 }
 
 export interface PlayerView {
+  opening?: { clockMode: 'manual' | 'auto'; ready: boolean; notices: { id: string; eventId: string; atMs: number; text: string; documentId?: string; sourceEventId?: string }[]; observed: boolean };
   audience: { participants: CharacterId[]; met: CharacterId[]; requested: CharacterId[] };
   conversation: TalkTurn[];
   schemaVersion: 1;
@@ -143,6 +145,11 @@ export interface LLMResult {
 }
 
 export type TestAction =
+  | { type: 'set-clock-mode'; mode: 'manual' | 'auto' }
+  | { type: 'advance-next' }
+  | { type: 'opening-ready' }
+  | { type: 'set-reading'; reading: boolean }
+  | { type: 'observe-document'; documentId: string }
   | { type: 'advance-clock'; milliseconds: number }
   | { type: 'set-pause'; reason: PauseReason; paused: boolean }
   | { type: 'mock-probe'; text: string };
@@ -171,7 +178,7 @@ export type CommandOutcome =
   | { kind: 'rejected'; code: RejectionCode; reply: string };
 
 export type LogKind =
-  | 'audience' | 'talk' | 'document-shared' | 'relationship'
+  | 'opening-event' | 'audience' | 'talk' | 'document-shared' | 'relationship'
   | 'reset' | TestAction['type']
   | 'command-submit' | 'command-revise' | 'command-cancel' | 'command-confirm' | 'command-rejected'
   | 'task-delivered' | 'task-completed' | 'task-progress' | 'command-recall';
@@ -202,7 +209,7 @@ export interface CommandResponse {
 export interface TalkTurn { eventId: string; speaker: CharacterId | 'player'; text: string; participants: CharacterId[] }
 export type AudienceRequest =
   | { type: 'invite'; participants: CharacterId[] }
-  | { type: 'dismiss' | 'defer'; characterId: CharacterId }
+  | { type: 'dismiss' | 'defer' | 'decline'; characterId: CharacterId }
   | { type: 'share'; characterId: CharacterId; documentId: string };
 export interface TalkRequest { characterId: CharacterId; text: string }
 export interface TalkResponse {

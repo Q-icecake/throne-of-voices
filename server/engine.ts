@@ -1,3 +1,4 @@
+import { Opening } from './opening.ts';
 import type {
   ActionPlan, ActionResponse, CommandOutcome, CommandRequest, CommandResponse, LogKind, PublicLogRecord, PublicSnapshot,
   RejectionCode, TestAction,
@@ -12,7 +13,7 @@ import { interpret, toReading } from './llm/pipeline.ts';
 import { actionVocabulary, validateProposal } from './llm/validator.ts';
 import { MockLLMProvider } from './provider.ts';
 import type { LLMProvider } from './provider.ts';
-import { ACTION_RULES, DIPLOMACY_RULES, deadlineDuration, ENGAGEMENT_POLICY_LABELS, NAVAL_DRILL, RESTRICTION_LABELS } from './rules.ts';
+import { ACTION_LABELS, ACTION_RULES, DIPLOMACY_RULES, deadlineDuration, ENGAGEMENT_POLICY_LABELS, NAVAL_DRILL, RESTRICTION_LABELS } from './rules.ts';
 import { createInitialWorld } from './world.ts';
 import type { DraftRecord, EventCause, EventRecord, TaskRecord, WorldState } from './world.ts';
 import type { AudienceRequest, CharacterId, TalkRequest, TalkResponse, TalkTurn } from '../shared/contracts.ts';
@@ -38,6 +39,9 @@ const REJECTION_REPLIES: Record<RejectionCode, string> = {
 };
 
 export class GameEngine<P extends InterpretationProvider | undefined = undefined> {
+  #opening: Opening | undefined;
+  #openingOptions: { mode: 'manual' | 'auto'; ready?: boolean } | undefined;
+  #wallAt: number | undefined;
   #clock = new FakeClock();
   #world: WorldState = createInitialWorld(this.#clock.snapshot());
   #events: EventRecord[] = [];
@@ -50,7 +54,8 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
   #connectionStatus: string;
 
   constructor(provider: LLMProvider = new MockLLMProvider(), interpreter: CommandInterpreter = new MockCommandInterpreter(),
-    interpretationProvider?: P, timeoutMs = 15000, status = 'AI 미연결, Mock 사용 중') {
+    interpretationProvider?: P, timeoutMs = 15000, status = 'AI 미연결, Mock 사용 중', opening?: { mode: 'manual' | 'auto'; ready?: boolean }) {
+    this.#openingOptions = opening;
     this.#provider = provider;
     this.#interpreter = interpreter;
     this.#interpretationProvider = interpretationProvider;
@@ -62,13 +67,17 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
 
   reset(): void {
     this.#requestVersion++;
+    this.#providerWaits.clear();
     this.#context = [];
     this.#clock = new FakeClock();
     this.#world = createInitialWorld(this.#clock.snapshot());
+    this.#opening = this.#openingOptions ? new Opening(this.#openingOptions.mode, this.#openingOptions.ready ?? true) : undefined;
+    this.#wallAt = undefined;
     this.#events = [{ id: 'event-0000', atActiveMs: 0, kind: 'reset', summary: '고정 초기 상태로 시작', cause: null, fromRevision: 0, toRevision: 0 }];
+    if (this.#opening) { this.#opening.initialize(this.#world); this.#evaluateOpening(); }
   }
 
-  view() { return { ...playerView(this.#world), mode: this.#interpretationProvider ? 'ai' as const : 'mock' as const,
+  view() { return { ...playerView(this.#world), ...(this.#opening ? { opening: { clockMode: this.#opening.mode, ready: this.#opening.ready, notices: structuredClone(this.#opening.notices), observed: this.#opening.observed } } : {}), mode: this.#interpretationProvider ? 'ai' as const : 'mock' as const,
     interpretation: { source: this.#interpretationProvider ? 'AI' as const : 'Mock' as const, status: this.#connectionStatus } }; }
 
   logs(): PublicLogRecord[] {
@@ -81,15 +90,34 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
 
   // Local tests/CLI only; deliberately has no HTTP route.
   internalSnapshot() {
-    return structuredClone({ visibility: 'server-only' as const, world: this.#world, events: this.#events });
+    return structuredClone({ visibility: 'server-only' as const, world: this.#world, events: this.#events, ...(this.#opening ? { opening: { statuses: this.#opening.statuses, receipts: this.#opening.receipts } } : {}) });
   }
 
   dispatch(action: TestAction): ActionResponse {
     let result: ActionResponse['result'];
     let summary: string;
     switch (action.type) {
+      case 'set-clock-mode':
+        if (!this.#opening || !['manual', 'auto'].includes(action.mode)) throw new Error('INVALID_CLOCK_MODE');
+        this.#opening.mode = action.mode; this.#wallAt = undefined; summary = `시계 모드 ${action.mode}`; break;
+      case 'opening-ready':
+        if (this.#opening) { this.#opening.ready = true; this.#wallAt = undefined; this.#evaluateOpening(); }
+        summary = '화면 준비 완료'; break;
+      case 'set-reading':
+        if (this.#opening) this.#opening.reading = action.reading;
+        summary = action.reading ? '문서 검토 중' : '문서 검토 마침'; break;
+      case 'observe-document':
+        this.#opening?.observe(this.#world, action.documentId, this.#emitOpening);
+        summary = '열람 가능한 보고 확인'; break;
+      case 'advance-next': {
+        this.#evaluateOpening();
+        const next = Math.min(this.#opening?.nextAt(this.#world) ?? Infinity, this.#nextTaskAt());
+        if (Number.isFinite(next)) this.#advance(next - this.#world.clock.activeMs);
+        summary = '다음 사건 경계까지 시간 보내기'; break;
+      }
       case 'advance-clock':
-        this.#clock.advance(action.milliseconds);
+        if (action.milliseconds > 60000) throw new Error('INVALID_CLOCK_STEP');
+        this.#advance(action.milliseconds);
         summary = `시험 시계 ${action.milliseconds}ms 전진`;
         break;
       case 'set-pause':
@@ -107,24 +135,27 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
     }
     this.#world.clock = this.#clock.snapshot();
     // Tasks progress only when active time passes; their events carry the exact threshold time.
-    if (action.type === 'advance-clock') this.#progressTasks();
+    this.#evaluateOpening();
     this.#record(action.type, summary, structuredClone(action));
     return { state: this.view(), ...(result ? { result } : {}) };
   }
 
   command(request: CommandRequest): P extends undefined ? CommandResponse : Promise<CommandResponse> {
+    if ('text' in request) this.#opening?.input(request.text, this.#world.clock.activeMs);
     const version = ++this.#requestVersion;
     if (this.#interpretationProvider) {
-      return this.#commandAI(structuredClone(request), version) as P extends undefined ? CommandResponse : Promise<CommandResponse>;
+      const hold = this.#beginProvider();
+      return this.#commandAI(structuredClone(request), version).finally(() => { this.#endProvider(hold); this.#evaluateOpening(); }).then(response => ({ ...response, state: this.view() })) as P extends undefined ? CommandResponse : Promise<CommandResponse>;
     }
     const outcome = this.#handleCommand(request);
+    this.#evaluateOpening();
     return { state: this.view(), outcome } as P extends undefined ? CommandResponse : Promise<CommandResponse>;
   }
 
   audience(request: AudienceRequest): TalkResponse {
     this.#requestVersion++;
     const world = this.#world;
-    const respond = (notice: string): TalkResponse => ({ state: this.view(), turns: [], inputOwner: 'player', source: 'offline', notice });
+    const respond = (notice: string): TalkResponse => { this.#evaluateOpening(); return ({ state: this.view(), turns: [], inputOwner: 'player', source: 'offline', notice }); };
     if (request.type === 'invite') {
       const ids = request.participants;
       if (!ids.length || ids.length > 3 || new Set(ids).size !== ids.length || ids.some(id => !CHARACTER_IDS.includes(id))) throw new Error('INVALID_AUDIENCE');
@@ -140,6 +171,7 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
         this.#record('audience', fact, null);
         remember(world, ids, this.#events.at(-1)!.id, fact);
       }
+      if (ids.length > 1) this.#opening?.meeting(world, this.#events.at(-1)!.id, this.#emitOpening);
       return respond(ids.length > 1 ? '회의를 열었습니다. 한 답변과 짧은 반론 뒤 주군의 말씀을 기다립니다.' : '접견을 시작했습니다. 말씀해 주십시오.');
     }
     const id = request.characterId;
@@ -148,6 +180,7 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
     if (request.type === 'share') {
       const doc = world.documents.find(d => d.id === request.documentId && d.readers.includes('player'));
       if (!doc || !world.audience.participants.includes(id)) return respond('열람 가능한 문서와 현재 접견 중인 인물을 선택해 주십시오. 공유하지 않았습니다.');
+      if (this.#opening && !this.#opening.mayShare(doc.id, id)) return respond('이 문서는 해당 인물에게 공유할 수 없습니다. 전달하지 않았습니다.');
       if (doc.readers.includes(id)) return respond('이미 공유된 문서입니다. 다시 공유하거나 관계를 중복 변경하지 않았습니다.');
       doc.readers.push(id);
       this.#record('document-shared', `${name}에게 「${doc.title}」 공유`, null);
@@ -158,14 +191,22 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
     }
     world.audience.participants = world.audience.participants.filter(p => p !== id);
     world.characters.find(c => c.id === id)!.location = HOME_LOCATIONS[id];
+    if (request.type === 'decline') world.audience.requested = world.audience.requested.filter(p => p !== id);
     if (request.type === 'defer') world.audience.requested = [...world.audience.requested.filter(p => p !== id), id];
-    const fact = `플레이어가 ${name}의 접견을 ${request.type === 'defer' ? '미룸' : '마침'}`;
+    const fact = `플레이어가 ${name}의 접견을 ${request.type === 'defer' ? '미룸' : request.type === 'decline' ? '거절함' : '마침'}`;
     this.#record('audience', fact, null);
     remember(world, [id], this.#events.at(-1)!.id, fact);
     return respond(`${fact}. 관계가 나빠지지는 않았습니다.`);
   }
 
   async talk(request: TalkRequest): Promise<TalkResponse> {
+    const hold = this.#beginProvider();
+    let response: TalkResponse;
+    try { response = await this.#talk(request); }
+    finally { this.#endProvider(hold); this.#evaluateOpening(); }
+    return { ...response, state: this.view() };
+  }
+  async #talk(request: TalkRequest): Promise<TalkResponse> {
     if (!CHARACTER_IDS.includes(request.characterId) || typeof request.text !== 'string' || !request.text.trim() || request.text.length > 2000) throw new Error('INVALID_TALK');
     const version = ++this.#requestVersion;
     const ids = [...this.#world.audience.participants];
@@ -173,12 +214,17 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
     const respond = (turns: TalkTurn[], outcome?: CommandOutcome, notice?: string): TalkResponse => ({ state: this.view(), turns, inputOwner: 'player', source, ...(outcome ? { outcome } : {}), ...(notice ? { notice } : {}) });
     if (!ids.includes(request.characterId)) return respond([], undefined, '먼저 해당 인물을 접견에 불러 주십시오.');
     if (ids.some(id => this.#world.tasks.some(t => t.assignee === id && !['completed', 'stopped'].includes(t.stage)))) return respond([], undefined, '참석자가 임무 중입니다. 접견을 다시 구성해 주십시오.');
+    this.#opening?.input(request.text, this.#world.clock.activeMs);
     const input = characterInput(this.#world, request.characterId, request.text, ids);
     const localInput = characterInput(this.#world, request.characterId, request.text, ids, true);
     const localEvidence = /기억|아까|지난|이전|문서|보고|서신|장부/.test(request.text)
       && JSON.stringify(localInput) !== JSON.stringify(input);
     let reading = this.#readMock(request.text);
     let answer = offlineReply(localEvidence ? localInput : input);
+    if (this.#opening && !localEvidence && !unknowable(request.text) && !/기억|신뢰|존중/.test(request.text)) {
+      const tag = /급보|형주/.test(request.text) ? 'dispatch-question' : /도움|모르겠/.test(request.text) ? 'weak-hint' : /문서|보고|서신/.test(request.text) ? 'after-document' : /위험|손실/.test(request.text) ? 'risk-explanation' : /의견|생각/.test(request.text) ? 'opposing-view' : 'information-request';
+      answer = this.#opening.line(this.#world, request.characterId, tag) ?? answer;
+    }
     if (this.#interpretationProvider && !unknowable(request.text) && !localEvidence) {
       try {
         const proposal = await interpret(this.#interpretationProvider, input, this.#timeoutMs);
@@ -216,6 +262,8 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
       add(second, offlineReply(characterInput(this.#world, second, request.text, ids), true));
       if (source === 'AI') source = 'mixed';
     }
+    if (this.#opening) this.#opening.discussed = true;
+    this.#evaluateOpening();
     return respond(turns);
   }
 
@@ -300,6 +348,7 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
       restrictions: [...reading.restrictions], estimate: { ...ACTION_RULES[plans[0]!.kind] }, unresolved: [...reading.unresolved],
     };
     this.#world.drafts.push(draft);
+    this.#syncConfirmation();
     this.#record('command-submit', `입력 「${quoted}」 · ${draft.id} v1 초안 작성 · 확인 대기 · 자원 변화 없음`, structuredClone(request));
     return { kind: 'draft', draftId: draft.id, version: 1, reply: reading.reply };
   }
@@ -330,6 +379,7 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
     const blocked = this.#editBlock(draft, request.version);
     if (blocked) return this.#reject(blocked, request);
     draft!.status = 'cancelled';
+    this.#syncConfirmation();
     this.#record('command-cancel', `${draft!.id} v${draft!.version} 초안 취소 · 실행 없음`, structuredClone(request));
     return { kind: 'cancelled', draftId: draft!.id, reply: '초안을 취소했습니다. 아무것도 실행하지 않았습니다.' };
   }
@@ -352,6 +402,7 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
     const recheck = this.#recheck(draft);
     if (recheck) {
       draft.status = 'rejected';
+      this.#syncConfirmation();
       draft.statusNote = REJECTION_REPLIES[recheck];
       return this.#reject(recheck, request);
     }
@@ -371,10 +422,20 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
     }
     this.#world.tasks.push(...tasks);
     draft.status = 'confirmed';
+    this.#syncConfirmation();
     draft.confirmedVersion = draft.version;
     draft.taskIds = tasks.map(t => t.id);
     draft.taskId = tasks[0]!.id;
     this.#record('command-confirm', `${draft.id} v${draft.version} 확정 · ${draft.taskIds.join(', ')} 등록 · 소모는 착수 시점`, structuredClone(request));
+    if (this.#opening) {
+      const scopedTask = tasks.find(t => t.plan.conditions.includes('secret')) ?? tasks[0]!;
+      this.#world.documents.push({
+        id: `command-record-${draft.id}`, title: '명령 처리 기록', claim: `원문: ${draft.text}\n확인한 실행 범위: ${draft.actions.map(a => ACTION_LABELS[a.kind]).join(' · ')}. ${draft.unresolved.length ? `제외한 요청: ${draft.unresolved.join(' · ')}.` : ''} 작업을 등록했으며 아직 전달·완료를 뜻하지 않습니다.`,
+        source: '정무청 · 플레이어가 확인한 지시 원문과 엔진 등록 기록', observedAtMs: this.#world.clock.activeMs, arrivedAtMs: this.#world.clock.activeMs,
+        evidence: '명령 확인·등록만 확인 · 결과는 각 작업의 후속 보고 참조 · 시험용 재구성', region: '강동', provenance: 'test-reconstruction',
+        taskId: scopedTask.id, readers: ['player', 'zhang-hong'],
+      });
+    }
     for (const task of tasks) remember(this.#world, [...new Set<CharacterId>(['zhang-hong', task.assignee])], this.#events.at(-1)!.id,
       `플레이어가 ${task.action} 명령을 확정함${task.restrictions.length ? ` · ${task.restrictions.map(r => RESTRICTION_LABELS[r]).join(', ')}` : ''} · 당시 아직 완료 아님`, { taskId: task.id });
     return { kind: 'confirmed', draftId: draft.id, taskId: draft.taskId, taskIds: [...draft.taskIds], duplicate: false,
@@ -553,6 +614,57 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
     };
   }
 
+  #emitOpening = (id: string, text: string): void => { this.#record('opening-event', `${id} · ${text}`, null); };
+  #evaluateOpening(): void { this.#opening?.evaluate(this.#world, this.#emitOpening); }
+  #syncConfirmation(): void {
+    if (!this.#opening) return;
+    this.#clock.setPause('confirmation', this.#world.drafts.some(d => d.status === 'awaiting-confirmation'));
+    this.#world.clock = this.#clock.snapshot();
+  }
+  #providerWaits = new Set<symbol>();
+  #beginProvider(): symbol {
+    const token = Symbol();
+    if (this.#opening) { this.#providerWaits.add(token); this.#clock.setPause('provider', true); this.#world.clock = this.#clock.snapshot(); }
+    return token;
+  }
+  #endProvider(token: symbol): void {
+    if (!this.#opening || !this.#providerWaits.delete(token)) return;
+    this.#clock.setPause('provider', this.#providerWaits.size > 0);
+    this.#world.clock = this.#clock.snapshot();
+  }
+  #nextTaskAt(): number {
+    return Math.min(...this.#world.tasks.map(task => {
+      const rule = ACTION_RULES[task.action];
+      return task.stage === 'delivering' ? (task.startedAtMs ?? task.registeredAtMs) + rule.deliveryMs
+        : task.stage === 'in-progress' ? task.deliveredAtMs! + rule.workMs
+        : task.stage === 'preparing' ? task.deliveredAtMs! + DIPLOMACY_RULES.prepareMs
+        : task.stage === 'travelling' ? task.departedAtMs! + DIPLOMACY_RULES.travelMs
+        : task.stage === 'awaiting-reply' ? task.receivedAtMs! + DIPLOMACY_RULES.replyMs : Infinity;
+    }));
+  }
+  #advance(milliseconds: number): void {
+    if (!Number.isSafeInteger(milliseconds) || milliseconds <= 0) throw new Error('INVALID_CLOCK_STEP');
+    if (this.#opening && !this.#opening.ready) return;
+    let left = milliseconds;
+    this.#evaluateOpening();
+    while (left > 0) {
+      const now = this.#world.clock.activeMs;
+      const held = this.#world.clock.pauseReasons.length > 0;
+      const next = Math.min(this.#opening?.nextAt(this.#world) ?? Infinity, this.#nextTaskAt());
+      const step = Math.min(left, 60000, held ? Infinity : Math.max(1, next - now));
+      this.#clock.advance(step); this.#world.clock = this.#clock.snapshot();
+      this.#evaluateOpening(); this.#progressTasks(); this.#evaluateOpening();
+      left -= step;
+    }
+  }
+  /** Driven by the server's monotonic wall clock; tests supply explicit timestamps. */
+  tick(wallMs: number): void {
+    if (this.#wallAt === undefined) { this.#wallAt = wallMs; return; }
+    const delta = Math.max(0, Math.floor(wallMs - this.#wallAt));
+    this.#wallAt = wallMs;
+    if (delta && this.#opening?.ready && this.#opening.mode === 'auto') this.#advance(delta);
+  }
+
   #nextEventId(): string { return `event-${pad(this.#world.revision + 1)}`; }
 
   #quote(text: string): string {
@@ -572,6 +684,7 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
       const status = task.stage === 'stopped' ? '중단' : task.stage === 'completed' ? '완료' : '진행 중';
       remember(this.#world, [...new Set<CharacterId>(['zhang-hong', task.assignee])], this.#events.at(-1)!.id,
         `작업 기록: ${summary} · ${status}`, { taskId: task.id });
+      this.#opening?.project(this.#world, this.#events.at(-1)!.id, summary, this.#emitOpening);
     }
   }
 }

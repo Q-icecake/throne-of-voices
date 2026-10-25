@@ -1,7 +1,7 @@
 import { PAUSE_REASONS } from '../shared/contracts.ts';
 import type { ClockState, PauseReason } from '../shared/contracts.ts';
 
-/** Explicit, integer milliseconds. Neither wall time nor rendering advances simulation. */
+/** Deterministic integer clock. The server driver explicitly supplies wall-time deltas in auto mode. */
 export class FakeClock {
   #elapsedMs = 0;
   #activeMs = 0;

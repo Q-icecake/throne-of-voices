@@ -14,6 +14,7 @@
 <path d="M-20 110C140 85 225 207 390 164S665 103 784 181S973 207 1030 172" stroke="#cad9bf" stroke-width="2" fill="none"/>
 <g fill="#687758" opacity=".3"><path d="M90 62l25-32 25 32 23-24 24 24z"/><path d="M635 70l25-32 25 32 23-24 24 24z"/><path d="M250 261l25-32 25 32 23-24 24 24z"/></g>
 <g fill="#34413b" font-family="Malgun Gothic, sans-serif"><text x="205" y="110" font-size="25" letter-spacing="4">형주</text><text x="472" y="149" font-size="16" letter-spacing="8">장강</text></g>
+<g id="map-jingzhou" class="map-marker"><rect x="182" y="76" width="140" height="48" fill="transparent"/><circle cx="192" cy="105" r="6" fill="#935f42"/></g>
 <g id="map-jiangdong" class="map-marker">
   <rect x="678" y="208" width="115" height="42" rx="4" fill="transparent"/>
   <circle cx="695" cy="230" r="7" fill="#935f42"/>

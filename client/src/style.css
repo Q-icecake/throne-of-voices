@@ -218,3 +218,7 @@ pre { max-height: 220px; overflow: auto; font-size: 11px; background: #0f1513; p
 .meeting-figure span { top: -24px; bottom: auto; }
 #next-audience { padding: 6px 12px; background: #30281d; border: 1px solid #9b865e; color: #f0e5cc; cursor: pointer; }
 .stage[data-audience-empty="true"] .figure-zhang-hong { visibility: hidden; }
+
+.opening-notice { position: fixed; z-index: 8; top: 100px; left: 24px; max-width: min(650px, calc(100vw - 180px)); margin: 0; padding: 8px 12px; background: #20190fe8; border-left: 2px solid #b99a63; color: #eee0c6; font-size: 16px; pointer-events: none; }
+/* The wide map keeps its title clear; badges and the live status still announce arrivals. */
+.stage[data-panel="map"] .opening-notice { width: 1px; height: 1px; max-width: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); }

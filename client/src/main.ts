@@ -31,7 +31,7 @@ new ResizeObserver(entries => {
   const height = entries[0]?.target.getBoundingClientRect().height ?? 0;
   stage.style.setProperty('--speech-clearance', `${Math.ceil(height) + 28}px`);
 }).observe(byId('speech'));
-const devControls = ['advance', 'advance-30', 'pause', 'reset', 'probe-submit', 'snapshot', 'logs'];
+const devControls = ['clock-mode', 'advance-next', 'advance', 'advance-30', 'pause', 'reset', 'probe-submit', 'snapshot', 'logs'];
 const pauseLabels = { manual: '수동', typing: '작성 중', provider: 'AI 대기', confirmation: '확인 대기', background: '백그라운드' };
 const PANEL_TITLES = { document: '문서', map: '강동 상황도', record: '처리 기록', command: '명령', audience: '접견 · 회의' } as const;
 
@@ -59,11 +59,13 @@ async function api<T>(path: string, body?: unknown): Promise<T> {
   return await response.json() as T;
 }
 
-// ---------- focus (UI only, never calls the server) ----------
+// ---------- local focus; reading/observation is separately acknowledged by the server ----------
 
 function setFocus(event: FocusEvent): void {
   focus = reduceFocus(focus, event);
   renderFocus();
+  void syncActivity();
+  if (focus.panel === 'document' && focus.documentId) void observeDocument(focus.documentId);
 }
 
 function renderFocus(): void {
@@ -127,13 +129,15 @@ function renderPanel(): void {
 
 // ---------- world state rendering ----------
 
-function renderBadges(): void {
-  if (!state) return;
-  const unread = state.knowledge.documents.filter(doc => !seenDocuments.has(doc.id)).length;
+function renderBadges(view = state): void {
+  if (!view) return;
+  const unread = view.knowledge.documents.filter(doc => !seenDocuments.has(doc.id)).length;
   const docBadge = byId('badge-documents');
   docBadge.hidden = unread === 0;
   docBadge.textContent = String(unread);
-  const pending = state.drafts.filter(draft => draft.status === 'awaiting-confirmation').length;
+  const audienceBadge = byId('badge-audience');
+  audienceBadge.hidden = view.audience.requested.length === 0; audienceBadge.textContent = String(view.audience.requested.length);
+  const pending = view.drafts.filter(draft => draft.status === 'awaiting-confirmation').length;
   const commandBadge = byId('badge-command');
   commandBadge.hidden = pending === 0;
   commandBadge.textContent = String(pending);
@@ -152,7 +156,8 @@ function render(next: PlayerView): void {
   byId('revision').textContent = String(next.revision);
   byId('pause-status').textContent = next.clock.pauseReasons.length
     ? `보류 사유: ${next.clock.pauseReasons.map(reason => pauseLabels[reason]).join(', ')}`
-    : '보류 사유 없음 · 시계 버튼을 누를 때만 시간이 흐릅니다.';
+    : `보류 사유 없음 · ${next.opening?.clockMode === 'auto' ? '자동으로 시간이 흐릅니다.' : '수동 시험 시계'}`;
+  byId('clock-mode').textContent = next.opening?.clockMode === 'auto' ? '자동 시계 → 수동 전환' : '수동 시계 → 자동 전환';
   const paused = next.clock.pauseReasons.includes('manual');
   byId('pause').textContent = paused ? '수동 보류 해제' : '수동 보류';
   byId('pause').setAttribute('aria-pressed', String(paused));
@@ -161,6 +166,14 @@ function render(next: PlayerView): void {
   byId('snapshot-preview').textContent = JSON.stringify(next, null, 2);
   renderBadges();
   renderPanel();
+  renderOpeningNotice(next);
+}
+
+function renderOpeningNotice(next: PlayerView): void {
+  const notice = next.opening?.notices.filter(n => n.eventId !== 'T01').at(-1);
+  const noticeBox = byId('opening-notice');
+  noticeBox.hidden = !notice;
+  if (notice && noticeBox.dataset.notice !== notice.id) { noticeBox.textContent = notice.text; noticeBox.dataset.notice = notice.id; }
 }
 
 function renderAudience(): void {
@@ -176,7 +189,10 @@ function renderAudience(): void {
   byId('speech').setAttribute('aria-label', `${person.name}에게 말하기`);
   speechInput.placeholder = `${person.name}에게 말하거나 지시하세요. (Enter 줄바꿈 · 전하기 버튼으로 전송)`;
   const mainImage = document.querySelector<HTMLImageElement>('.character-art .slot-image');
-  if (mainImage && !mainImage.src.endsWith(art[addressee])) mainImage.src = art[addressee];
+  if (mainImage && mainImage.dataset.character !== addressee) {
+    mainImage.dataset.character = addressee;
+    if (!mainImage.src.endsWith(art[addressee])) mainImage.src = art[addressee];
+  }
   byId('zhang-hong-tag').textContent = `${person.name} · ${person.role}`;
   byId('hotspot-zhang-hong').setAttribute('aria-label', `${person.name}에게 말하기`);
   document.querySelectorAll('.meeting-figure').forEach(el => el.remove());
@@ -236,6 +252,7 @@ async function run(work: () => Promise<void>): Promise<void> {
     byId<HTMLButtonElement>('refresh').disabled = false;
     updateSpeechButton();
     renderPanel();
+    void syncActivity();
   }
 }
 
@@ -283,9 +300,9 @@ function autosize(): void {
   speechInput.style.height = `${Math.min(speechInput.scrollHeight, 120)}px`;
 }
 
-speechInput.addEventListener('input', () => { updateSpeechButton(); autosize(); });
-speechInput.addEventListener('compositionstart', () => { composing = true; });
-speechInput.addEventListener('compositionend', () => { composing = false; });
+speechInput.addEventListener('input', () => { updateSpeechButton(); autosize(); void syncActivity(); });
+speechInput.addEventListener('compositionstart', () => { composing = true; void syncActivity(); });
+speechInput.addEventListener('compositionend', () => { composing = false; void syncActivity(); });
 speechInput.addEventListener('focus', () => setFocus({ type: 'address', speaker: addressee }));
 speechInput.addEventListener('blur', () => { if (!audienceMode && !speechInput.value.trim()) setFocus({ type: 'address', speaker: null }); });
 byId('speech-form').addEventListener('submit', event => {
@@ -295,7 +312,7 @@ byId('speech-form').addEventListener('submit', event => {
   void run(async () => {
     const outcome = audienceMode || state?.mode === 'mock' ? await talk(text) : await command({ type: 'submit', text });
     // Clear only after the server accepted the input; failures keep the text.
-    if (outcome.kind !== 'error' && !(outcome.kind === 'answer' && outcome.intent === 'ambiguous') && speechInput.value === text) { speechInput.value = ''; autosize(); }
+    if (outcome.kind !== 'error' && !(outcome.kind === 'answer' && outcome.intent === 'ambiguous') && speechInput.value === text) { speechInput.value = ''; autosize(); void syncActivity(); }
   });
 });
 
@@ -320,6 +337,8 @@ document.addEventListener('keydown', event => {
   else if (focus.devOpen) setFocus({ type: 'toggle-dev' });
 });
 
+byId('clock-mode').addEventListener('click', () => void run(() => dispatch({ type: 'set-clock-mode', mode: state?.opening?.clockMode === 'auto' ? 'manual' : 'auto' })));
+byId('advance-next').addEventListener('click', () => void run(() => dispatch({ type: 'advance-next' })));
 byId('advance').addEventListener('click', () => { void run(() => dispatch({ type: 'advance-clock', milliseconds: 5000 })); });
 byId('advance-30').addEventListener('click', () => { void run(() => dispatch({ type: 'advance-clock', milliseconds: 30_000 })); });
 byId('pause').addEventListener('click', () => { void run(() => dispatch({ type: 'set-pause', reason: 'manual', paused: !state?.clock.pauseReasons.includes('manual') })); });
@@ -329,13 +348,16 @@ byId('reset').addEventListener('click', () => { void run(async () => {
   audienceMode = false; addressee = 'zhang-hong'; focus = INITIAL_FOCUS;
   state = undefined;
   render(response.state);
+  activitySent = '';
+  await syncActivity();
+  await api('/api/test/action', { type: 'opening-ready' });
   replyLine.hidden = true;
   byId('mock-result').textContent = '초기 상태로 돌아왔습니다.';
   await refreshLogs();
 }); });
 byId('refresh').addEventListener('click', () => { void run(async () => { await refreshLogs(); render(await api<PlayerView>('/api/state')); }); });
-probeInput.addEventListener('compositionstart', () => { composing = true; });
-probeInput.addEventListener('compositionend', () => { composing = false; });
+probeInput.addEventListener('compositionstart', () => { composing = true; void syncActivity(); });
+probeInput.addEventListener('compositionend', () => { composing = false; void syncActivity(); });
 byId('probe-form').addEventListener('submit', event => {
   event.preventDefault();
   if (composing || !probeInput.value.trim()) return;
@@ -361,4 +383,58 @@ byId('snapshot').addEventListener('click', () => { void run(async () => {
 byId('logs').addEventListener('click', () => { void run(async () => saveJson('m1-player-logs.json', await api('/api/test/logs'))); });
 
 renderFocus();
-void run(async () => render(await api<PlayerView>('/api/state')));
+void run(async () => {
+  render(await api<PlayerView>('/api/state'));
+  await syncActivity();
+  await document.fonts.ready;
+  await Promise.all([...document.images].map(image => image.complete ? Promise.resolve() : new Promise<void>(resolve => { image.addEventListener('load', () => resolve(), { once: true }); image.addEventListener('error', () => resolve(), { once: true }); })));
+  const ready = await api<ActionResponse>('/api/test/action', { type: 'opening-ready' });
+  render(ready.state);
+});
+
+// Activity requests are serialized so rapid input/visibility changes cannot reorder pauses.
+let activitySent = '';
+let activityQueue = Promise.resolve();
+function syncActivity(): Promise<void> {
+  if (!state?.opening) return Promise.resolve();
+  const typing = composing || !!speechInput.value.trim() || [...panelBody.querySelectorAll<HTMLTextAreaElement>('.revise textarea')].some(a => !a.closest('[hidden]') && document.activeElement === a);
+  const background = document.hidden, reading = focus.panel === 'document';
+  const key = `${typing}:${background}:${reading}`;
+  if (key === activitySent) return activityQueue;
+  activitySent = key;
+  activityQueue = activityQueue.then(async () => {
+    await api('/api/test/action', { type: 'set-pause', reason: 'typing', paused: typing });
+    await api('/api/test/action', { type: 'set-pause', reason: 'background', paused: background });
+    await api('/api/test/action', { type: 'set-reading', reading });
+  }).catch(() => { activitySent = ''; });
+  return activityQueue;
+}
+async function observeDocument(documentId: string): Promise<void> {
+  if (!state?.opening) return;
+  try { await api('/api/test/action', { type: 'observe-document', documentId }); } catch { /* next explicit read may retry */ }
+}
+document.addEventListener('visibilitychange', () => void syncActivity());
+panelBody.addEventListener('input', () => void syncActivity());
+panelBody.addEventListener('focusin', () => void syncActivity());
+panelBody.addEventListener('focusout', () => queueMicrotask(() => void syncActivity()));
+// Polls do not rebuild editable controls or steal selection, focus, scroll, or a panel.
+setInterval(async () => {
+  if (!state?.opening || busy || document.hidden) return;
+  try {
+    const next = await api<PlayerView>('/api/state');
+    if (busy || next.revision < state.revision) return;
+    const selection = window.getSelection();
+    const editing = panelBody.contains(document.activeElement) || (!!selection?.anchorNode && !selection.isCollapsed && panelBody.contains(selection.anchorNode));
+    if (!editing && next.revision !== state.revision) { await refreshLogs(); render(next); }
+    else {
+      state = { ...state, clock: next.clock, opening: next.opening };
+      renderBadges(next);
+      renderOpeningNotice(next);
+      byId('active-time').textContent = seconds(next.clock.activeMs);
+      byId('held-time').textContent = seconds(next.clock.heldMs);
+      byId('pause-chip').hidden = next.clock.pauseReasons.length === 0;
+      byId('connection').textContent = `서버 연결됨 · 시험 시계 ${seconds(next.clock.activeMs)}`;
+      byId('pause-status').textContent = next.clock.pauseReasons.length ? `보류 사유: ${next.clock.pauseReasons.map(reason => pauseLabels[reason]).join(', ')}` : `보류 사유 없음 · ${next.opening?.clockMode === 'auto' ? '자동 시계' : '수동 시험 시계'}`;
+    }
+  } catch { /* explicit operations retain the existing error UI */ }
+}, 400);

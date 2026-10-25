@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#140f0b" />
     <link rel="icon" href="data:," />
-    <title>Throne of Voices · 적벽 전야 (M4 시험판)</title>
+    <title>Throne of Voices · 적벽 전야 (M5 시험판)</title>
   </head>
   <body>
     <div id="stage" class="stage" data-scene="S0" data-panel="none">
@@ -37,7 +37,7 @@
       </header>
 
       <nav class="hud hud-tools" aria-label="자료와 도구">
-        <button type="button" class="tool" id="tool-audience" aria-pressed="false"><span class="tool-glyph" aria-hidden="true">人</span><span class="tool-label">접견</span></button>
+        <button type="button" class="tool" id="tool-audience" aria-pressed="false"><span class="tool-glyph" aria-hidden="true">人</span><span class="tool-label">접견</span><span class="tool-badge" id="badge-audience" hidden></span></button>
         <button type="button" class="tool" id="tool-documents" aria-pressed="false"><span class="tool-glyph" aria-hidden="true">簡</span><span class="tool-label">문서</span><span class="tool-badge" id="badge-documents" hidden></span></button>
         <button type="button" class="tool" id="tool-map" aria-pressed="false"><span class="tool-glyph" aria-hidden="true">圖</span><span class="tool-label">지도</span></button>
         <button type="button" class="tool" id="tool-command" aria-pressed="false"><span class="tool-glyph" aria-hidden="true">令</span><span class="tool-label">명령</span><span class="tool-badge" id="badge-command" hidden></span></button>
@@ -53,6 +53,7 @@
         <div class="panel-body" id="panel-body"></div>
       </aside>
 
+      <p id="opening-notice" class="opening-notice" role="status" aria-live="polite" hidden></p>
       <section id="speech" class="hud speech" aria-label="장굉에게 말하기">
         <p class="reply" id="reply" role="status" aria-live="polite" hidden></p>
         <form id="speech-form" class="speech-form">
@@ -69,7 +70,7 @@
           <button type="button" class="panel-close" id="dev-close">닫기</button>
         </div>
         <div class="dev-body">
-          <p class="dev-note">M4 시험판 · 인물 대화는 작성된 한국어 대사 풀을 사용합니다. LLM 대사는 라이브 미검증입니다. 시계는 버튼을 누를 때만 흐릅니다. 지도·문서·인물은 시험용 재구성이며 아트는 임시입니다.</p>
+          <p class="dev-note">M5 시험판 · 인물 대화는 작성된 한국어 대사 풀을 사용합니다. LLM 대사는 라이브 미검증입니다. 기본 자동 시계 · 작성/AI/확인/일시정지/백그라운드에서는 보류됩니다. 지도·문서·인물은 시험용 재구성이며 아트는 임시입니다.</p>
           <div class="clock-grid">
             <div><span>활성 시간</span><strong id="active-time">0.0초</strong></div>
             <div><span>보류 시간</span><strong id="held-time">0.0초</strong></div>
@@ -77,6 +78,8 @@
           </div>
           <p id="pause-status" class="dev-note">보류 사유 없음</p>
           <div class="controls">
+            <button type="button" id="clock-mode">자동 시계</button>
+            <button type="button" id="advance-next">다음 사건까지 시간 보내기</button>
             <button type="button" id="advance" disabled>시계 +5초</button>
             <button type="button" id="advance-30" disabled>시계 +30초</button>
             <button type="button" id="pause" aria-pressed="false" disabled>수동 보류</button>

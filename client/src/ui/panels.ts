@@ -17,6 +17,7 @@ export function audiencePanel(state: PlayerView, busy: boolean, act: (request: A
       h('small', {}, occupied ? '임무 중 · 접견 불가' : state.audience.requested.includes(person.id) ? `접견 요청 ${state.audience.requested.indexOf(person.id) + 1}순위 · 호출 가능` : '호출 가능'),
       h('button', { type: 'button', 'data-invite': person.id, disabled: occupied || busy, onclick: () => act({ type: 'invite', participants: [person.id] }) }, '단독 접견'),
       h('button', { type: 'button', 'data-defer': person.id, disabled: busy, onclick: () => act({ type: 'defer', characterId: person.id }) }, '연기'),
+      state.audience.requested.includes(person.id) ? h('button', { type: 'button', 'data-decline': person.id, disabled: busy, onclick: () => act({ type: 'decline', characterId: person.id }) }, '요청 거절') : null,
       state.audience.participants.includes(person.id) ? h('button', { type: 'button', 'data-dismiss': person.id, disabled: busy, onclick: () => act({ type: 'dismiss', characterId: person.id }) }, '퇴실') : null));
   }
   return h('div', { class: 'audience-panel' }, h('p', {}, '연기하면 요청 맨 뒤로 이동합니다. 모두 연기해도 현재 순서대로 접견할 수 있습니다. 회의는 두세 명을 선택해 여십시오.'),
@@ -68,7 +69,7 @@ export function documentPanel(state: PlayerView, selectedId: string | null, acti
       h('span', { class: 'doc-item-meta' }, `${doc.source} · ${seconds(doc.arrivedAtMs)}`)))));
   const task = selected.taskId ? state.tasks.find(item => item.id === selected.taskId) : undefined;
   const meta: [string, string][] = [
-    ['출처', selected.source], ['관측 / 도착', `${seconds(selected.observedAtMs)} / ${seconds(selected.arrivedAtMs)} (시험 시계)`],
+    ['출처', selected.source], ['관측 / 도착', `${selected.observedAtMs === null ? (selected.observedAtLabel ?? '시각 미상') : seconds(selected.observedAtMs)} / ${seconds(selected.arrivedAtMs)} (시험 시계)`],
     ['근거', selected.evidence], ['관련 지역', selected.region], ['성격', '역사 검토 전 시험용 재구성'],
     ...(task ? [['관련 작업', `${task.id} · ${task.actionLabel}`] as [string, string]] : []),
   ];
@@ -198,10 +199,11 @@ export function mapPanel(state: PlayerView, actions: PanelActions): HTMLElement 
   const wrapper = h('div', { class: 'map-panel' });
   wrapper.innerHTML = MAP_SVG; // static markup, no user text
   const regions = [
-    { id: 'map-jiangdong', label: '강동', docs: state.knowledge.documents.filter(doc => doc.region === '강동') },
+    { id: 'map-jingzhou', label: '형주 방면 (받은 보고 위치)', docs: state.knowledge.documents.filter(doc => doc.region.includes('형주')) },
+    { id: 'map-jiangdong', label: '강동', docs: state.knowledge.documents.filter(doc => doc.region.split(' · ').includes('강동')) },
     { id: 'map-navy', label: '강동 수군', docs: state.knowledge.documents.filter(doc => doc.region === '강동 수군') },
   ];
-  const legend = h('ul', { class: 'map-legend' }, ...regions.map(region => h('li', {},
+  const legend = h('ul', { class: 'map-legend' }, ...regions.filter(region => region.id !== 'map-jingzhou' || region.docs.length).map(region => h('li', {},
     h('strong', {}, region.label), ' · ',
     region.docs.length
       ? h('span', {}, ...region.docs.map((doc, index) => h('span', {}, index ? ', ' : '', h('button', { type: 'button', class: 'link', onclick: () => actions.openDocument(doc.id) }, doc.title))))
@@ -211,6 +213,7 @@ export function mapPanel(state: PlayerView, actions: PanelActions): HTMLElement 
   for (const region of regions) {
     const marker = wrapper.querySelector<SVGGElement>(`#${region.id}`);
     const first = region.docs.at(-1)?.id ?? (region.id === 'map-navy' ? LEDGER_DOC_ID : null);
+    if (marker && !first) marker.style.display = 'none';
     if (marker && first) {
       marker.setAttribute('tabindex', '0');
       marker.setAttribute('role', 'button');
@@ -219,6 +222,6 @@ export function mapPanel(state: PlayerView, actions: PanelActions): HTMLElement 
       marker.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); actions.openDocument(first); } });
     }
   }
-  wrapper.append(legend, h('p', { class: 'muted' }, '시험용 개념도입니다. 축척·지리 정확성이 없으며 관측된 병력은 표시하지 않습니다. 받은 보고가 있는 곳만 표시합니다.'));
+  wrapper.append(legend, h('p', { class: 'muted' }, '시험용 개념도 · 축척/지리 정확성 없음. 받은 보고의 지역만 표시하며 현재 실제 위치·병력은 알 수 없습니다.'));
   return wrapper;
 }
