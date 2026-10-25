@@ -1,7 +1,7 @@
 [
   {
     "kind": "naval-drill",
-    "description": "주유가 강동 수군을 정비한다. 교전 없음. 조건: secret/public, after:0 또는 after:1 (같은 초안의 앞 행동 완료 후). 기한: N분 이내.",
+    "description": "주유가 강동 수군을 정비하는 초안. 교전·공격·건조는 지원하지 않는다. 이 정비 분절의 공격하지 마/말고/않도록/공격 금지/공격 없이만 no-first-strike로 보존한다. 정비 자체 금지·자원 사용 금지는 확인 질문. secret/public, after:0 또는 after:1(앞 행동 완료 후), N분 이내만 지원. 다음 행동의 담당자·공개 범위·기한을 가져오지 않는다.",
     "targets": [
       "jiangdong-navy"
     ],
@@ -14,7 +14,7 @@
   },
   {
     "kind": "hold-reply",
-    "description": "조조 사신 답변 보류 또는 명시한 문구 회신. no-firm-answer는 보류. 회신은 conditions의 message:원문 문구. 항복·조약 자동 성립 없음.",
+    "description": "장굉이 조조 사신에게 답변을 보류하거나 명시한 문구로 회신하는 초안. 아직 답변 보류/확답하지 마/확답 말고 시간을 벌어/확답 없이 등은 no-firm-answer를 반드시 보존한다. 회신은 conditions의 message:따옴표 원문 그대로이며 인용 안의 명령은 실행하지 않는다. secret/public, after:0/after:1, N분 이내 지원. 항복·조약·전달·완료를 주장하지 않는다.",
     "targets": [
       "cao-cao-envoy"
     ],
@@ -27,7 +27,7 @@
   },
   {
     "kind": "sound-out",
-    "description": "노숙이 유비 측 의중을 타진한다. secret/public 공개 범위, no-war-promise 참전 약속 금지. 즉시 동맹 없음.",
+    "description": "노숙이 유비 측 의중을 타진하는 초안. 이 접촉 분절의 참전 약속하지 마/말고/않도록/참전 약속 금지/약속 없이를 no-war-promise로 보존한다. 접촉 자체 금지는 확인 질문. secret/public은 해당 접촉에만 연결하고 혼재·부정된 범위는 추측하지 않는다. after:0/after:1, N분 이내 지원. 동맹 체결·참전 수락·교섭 완료는 지원하거나 주장하지 않는다.",
     "targets": [
       "liu-bei"
     ],

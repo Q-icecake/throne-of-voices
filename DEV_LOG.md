@@ -1,5 +1,15 @@
 # Development Log
 
+## 2026-10-25 — 022 V3 검증기·해석·프롬프트
+
+- 기준 `v0.2/validator`, HEAD `79a72bf`, 초기 작업 트리 깨끗함. 조사 보고는 worktree에 없어 읽기 전용 `throne-compare/.codex-runs/v02-readiness.md`에서 확인했다. `_v02-override.md`에 따라 현재 worktree를 사용하고 Git 소유권 차이는 명령 한정 `safe.directory`로 처리했다. 다른 worktree·원본·V4 소유 경로·shared·UI·기존 시험·fixture·의존성은 변경하지 않았다.
+- `E029/E039/E049/E087/E089`를 먼저 시험으로 재현(5/5 실패, 전체 357통과/5신규실패). 문장 전체 담당자 정규식을 분절별 비교로 바꾸고 Mock/검증기의 분절·제한 처리를 공유했다. 부정 변형은 해당 행동에만 연결하며 누락/추가된 제한·공개 범위·기한·순서·행동은 계속 강등한다. 논의 요청과 인용 회신의 내용은 실행 명령과 구분한다.
+- 신규 시험 **59개**, 전체 **416/416**, `tsc --noEmit`·Vite 빌드 통과. 중간 전체 413/416에서 기존 동일 작업 연속 설명/공개 부정 회귀를 발견해 구현에서 수정했고 기존 시험은 그대로 유지했다. 기존 가짜 응답 오류 주입 시험도 모두 통과했다. 증거 `artifacts/eval/validator-022/{regressions-before,full-before,full-initial,full-tests,typecheck,build}.log`.
+- 개발 80개(명령60+NPC20): 정답 scripted **80/80→75/80**에서 **80/80→80/80**, 종료 0. Mock **47/80→48/80**에서 **47/80→51/80**, 종료 1. 고정 오답 **72/80→72/80**, 종료 1이며 8개 오류 모두 계속 실패. 검증기 단독의 오답 NPC 안전 위반 2건/Mock 반복 지시 E101 위반 1건은 남아 있고 통과로 포장하지 않았다. 최종 세트는 구조 검사 외 채점하지 않았다. 원응답/후단·해시·요약·사람 평가 시트 경로 `artifacts/eval/validator-022/offline-runs.json`.
+- Edge 1920×1080·1366×768: 기존 R1 **6/6**, M3 **10/10**, LLM UI **12/12**, 총 **28/28** 통과. 결과·스크린샷 `artifacts/eval/validator-022/browser/`; 대표 1366 복합 초안/1920 AI 오류 화면을 직접 확인했다. UI 변경 없음. 전체 verify-all은 이번 단계에서 실행하지 않았으며 관련 브라우저만 실행했다.
+- 시스템 프롬프트 **tov-ko-0.2.1**, 평가 해시 `eval-v2:4509830b3807ee4d0e0604558bb2737bfe575e17a7e9bcb085c3a5eb565047f1`. 의도·분절별 부정·허용 어휘 밖 요청·최소 되묻기·허위 완료/체결·인물별 한국어 어조/간결성 및 actions 설명 보강. 실제 API/라이브 **0회**이며 실제 효과·모델 품질/비용/지연·사람의 재미는 미검증이다.
+- 제출: 공통 규칙의 리드 커밋 지시와 읽기 전용 원본의 `.git/worktrees/throne-v03a` 때문에 add/commit을 시도하지 않았다. **커밋 미생성**. 변경은 현재 작업 트리에 보존하고 `.codex-runs/v02-validator-report.md`, 전체 검토 패치 `artifacts/eval/validator-022/changes.patch`, SHA-256 목록·역적용 읽기 검사 `submission-manifest.json`으로 인계한다. 전역 설정·원격 push·권한 우회·선택/확인 팝업 없음. 다음 단계는 리드 검토/커밋과 V4 통합 후 전체 검증, 별도 승인 환경의 라이브 평가다.
+
 ## 2026-10-25 — 021 V1·V2 통합 마무리
 
 - `v0.2/real-ai` HEAD `807acce` + 병합 대상 `5982f9f`: V1/V2 로그 양쪽을 보존했고 본문의 충돌 표식은 없다. bridge 생산 코드 한 파일만 중립 `configuredProvider`/`providerConfig`/`CallBudget` 경로로 연결하고 양 공급자의 실패 usage를 구분했다. factory에 budget 주입 인수가 없어 선택된 어댑터의 공통 생성자로 평가 budget을 주입한다. 서버/UI/shared/의존성 변경 없음.

@@ -1,4 +1,4 @@
-import { parseCompound } from './compound.ts';
+import { FIRST_STRIKE, parseCompound } from './compound.ts';
 import type { ActionPlan, CommandIntent, RestrictionId } from '../shared/contracts.ts';
 
 /**
@@ -15,7 +15,6 @@ export interface CommandInterpreter {
   interpret(text: string): Interpretation;
 }
 
-const NO_FIRST_STRIKE = /(공격|치)[은는]?\s*(하)?지\s*[는도은]?\s*(마|말|않)|(선제)?공격\s*금지/;
 const ATTACK_REQUEST = /공격(해|하라|하게|하시오|하도록|을\s*개시)|진격|습격|쳐들어|들이쳐|출격/;
 const HYPOTHETICAL = /(하면|한다면|하는\s*게|하는\s*것은?)\s*(어떨까|어때|어떻습|좋을까|나을까)|척(하|을)/;
 const QUESTION = /[?？]\s*$|(어떻게|무엇|뭐야|뭔가|왜|얼마나|어디|누가|있나|있는가|되나|될까|인가)\s*[?？.]?\s*$/;
@@ -45,9 +44,9 @@ export class MockCommandInterpreter implements CommandInterpreter {
         restrictions: actions[0]!.restrictions, unresolved, reply: '[Mock] 이해한 행동과 미해결 부분을 초안에서 확인해 주세요. 아직 실행하지 않았습니다.' };
     }
     const naval = NAVAL.test(text) && DRILL.test(text);
-    const noFirstStrike = NO_FIRST_STRIKE.test(text);
+    const noFirstStrike = Boolean(text.match(FIRST_STRIKE));
     // Strip the negated clause before looking for a real attack request.
-    const attack = ATTACK_REQUEST.test(text.replace(NO_FIRST_STRIKE, ''));
+    const attack = ATTACK_REQUEST.test(text.replace(FIRST_STRIKE, ''));
     if (attack) {
       return { intent: 'unsupported', reason: '공격·교전 명령은 이 시제품에 구현되어 있지 않습니다.',
         reply: '[Mock] 공격 지시는 아직 처리할 수 없습니다. 정비로 바꿔 실행하지 않았습니다. 원문은 기록에 남겼습니다.' };
@@ -57,9 +56,10 @@ export class MockCommandInterpreter implements CommandInterpreter {
         reply: '[Mock] M1에서는 주유 외의 담당자를 지정할 수 없습니다. 실행하지 않았습니다.' };
     }
     if (naval) {
+      const parsed = parseCompound(text);
       const restrictions: RestrictionId[] = noFirstStrike ? ['no-first-strike'] : [];
       return {
-        intent: 'command', action: 'naval-drill', actions: parseCompound(text).actions, restrictions, unresolved: parseCompound(text).unresolved,
+        intent: 'command', action: 'naval-drill', actions: parsed.actions, restrictions, unresolved: parsed.unresolved,
         reply: noFirstStrike
           ? '[Mock] 주유 장군께 수군 정비를 전하되, 먼저 공격하지 말라는 조건을 붙이겠습니다. 확인하시면 전령을 보내겠습니다.'
           : '[Mock] 주유 장군께 수군 정비를 전하겠습니다. 교전 방침에 대한 지시는 없습니다. 확인하시면 전령을 보내겠습니다.',
