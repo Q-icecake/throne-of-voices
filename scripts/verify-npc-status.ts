@@ -43,7 +43,7 @@ const transport: typeof fetch = async (_url, init) => {
   }) } }], usage: { prompt_tokens: 123, completion_tokens: 45 } });
 };
 // Explicit synthetic credential and in-memory reservation: no process keys or external transport.
-const provider = new OpenAICompatibleProvider(config, transport, new FixtureBudget(config), 'synthetic-fixture-credential');
+const provider = new OpenAICompatibleProvider(config, transport, new FixtureBudget(config), 'synthetic-P9qR7sT3uV6wX2yZ');
 const engine = new GameEngine(undefined, undefined, provider, 200, provider.status, { mode: 'manual' }, { ...npcSettings({}), meeting: true });
 const api = createGameServer(engine, 5286);
 const vite = await createServer({ logLevel: 'error', server: { port: 5286, strictPort: true, proxy: { '/api': 'http://127.0.0.1:3116' } } });

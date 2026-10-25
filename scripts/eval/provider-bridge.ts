@@ -3,6 +3,7 @@ import { configuredProvider, providerConfig } from '../../server/llm/config.ts';
 import type { ProviderConfig } from '../../server/llm/config.ts';
 import { CallBudget } from '../../server/llm/budget.ts';
 import { ProviderError } from '../../server/llm/types.ts';
+import { SecretGuard } from '../../server/llm/secrets.ts';
 import type { InterpretationProvider } from '../../server/llm/types.ts';
 import type { Attempt, Source } from './types.ts';
 
@@ -91,13 +92,15 @@ export function liveSource(maxCalls: number, env: NodeJS.ProcessEnv = process.en
   const provider = new Adapter({ ...config, baseUrl: env.OPENAI_COMPAT_BASE_URL ?? '' }, transport,
     new ObservedBudget(config, runtime.budgetFile),
     (format === 'gemini' ? env.GEMINI_API_KEY : env.OPENAI_COMPAT_API_KEY) ?? '');
+  const secretGuard = new SecretGuard((format === 'gemini' ? env.GEMINI_API_KEY : env.OPENAI_COMPAT_API_KEY) ?? '');
   return {
+    secretGuard,
     model: `${format}/${config.model}`, timeoutMs: selected.timeoutMs,
     async sample(_fixture, input) {
       const first = attempts.length, reserved = reservations;
       let raw: unknown, error: string | undefined;
-      try { raw = await provider.interpret(input, AbortSignal.timeout(config.timeoutMs)); }
-      catch (e) { error = budgetStop ?? errorCode(e); }
+      try { raw = await provider.interpret(input, AbortSignal.timeout(config.timeoutMs)); secretGuard.assertSafe(raw); }
+      catch (e) { raw = undefined; error = budgetStop ?? errorCode(e); }
       const observed = attempts.slice(first);
       if (error && observed.length && !observed.at(-1)!.error) observed.at(-1)!.error = error;
       return { raw, error, attempts: structuredClone(observed), reservations: reservations - reserved };

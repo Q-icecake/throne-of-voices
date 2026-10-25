@@ -3,7 +3,7 @@ import type { ActionPlan } from '../shared/contracts.ts';
 // Deliberately small offline grammar. Unknown clauses stay visible, never become fake successes.
 export const FIRST_STRIKE = /(?:먼저\s*|선제\s*)?(?:공격|치)[은는을]?\s*(?:하)?지\s*[는도은]?\s*(?:마[가-힣]*|말[가-힣]*|않[가-힣]*)|(?:먼저\s*|선제\s*)?공격[은는을]?\s*(?:금지[가-힣]*|없이|말고)/g;
 export const WAR_PROMISE = /(?:참전[은을]?\s*(?:은\s*)?)?약속(?:하)?지\s*(?:는\s*)?(?:마[가-힣]*|말[가-힣]*|않[가-힣]*)|(?:참전[은을]?\s*)?약속[은을]?\s*(?:금지[가-힣]*|없이|말고)/g;
-export const HOLD = /확답(?:하)?지\s*(?:는\s*)?(?:마[가-힣]*|말[가-힣]*|않[가-힣]*)|확답[은을]?\s*(?:말고|없이|금지[가-힣]*)|(?:답변|답|회신)[을은]?\s*(?:잠시\s*)?(?:미루|보류)[가-힣]*|시간[을은]?\s*벌[가-힣]*/g;
+export const HOLD = /(?:확답|답변|답|회신)(?:하)?지\s*(?:는\s*)?(?:마[가-힣]*|말[가-힣]*|않[가-힣]*)|확답[은을]?\s*(?:말고|없이|금지[가-힣]*)|(?:답변|답|회신)[을은]?\s*(?:잠시\s*)?(?:미루|보류)[가-힣]*|시간[을은]?\s*벌[가-힣]*/g;
 
 const QUOTED = /[「“"]([^」”"]+)[」”"]/g;
 const withoutQuotes = (text: string) => text.replace(QUOTED, '');
@@ -13,7 +13,7 @@ function actionKinds(text: string, providerVocabulary: boolean): { kind: Kind; a
   if (/조조/.test(source) && (source.match(HOLD) || /회신|답변|답장/.test(source))) kinds.push({ kind: 'hold-reply', at: source.indexOf('조조') });
   if (/유비/.test(source) && /연락|접촉|타진|알아|의중|조건/.test(source)) kinds.push({ kind: 'sound-out', at: source.indexOf('유비') });
   const navy = source.match(providerVocabulary ? /수군|함대|전선|水軍|뱃사람|병선|수병|배들|우리\s*배/ : /수군|함대|전선|水軍/);
-  if (navy && (providerVocabulary ? /정비|훈련|조련|점검|준비|채비|갖추|손보|정돈|다듬/ : /정비|훈련|조련|점검|준비/).test(source)) kinds.push({ kind: 'naval-drill', at: navy.index! });
+  if (navy && (providerVocabulary ? /정비|훈련|조련|점검|준비|채비|갖추|손보|손봐|정돈|다듬/ : /정비|훈련|조련|점검|준비/).test(source)) kinds.push({ kind: 'naval-drill', at: navy.index! });
   return kinds.sort((a, b) => a.at - b.at);
 }
 
@@ -114,7 +114,7 @@ export function parseCompound(text: string, providerVocabulary = false): { actio
     // Account for the whole source, not a blacklist of unsupported policy verbs.
     // Unknown residue is retained verbatim; partial execution needs explicit acceptance.
     const remainder = stripActionQualifiers(clause, kinds.map(a => a.kind))
-      .split(/[\s,.，。]+/).filter(token => token && !/^(?:(?:주유|노숙|장굉|공근|조조|유비|수군|함대|전선|水軍|답변|답장|회신|의중|조건|배|뱃사람|병선|수병|장군)(?:에게는|에게|더러|께|가|은|는|을|를|의|와|과|들의|들을|들이)?|(?:정비|훈련|조련|점검|준비|연락|접촉|타진|알아|보류|미루|회신|채비|갖추|손보|정돈|가다듬|다듬)[가-힣]*|(?:비공개|비밀|공개)[가-힣]*|몰래|은밀히|우리|강동|당장|잠시|그리고|또|하고|하라|하되|해|전해|전하라|일러라|라고|고|말고|시키되|하도록|명의?|초안을?|시작할|올려라|지시한다|맡겨라|맡게|맡기도록|담당하도록|태세를|싶다|그|지시의|만들어라)$/.test(token)).join(' ');
+      .split(/[\s,.，。]+/).filter(token => token && !/^(?:(?:주유|노숙|장굉|공근|조조|유비|수군|함대|전선|水軍|답변|답장|회신|의중|조건|배|뱃사람|병선|수병|장군)(?:에게는|에게|더러|한테|께|가|은|는|을|를|의|와|과|들의|들을|들이)?|(?:정비|훈련|조련|점검|준비|연락|접촉|타진|알아|보류|미루|회신|채비|갖추|손보|손봐|정돈|가다듬|다듬)[가-힣]*|(?:비공개|비밀|공개)[가-힣]*|몰래|은밀히|우리|강동|당장|잠시|그리고|또|하고|하라|하되|해|전해|전하라|일러라|라고|고|말고|시키되|하도록|명의?|초안을?|시작할|올려라|달라|줘|주어라|주라|지시한다|맡겨라|맡게|맡기도록|담당하도록|태세를|싶다|그|지시의|만들어라)$/.test(token)).join(' ');
     if (remainder) unresolved.push(`미지원·모호 부분 (실행 제외): ${remainder}`);
   }
   return { actions, unresolved, segments };

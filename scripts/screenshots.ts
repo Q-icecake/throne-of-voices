@@ -1,5 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { once } from 'node:events';
+import { createServer as createPortProbe } from 'node:net';
+import type { AddressInfo } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { relative } from 'node:path';
 import { chromium } from 'playwright-core';
@@ -13,7 +15,7 @@ import { createGameServer } from '../server/http.ts';
  * Drives the real app in the installed Edge (no browser download), captures each scene
  * at two desktop sizes and measures layout rules from VISUAL_DIRECTION §11.
  * Usage: node scripts/screenshots.ts [S0,S1,S4,S5a,S5b,S2] [--out artifacts/m1]
- * Starts its own API + Vite on separate ports (3101/5273) so a running dev server is never touched.
+ * Starts its own API + Vite on isolated dynamic ports, leaving other worktrees alone.
  */
 const args = process.argv.slice(2);
 const outIndex = args.indexOf('--out');
@@ -164,7 +166,7 @@ async function reset(page: Page) {
 async function settle(page: Page) { await page.waitForTimeout(450); }
 
 async function action(page: Page, body: unknown) {
-  const response = await page.request.post('http://127.0.0.1:5273/api/test/action', { data: body }); assert.ok(response.ok());
+  const response = await page.request.post(`${base}/api/test/action`, { data: body }); assert.ok(response.ok());
 }
 async function advance(page: Page, ms: number) {
   while (ms > 0) { const step = Math.min(ms, 60000); await action(page, { type: 'advance-clock', milliseconds: step }); ms -= step; }
@@ -182,7 +184,7 @@ async function audience(page: Page, ids: string[]) {
 }
 async function documentScene(page: Page, id: string) {
   await advance(page, 65000); await page.click('#tool-documents');
-  const state = await (await page.request.get('http://127.0.0.1:5273/api/state')).json();
+  const state = await (await page.request.get(`${base}/api/state`)).json();
   const title = state.knowledge.documents.find((d: { id: string }) => d.id === id)?.title ?? '수군·군량 장부';
   await page.locator('.doc-item').filter({ hasText: title }).click();
   await page.waitForSelector(`[data-document="${id}"]`);
@@ -242,11 +244,14 @@ const SCENES: Record<string, (page: Page) => Promise<void>> = {
 };
 if (wanted[0] === 'all') wanted.splice(0, wanted.length, ...Object.keys(SCENES));
 
-const API_PORT = 3101, WEB_PORT = 5273;
+const probe = createPortProbe(); probe.listen(0, '127.0.0.1'); await once(probe, 'listening');
+const WEB_PORT = (probe.address() as AddressInfo).port;
+await new Promise<void>(resolve => probe.close(() => resolve()));
 const base = `http://127.0.0.1:${WEB_PORT}`;
 const api = createGameServer(undefined, WEB_PORT);
-api.listen(API_PORT, '127.0.0.1');
+api.listen(0, '127.0.0.1');
 await once(api, 'listening');
+const API_PORT = (api.address() as AddressInfo).port;
 const vite: ViteDevServer = await createServer({
   logLevel: 'error',
   server: { port: WEB_PORT, strictPort: true, proxy: { '/api': `http://127.0.0.1:${API_PORT}` } },

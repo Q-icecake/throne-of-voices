@@ -1,0 +1,1977 @@
+{
+  "source": "024 independent review; no final holdout data",
+  "cases": [
+    {
+      "id": "A001",
+      "group": "valid-negation",
+      "text": "주유에게 수군을 정비하되 먼저 공격은 금지다.",
+      "expected": "accept",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [
+              "no-first-strike"
+            ],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A002",
+      "group": "valid-negation",
+      "text": "주유에게 수군을 정비하되 선제공격 없이.",
+      "expected": "accept",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [
+              "no-first-strike"
+            ],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A003",
+      "group": "valid-negation",
+      "text": "주유에게 수군을 정비하되 공격하지는 마.",
+      "expected": "accept",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [
+              "no-first-strike"
+            ],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A004",
+      "group": "valid-negation",
+      "text": "주유에게 수군을 정비하되 공격하지 않도록 하라.",
+      "expected": "accept",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [
+              "no-first-strike"
+            ],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A005",
+      "group": "valid-negation",
+      "text": "주유에게 수군을 정비하되 공격은 말고 정비해.",
+      "expected": "accept",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [
+              "no-first-strike"
+            ],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A006",
+      "group": "valid-negation",
+      "text": "노숙에게 유비를 타진하되 참전 약속은 금지다.",
+      "expected": "accept",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "sound-out",
+            "target": "liu-bei",
+            "assignee": "lu-su",
+            "restrictions": [
+              "no-war-promise"
+            ],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A007",
+      "group": "valid-negation",
+      "text": "노숙에게 유비를 타진하되 참전 약속 없이.",
+      "expected": "accept",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "sound-out",
+            "target": "liu-bei",
+            "assignee": "lu-su",
+            "restrictions": [
+              "no-war-promise"
+            ],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A008",
+      "group": "valid-negation",
+      "text": "노숙에게 유비를 타진하되 약속하지는 마.",
+      "expected": "accept",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "sound-out",
+            "target": "liu-bei",
+            "assignee": "lu-su",
+            "restrictions": [
+              "no-war-promise"
+            ],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A009",
+      "group": "valid-negation",
+      "text": "노숙에게 유비를 타진하되 참전 약속하지 않도록 하라.",
+      "expected": "accept",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "sound-out",
+            "target": "liu-bei",
+            "assignee": "lu-su",
+            "restrictions": [
+              "no-war-promise"
+            ],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A010",
+      "group": "valid-negation",
+      "text": "노숙에게 유비를 타진하되 약속은 말고 연락해.",
+      "expected": "accept",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "sound-out",
+            "target": "liu-bei",
+            "assignee": "lu-su",
+            "restrictions": [
+              "no-war-promise"
+            ],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A011",
+      "group": "valid-three-actors",
+      "text": "노숙에게 유비를 비밀리에 9분 이내 타진하고, 주유에게 공개적으로 수군을 정비하되 선제공격 금지. 장굉에게 조조의 답변을 보류해.",
+      "expected": "accept",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "sound-out",
+            "target": "liu-bei",
+            "assignee": "lu-su",
+            "restrictions": [],
+            "conditions": [
+              "secret"
+            ],
+            "deadline": "9분 이내"
+          },
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [
+              "no-first-strike"
+            ],
+            "conditions": [
+              "public"
+            ],
+            "deadline": null
+          },
+          {
+            "kind": "hold-reply",
+            "target": "cao-cao-envoy",
+            "assignee": "zhang-hong",
+            "restrictions": [
+              "no-firm-answer"
+            ],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A012",
+      "group": "valid-three-actors",
+      "text": "노숙에게 유비를 비밀리에 9분 이내 타진하며 주유에게 공개적으로 수군을 정비하되 선제공격 금지. 장굉에게 조조의 답변을 보류해.",
+      "expected": "accept",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "sound-out",
+            "target": "liu-bei",
+            "assignee": "lu-su",
+            "restrictions": [],
+            "conditions": [
+              "secret"
+            ],
+            "deadline": "9분 이내"
+          },
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [
+              "no-first-strike"
+            ],
+            "conditions": [
+              "public"
+            ],
+            "deadline": null
+          },
+          {
+            "kind": "hold-reply",
+            "target": "cao-cao-envoy",
+            "assignee": "zhang-hong",
+            "restrictions": [
+              "no-firm-answer"
+            ],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A013",
+      "group": "valid-three-actors",
+      "text": "노숙에게 유비를 비밀리에 9분 이내 타진하고\n주유에게 공개적으로 수군을 정비하되 선제공격 금지. 장굉에게 조조의 답변을 보류해.",
+      "expected": "accept",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "sound-out",
+            "target": "liu-bei",
+            "assignee": "lu-su",
+            "restrictions": [],
+            "conditions": [
+              "secret"
+            ],
+            "deadline": "9분 이내"
+          },
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [
+              "no-first-strike"
+            ],
+            "conditions": [
+              "public"
+            ],
+            "deadline": null
+          },
+          {
+            "kind": "hold-reply",
+            "target": "cao-cao-envoy",
+            "assignee": "zhang-hong",
+            "restrictions": [
+              "no-firm-answer"
+            ],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A014",
+      "group": "valid-three-actors",
+      "text": "노숙에게 유비를 비밀리에 9분 이내 타진해. 주유에게 공개적으로 수군을 정비하되 선제공격 금지. 장굉에게 조조의 답변을 보류해.",
+      "expected": "accept",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "sound-out",
+            "target": "liu-bei",
+            "assignee": "lu-su",
+            "restrictions": [],
+            "conditions": [
+              "secret"
+            ],
+            "deadline": "9분 이내"
+          },
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [
+              "no-first-strike"
+            ],
+            "conditions": [
+              "public"
+            ],
+            "deadline": null
+          },
+          {
+            "kind": "hold-reply",
+            "target": "cao-cao-envoy",
+            "assignee": "zhang-hong",
+            "restrictions": [
+              "no-firm-answer"
+            ],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A015",
+      "group": "valid-three-actors",
+      "text": "노숙에게 유비를 비밀리에 9분 이내 타진하고 주유에게 공개적으로 수군을 정비하되 선제공격 금지. 장굉에게 조조의 답변을 보류해.",
+      "expected": "accept",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "sound-out",
+            "target": "liu-bei",
+            "assignee": "lu-su",
+            "restrictions": [],
+            "conditions": [
+              "secret"
+            ],
+            "deadline": "9분 이내"
+          },
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [
+              "no-first-strike"
+            ],
+            "conditions": [
+              "public"
+            ],
+            "deadline": null
+          },
+          {
+            "kind": "hold-reply",
+            "target": "cao-cao-envoy",
+            "assignee": "zhang-hong",
+            "restrictions": [
+              "no-firm-answer"
+            ],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A016",
+      "group": "valid-hold",
+      "text": "아직 조조에게 답변하지 말고 시간을 벌어.",
+      "expected": "accept",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "hold-reply",
+            "target": "cao-cao-envoy",
+            "assignee": "zhang-hong",
+            "restrictions": [
+              "no-firm-answer"
+            ],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A017",
+      "group": "valid-hold",
+      "text": "조조에게 확답은 금지다.",
+      "expected": "accept",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "hold-reply",
+            "target": "cao-cao-envoy",
+            "assignee": "zhang-hong",
+            "restrictions": [
+              "no-firm-answer"
+            ],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A018",
+      "group": "valid-hold",
+      "text": "장굉에게 조조 회신을 보류하라.",
+      "expected": "accept",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "hold-reply",
+            "target": "cao-cao-envoy",
+            "assignee": "zhang-hong",
+            "restrictions": [
+              "no-firm-answer"
+            ],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A019",
+      "group": "valid-order",
+      "text": "수군을 정비하고 그 뒤 유비를 타진해.",
+      "expected": "accept",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          },
+          {
+            "kind": "sound-out",
+            "target": "liu-bei",
+            "assignee": "lu-su",
+            "restrictions": [],
+            "conditions": [
+              "after:0"
+            ],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A020",
+      "group": "valid-quoted-message",
+      "text": "조조에게 \"수군을 정비하지 마. 유비에게 연락하지 마.\"라고 회신해.",
+      "expected": "accept",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "hold-reply",
+            "target": "cao-cao-envoy",
+            "assignee": "zhang-hong",
+            "restrictions": [],
+            "conditions": [
+              "message:수군을 정비하지 마. 유비에게 연락하지 마."
+            ],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A021",
+      "group": "unsafe-dropped-negation-condition",
+      "text": "수군 정비를 하지 말아라.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A022",
+      "group": "unsafe-dropped-negation-condition",
+      "text": "수군을 아직 정비하지 마.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A023",
+      "group": "unsafe-dropped-negation-condition",
+      "text": "지금은 수군을 정비하지 않고 기다려.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A024",
+      "group": "unsafe-dropped-negation-condition",
+      "text": "수군을 정비하되 공격을 하지 마.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A025",
+      "group": "unsafe-dropped-negation-condition",
+      "text": "수군을 정비하되 군량은 쓰지 마.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A026",
+      "group": "unsafe-dropped-negation-condition",
+      "text": "수군을 정비하되 병사 없이 해.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A027",
+      "group": "unsafe-dropped-negation-condition",
+      "text": "수군을 정비하되 내일까지 끝내.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A028",
+      "group": "unsafe-dropped-negation-condition",
+      "text": "군량이 도착하면 수군을 정비해.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A029",
+      "group": "unsafe-dropped-negation-condition",
+      "text": "만약 군량이 없으면 수군을 정비해.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A030",
+      "group": "unsafe-dropped-negation-condition",
+      "text": "노숙이 돌아오기 전까지 수군을 정비해.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A031",
+      "group": "unsafe-dropped-negation-condition",
+      "text": "수군을 정비하되 2시간 후에 시작해.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A032",
+      "group": "unsafe-dropped-negation-condition",
+      "text": "수군을 정비하되 공격은 안 해.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A033",
+      "group": "unsafe-actor",
+      "text": "노숙에게 수군을 준비시켜.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A034",
+      "group": "unsafe-actor",
+      "text": "장조한테 수군을 정비하게 하라.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A035",
+      "group": "unsafe-actor",
+      "text": "장굉은 수군을 점검해.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A036",
+      "group": "unsafe-actor",
+      "text": "노숙이 수군을 정비해.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A037",
+      "group": "unsafe-actor",
+      "text": "장조가 수군을 정비해.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A038",
+      "group": "unsafe-visibility",
+      "text": "유비에게 비밀 접촉은 하지 말고 연락해.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "sound-out",
+            "target": "liu-bei",
+            "assignee": "lu-su",
+            "restrictions": [],
+            "conditions": [
+              "secret"
+            ],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A039",
+      "group": "unsafe-visibility",
+      "text": "유비에게 공개는 하지 마. 연락해.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "sound-out",
+            "target": "liu-bei",
+            "assignee": "lu-su",
+            "restrictions": [],
+            "conditions": [
+              "secret"
+            ],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A040",
+      "group": "unsafe-visibility",
+      "text": "유비에게 비공개인지 확인하고 연락해.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "sound-out",
+            "target": "liu-bei",
+            "assignee": "lu-su",
+            "restrictions": [],
+            "conditions": [
+              "secret"
+            ],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A041",
+      "group": "unsafe-visibility",
+      "text": "유비에게 비밀리에 공개적으로 연락해.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "sound-out",
+            "target": "liu-bei",
+            "assignee": "lu-su",
+            "restrictions": [],
+            "conditions": [
+              "secret"
+            ],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A042",
+      "group": "unsafe-extra",
+      "text": "수군을 정비해.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          },
+          {
+            "kind": "sound-out",
+            "target": "liu-bei",
+            "assignee": "lu-su",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A043",
+      "group": "unsafe-missing",
+      "text": "수군을 정비하고 유비를 타진해.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A044",
+      "group": "unsafe-dependency",
+      "text": "수군을 정비한 그 뒤 유비를 타진해.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          },
+          {
+            "kind": "sound-out",
+            "target": "liu-bei",
+            "assignee": "lu-su",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A045",
+      "group": "unsafe-four",
+      "text": "수군을 정비해. 유비를 타진해. 조조 답변을 보류해. 다시 수군을 정비해.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          },
+          {
+            "kind": "sound-out",
+            "target": "liu-bei",
+            "assignee": "lu-su",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          },
+          {
+            "kind": "hold-reply",
+            "target": "cao-cao-envoy",
+            "assignee": "zhang-hong",
+            "restrictions": [
+              "no-firm-answer"
+            ],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A046",
+      "group": "unsafe-four-schema",
+      "text": "수군을 정비해.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          },
+          {
+            "kind": "sound-out",
+            "target": "liu-bei",
+            "assignee": "lu-su",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          },
+          {
+            "kind": "hold-reply",
+            "target": "cao-cao-envoy",
+            "assignee": "zhang-hong",
+            "restrictions": [
+              "no-firm-answer"
+            ],
+            "conditions": [],
+            "deadline": null
+          },
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A047",
+      "group": "unsafe-semantic-boundary",
+      "text": "수군 정비는 보류하고 현 상태를 지켜.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A048",
+      "group": "unsafe-semantic-boundary",
+      "text": "수군 정비를 중단해.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A049",
+      "group": "unsafe-semantic-boundary",
+      "text": "수군 정비는 취소해.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A050",
+      "group": "unsafe-semantic-boundary",
+      "text": "수군을 정비할 때만 유비에게 연락해.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A051",
+      "group": "unsafe-semantic-boundary",
+      "text": "군량이 충분할 때만 수군을 정비해.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A052",
+      "group": "unsafe-semantic-boundary",
+      "text": "허락을 받은 다음에 수군을 정비해.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A053",
+      "group": "unsafe-semantic-boundary",
+      "text": "수군 정비를 해서는 안 된다.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A054",
+      "group": "unsafe-semantic-boundary",
+      "text": "수군을 정비할 필요는 없어.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A055",
+      "group": "unsafe-executable-postpone",
+      "text": "수군 정비는 보류해.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A056",
+      "group": "unsafe-executable-postpone",
+      "text": "수군 정비를 미루어라.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A057",
+      "group": "unsafe-executable-postpone",
+      "text": "유비 연락은 보류해.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "sound-out",
+            "target": "liu-bei",
+            "assignee": "lu-su",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A058",
+      "group": "unsafe-executable-postpone",
+      "text": "노숙에게 유비 접촉을 미루도록 해.",
+      "expected": "block",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "sound-out",
+            "target": "liu-bei",
+            "assignee": "lu-su",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A059",
+      "group": "valid-paraphrase",
+      "text": "주유더러 수군 정비를 맡아 달라.",
+      "expected": "accept",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A060",
+      "group": "valid-paraphrase",
+      "text": "공근한테 함대를 손봐 달라.",
+      "expected": "accept",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A061",
+      "group": "valid-paraphrase",
+      "text": "주유가 수군을 점검하도록 하라.",
+      "expected": "accept",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "naval-drill",
+            "target": "jiangdong-navy",
+            "assignee": "zhou-yu",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    },
+    {
+      "id": "A062",
+      "group": "valid-paraphrase",
+      "text": "노숙더러 유비 측과 접촉하도록 하라.",
+      "expected": "accept",
+      "proposal": {
+        "intent": "command",
+        "dialogue": "초안의 조건을 확인해 주십시오.",
+        "proposedActions": [
+          {
+            "kind": "sound-out",
+            "target": "liu-bei",
+            "assignee": "lu-su",
+            "restrictions": [],
+            "conditions": [],
+            "deadline": null
+          }
+        ],
+        "unresolvedQuestions": [],
+        "referencedKnowledgeIds": [],
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "externalCalls": 0,
+          "costUsd": null
+        }
+      }
+    }
+  ],
+  "claims": [
+    "유비와 동맹이 맺어졌습니다. 주군의 판단을 기다리겠습니다.",
+    "수군 정비가 다 끝났습니다. 주군의 판단을 기다리겠습니다.",
+    "수군의 정비는 끝난 상태입니다. 주군의 판단을 기다리겠습니다.",
+    "주유는 정비를 끝내 놓았습니다. 주군의 판단을 기다리겠습니다.",
+    "유비와 동맹을 맺는 데 성공했습니다. 주군의 판단을 기다리겠습니다.",
+    "노숙은 벌써 유비에게 가 있습니다. 주군의 판단을 기다리겠습니다.",
+    "군량이 벌써 20 줄었습니다. 주군의 판단을 기다리겠습니다.",
+    "주유는 수군 정비를 완료했습니다. 주군의 판단을 기다리겠습니다."
+  ]
+}

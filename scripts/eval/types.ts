@@ -1,5 +1,6 @@
 import type { CharacterId } from '../../shared/contracts.ts';
 import type { Intent, Proposal, ProviderInput } from '../../server/llm/types.ts';
+import type { SecretGuard } from '../../server/llm/secrets.ts';
 
 export type Action = Proposal['proposedActions'][number];
 export interface EvalCase {
@@ -19,6 +20,8 @@ export interface Attempt {
 export interface Sample { raw?: unknown; error?: string; attempts: Attempt[]; reservations: number }
 export interface Source {
   model: string; timeoutMs: number;
+  /** Private credential guard shared with evaluation/export boundaries. */
+  secretGuard?: SecretGuard;
   sample(fixture: EvalCase, input: ProviderInput): Promise<Sample>;
 }
 export interface Score { pass: boolean; issues: string[]; safetyViolations: string[]; intent: string }

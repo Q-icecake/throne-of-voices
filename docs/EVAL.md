@@ -63,7 +63,7 @@ Remove-Item Env:GEMINI_API_KEY
 
 모델/키/상한 누락은 공급자 호출 0회로 종료 2와 설정 안내를 출력한다. 일반 오류는 다음 사례로 진행하되 `CALL_LIMIT`/429 또는 예산 중단은 남은 ID를 `skipped`로 기록한다. 일일 예산 파일은 기존 서버의 `artifacts/llm-usage.json`을 공유한다. 호출 시도와 재시도 모두 명시 상한에 포함된다. 예산 검사는 재시도 전에도 적용한다.
 
-OpenAI 호환 서버는 `LLM_PROVIDER=openai-compatible`, `OPENAI_COMPAT_API_KEY`, `OPENAI_COMPAT_MODEL_ID`, `OPENAI_COMPAT_BASE_URL`을 설정하고 같은 상한/CLI 옵션을 사용한다. 주소는 V1 factory의 HTTPS/로컬 HTTP 제한을 따른다. CLI의 차단 안내 문구에는 아직 Gemini 예시만 나오지만 bridge의 실제 허용 경로는 위 두 종류다. 이번 통합은 bridge 한 파일에 생산 코드 변경을 한정했으므로 안내 문구는 그대로 두었다. 실제 접속·과금·모델 품질은 이번 작업에서 확인하지 않았다.
+OpenAI 호환 서버는 `LLM_PROVIDER=openai-compatible`, `OPENAI_COMPAT_API_KEY`, `OPENAI_COMPAT_MODEL_ID`, `OPENAI_COMPAT_BASE_URL`을 설정하고 같은 상한/CLI 옵션을 사용한다. 주소는 V1 factory의 HTTPS/로컬 HTTP 제한을 따른다. CLI 차단 안내는 선택한 공급자의 필수 설정명을 표시한다. 공급자를 선택하지 않았거나 알 수 없으면 두 지원 공급자 중 선택하도록 안내한다. 실제 접속·과금·모델 품질은 이번 작업에서 확인하지 않았다.
 
 `--max-tokens N`은 관측된 입력+출력 토큰 누계, `--budget-usd B --input-price Pi --output-price Po`는 백만 토큰당 입력/출력 단가에 따른 관측 비용으로 다음 호출을 중단한다. 금액/토큰 제한은 한 응답을 받은 뒤에야 정확히 계산되므로 마지막 호출 한 번의 초과 가능성이 있다. **현재 공급자에 출력 토큰 상한 계약이 없으므로 엄격한 금액 한도는 아니다.** 엄격한 요청 횟수 한도는 `--max-calls`와 공급자 예산으로 보장한다. 사용량이 누락되면 금액/토큰 제한이 설정된 실행은 다음 호출 전에 `USAGE_UNKNOWN`으로 중단한다.
 

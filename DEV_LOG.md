@@ -1,5 +1,15 @@
 # Development Log
 
+## 2026-10-25 — 025 V5 / 독립 리뷰 H1·H2·M1·M2·L1 수정
+
+- 기준 `v0.2/real-ai@63bad1a`, 초기 작업 트리 깨끗함. 독립 작업으로 리뷰의 62입력(정상24/위험38)과 허위 완료8개를 `tests/fixtures/review-025.json`에 복사했다. 먼저 신규139개 중51개 실패를 재현했고, 최종 신규 **161개**, 기존 시험 변경/삭제/약화 0, 전체 **624/624** 통과. 최종 holdout 정답 열람/수정/채점 0, UI·디자인·shared·의존성 변경 0.
+- H1: 행동 분절의 보류/미루/중단/취소/그만/멈춤·미지원 조건을 ambiguous로 돌려 반대 실행을 차단한다. 조조 답변 보류는 별도 지원 행동으로 유지한다. M2: 답변하지 말고/아직 처리와 손봐/손보고/손보라/손봐 줘 활용 보강. 정상 **22/24→24/24**, 위험 **차단28/부분승인 gate6/일반확인 실행4→차단·강등38/0/0**(ambiguous37, schema거절1). 기존 부분 승인 gate는 유지했다.
+- H2: 공통 SecretGuard에서 무패딩/Base64url·두 겹 Base64/hex·7자 이상 부분 반사를 검사하고 liveSource/evaluate/humanSheet/파일 export 경계에 같은 guard를 적용한다. 두 공급자×12변형 **24/24**, HTTP·로그·snapshot·usage·평가 JSON 보호 통과. 인증 헤더 전용/모델 입력에 키 금지가 1차 방어이며 임의 인코딩 완전 방어 불가를 LLM_SETUP에 명시했다.
+- M1: 끝/마치/성공/맺/이뤄/해냈·완료 보조 활용과 군량 감소·이동 상태를 보강했다. 허위 완료 **2/8→8/8 차단**, 정상 계획·조건·질문 **41/41** 유지. 정확한 엔진 기록 근거만 허용하며 동의어 오탐 한계는 KNOWN_LIMITS에 기록했다. L1: 선택 공급자별 키·모델·endpoint 설정 안내와 문서 수정.
+- `node node_modules/typescript/bin/tsc --noEmit`, `node node_modules/vite/bin/vite.js build`, `node --test tests/*.test.ts`, `node scripts/verify-all.ts` 최종 모두 종료0, 통합 **18/18**. 최초 통합14/18은 고정3101/3103 EACCES 및 합성 키/모델의7자 중복 때문이었다. screenshots/verify-m5/verify-llm-ui만 기존 R1/M3 방식의 동적 포트로 바꾸고 NPC 합성 키를 독립 문자열로 교체했으며 단언은 유지했다. 실패/최종 로그 별도 보존.
+- 개발 평가: `eval-llm.ts --scripted tests/fixtures/eval-scripted-good.json` **80/80→80/80**, 안전위반0, 종료0. bad scripted **72/80→72/80**, 주입8개 계속 실패·후단 안전위반2, 종료1. `--mock` **47/80→51/80**, 후단 안전위반1, 종료1. 기존 미해결 Mock/NPC 오답을 합격으로 쓰지 않았다. 실제 외부 API/라이브 **0회**.
+- 최종 Edge 두 해상도 장면42/42·NPC상태30/30·M5 18/18·비교68쌍 통과. 증거 `.codex-runs/025/`, `artifacts/m6/`, 보고 `.codex-runs/025/report.md`, 인계 `artifacts/review-025/`. 사용자 최신 제출 지시로 git add를 실제 시도했으나 외부 worktree `index.lock: Permission denied`(종료128)로 차단되어 **커밋 미생성**, HEAD 유지. 전역 설정/권한 변경/원격 push/확인 팝업 없음. 쓰기 가능한 리드 환경에서 패치 검토 후 커밋 필요; 라이브 품질·비용·일반 한국어 의미는 미검증.
+
 ## 2026-10-25 — 022 V3 검증기·해석·프롬프트
 
 - 기준 `v0.2/validator`, HEAD `79a72bf`, 초기 작업 트리 깨끗함. 조사 보고는 worktree에 없어 읽기 전용 `throne-compare/.codex-runs/v02-readiness.md`에서 확인했다. `_v02-override.md`에 따라 현재 worktree를 사용하고 Git 소유권 차이는 명령 한정 `safe.directory`로 처리했다. 다른 worktree·원본·V4 소유 경로·shared·UI·기존 시험·fixture·의존성은 변경하지 않았다.

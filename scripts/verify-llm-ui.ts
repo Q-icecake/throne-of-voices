@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
+import { createServer as createPortProbe } from 'node:net';
+import type { AddressInfo } from 'node:net';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { chromium } from 'playwright-core';
 import { createServer } from 'vite';
@@ -21,12 +23,17 @@ const perViewport = () => [
 ];
 const provider = new ScriptedProvider(...perViewport(), ...perViewport());
 const engine = new GameEngine(undefined, undefined, provider, 100);
-const api = createGameServer(engine, 5275);
-const vite = await createServer({ logLevel: 'error', server: { port: 5275, strictPort: true, proxy: { '/api': 'http://127.0.0.1:3103' } } });
+const probe = createPortProbe(); probe.listen(0, '127.0.0.1'); await once(probe, 'listening');
+const webPort = (probe.address() as AddressInfo).port;
+await new Promise<void>(resolve => probe.close(() => resolve()));
+const base = `http://127.0.0.1:${webPort}`;
+const api = createGameServer(engine, webPort);
+api.listen(0, '127.0.0.1'); await once(api, 'listening');
+const apiPort = (api.address() as AddressInfo).port;
+const vite = await createServer({ logLevel: 'error', server: { port: webPort, strictPort: true, proxy: { '/api': `http://127.0.0.1:${apiPort}` } } });
 const checks: { size: string; check: string }[] = [];
 let browser;
 try {
-  api.listen(3103, '127.0.0.1'); await once(api, 'listening');
   await vite.listen();
   browser = await chromium.launch({ channel: 'msedge', headless: true });
   await mkdir(output, { recursive: true });
@@ -45,10 +52,10 @@ try {
       }), 'AI speech/error and command panel must not overlap or leave the viewport');
     };
     await page.route('**/*', route => {
-      if (!/^http:\/\/127\.0\.0\.1:5275\//.test(route.request().url())) throw new Error('External browser request forbidden');
+      if (!route.request().url().startsWith(`${base}/`)) throw new Error('External browser request forbidden');
       return route.continue();
     });
-    await page.goto('http://127.0.0.1:5275');
+    await page.goto(base);
     await page.waitForSelector('#connection:has-text("서버 연결됨")');
     assert.match(await page.locator('#interpretation-status').innerText(), /AI.*시험 응답/);
     const text = '공근더러 우리 배와 뱃사람들의 채비를 갖추도록 일러라.';
