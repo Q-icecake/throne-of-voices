@@ -103,23 +103,23 @@ for (const kind of ['gemini', 'openai-compatible'] as const) {
 
     const cases: [string, typeof fetch, ProviderErrorCode][] = [
       ['schema violation', async () => envelope(kind, { ...proposal, intent: 'not-an-intent' }), 'schema'],
-      ['invalid JSON', async () => envelope(kind, '{'), 'schema'],
-      ['truncation', async () => envelope(kind, proposal, kind === 'gemini' ? 'MAX_TOKENS' : 'length'), 'schema'],
-      ['empty envelope', async () => Response.json({}), 'schema'],
-      ['null envelope', async () => Response.json(null), 'schema'],
+      ['invalid JSON', async () => envelope(kind, '{'), kind === 'gemini' ? 'parse' : 'schema'],
+      ['truncation', async () => envelope(kind, proposal, kind === 'gemini' ? 'MAX_TOKENS' : 'length'), kind === 'gemini' ? 'truncated' : 'schema'],
+      ['empty envelope', async () => Response.json({}), kind === 'gemini' ? 'parse' : 'schema'],
+      ['null envelope', async () => Response.json(null), kind === 'gemini' ? 'parse' : 'schema'],
       ['local uniqueItems enforcement', async () => envelope(kind, { ...proposal, unresolvedQuestions: ['어떤 보고입니까?', '어떤 보고입니까?'] }), 'schema'],
       ['refusal or safety stop', async () => kind === 'gemini' ? envelope(kind, proposal, 'SAFETY') : Response.json({
         choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(proposal), refusal: '거절' } }],
       }), 'schema'],
       ['malformed envelope types', async () => Response.json(kind === 'gemini' ? { candidates: [{ content: { parts: {} } }] } :
-        { choices: [{ finish_reason: 'stop', message: { content: 42 } }] }), 'schema'],
-      ['HTTP 400', async () => new Response(key, { status: 400 }), 'schema'],
+        { choices: [{ finish_reason: 'stop', message: { content: 42 } }] }), kind === 'gemini' ? 'parse' : 'schema'],
+      ['HTTP 400', async () => new Response(key, { status: 400 }), kind === 'gemini' ? 'request' : 'schema'],
       ['HTTP 401', async () => new Response(key, { status: 401 }), 'auth'],
       ['HTTP 403', async () => new Response(key, { status: 403 }), 'auth'],
-      ['HTTP 503', async () => new Response(key, { status: 503 }), 'server'],
+      ['HTTP 503', async () => new Response(key, { status: 503 }), kind === 'gemini' ? 'google_server' : 'server'],
       ['HTTP 429', async () => new Response(key, { status: 429 }), 'rate_limited'],
       ['transport exception', async () => { throw new Error(key); }, 'server'],
-      ['oversized envelope', async () => new Response('x'.repeat(65537)), 'schema'],
+      ['oversized envelope', async () => new Response('x'.repeat(65537)), kind === 'gemini' ? 'parse' : 'schema'],
     ];
     for (const [name, transport, code] of cases) await t.test(name, async () => {
       const p = make(kind, transport, fresh());
@@ -147,13 +147,13 @@ for (const kind of ['gemini', 'openai-compatible'] as const) {
       assert.equal(output.usage.externalCalls, 2);
       assert.equal(p.lastUsage?.attempts, 2); assert.equal(p.lastUsage?.retries, 1); assert.equal(p.lastUsage?.reservations, 2);
       assert.equal(p.lastUsage?.inputTokens, null); assert.equal(p.lastUsage?.attemptUsage[1]?.inputTokens, 123);
-      assert.equal(p.lastUsage?.attemptUsage[0]?.errorCode, 'server'); assert.equal(p.lastUsage?.errorCode, null);
+      assert.equal(p.lastUsage?.attemptUsage[0]?.errorCode, kind === 'gemini' ? 'google_server' : 'server'); assert.equal(p.lastUsage?.errorCode, null);
       assert.equal(JSON.parse(readFileSync(file, 'utf8')).calls, 2);
     });
     await t.test('429 and auth never retry', async () => {
       for (const status of [429, 401, 403, 400]) {
         let calls = 0; const p = make(kind, async () => { calls++; return new Response(key, { status }); }, fresh(), { ...settings, retries: 3 });
-        await failure(p, status === 429 ? 'rate_limited' : status === 400 ? 'schema' : 'auth'); assert.equal(calls, 1);
+        await failure(p, status === 429 ? 'rate_limited' : status === 400 ? kind === 'gemini' ? 'request' : 'schema' : 'auth'); assert.equal(calls, 1);
       }
     });
     await t.test('zero budget blocks before transport and AI source remains explicit', async () => {

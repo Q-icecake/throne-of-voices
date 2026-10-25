@@ -18,11 +18,13 @@ const temp = await mkdtemp(join(tmpdir(), 'throne-start-visual-'));
 const fakeKey = 'browser-synthetic-Q7v2B9m4L6r8S3x5', guard = new SecretGuard(fakeKey);
 const probe = portProbe(); await listenForFetch(probe);
 const webPort = (probe.address() as AddressInfo).port; await new Promise<void>(resolve => probe.close(() => resolve()));
-let calls = 0, reply: number | 'timeout' | 'schema' = 200;
+let calls = 0, reply: number | 'timeout' | 'schema' | 'truncated' | 'thinking' = 200;
 function freshApi() { return createGameServer(undefined, webPort, { env: {}, budgetFile: join(temp, 'usage.json'), timeoutMs: 80, transport: async (_url, init) => {
   calls++; assert.equal(new Headers(init?.headers).get('x-goog-api-key'), fakeKey);
   if (reply === 'timeout') return await new Promise<Response>(() => {});
   if (reply === 'schema') return new Response('invalid');
+  if (reply === 'truncated') return Response.json({ candidates: [{ finishReason: 'MAX_TOKENS', content: { parts: [] } }] });
+  if (reply === 'thinking') return Response.json({ candidates: [{ finishReason: 'STOP', content: { parts: [{ thought: true, text: 'OK' }] } }] });
   return reply === 200 ? Response.json({ candidates: [{ finishReason: 'STOP', content: { parts: [{ text: 'OK' }] } }] }) : new Response(fakeKey, { status: reply });
 } }); }
 let api = freshApi();
@@ -118,12 +120,16 @@ try {
     const resetLogs = await (await page.request.get(base + '/api/test/logs')).json();
     assert.equal(resetLogs.filter((event: { kind: string }) => event.kind === 'llm-usage-reset').length, 1);
     await page.screenshot({ path: `${usageOutput}/reset-${size}.png` });
-    for (const [response, label] of [[200, '정상'], [401, '키 오류'], [404, '모델 없음'], [429, 'Google 한도 초과(429)'], ['timeout', '시간 초과'], ['schema', '응답 형식 오류'], [500, '서버 오류']] as const) {
+    assert.match(await page.locator('.start-field-note').allTextContents().then(values => values.join(' ')), /사고·출력 합계 최대 256토큰/);
+    for (const [response, label] of [[200, '정상'], [401, '키 오류'], [404, '모델 없음(404)'], [429, 'Google 한도 초과(429)'], ['timeout', '시간 초과'], ['schema', '응답 파싱 실패'],
+      [400, '요청 형식 거부(400)·모델 설정 불일치'], [500, 'Google 서버 오류(5xx)'], [503, 'Google 서버 오류(5xx)'],
+      ['truncated', '응답이 잘림(출력 한도·사고 토큰)'], ['thinking', '응답 없음(사고만 반환 또는 빈 응답)']] as const) {
       reply = response; const beforeCall = calls;
       await page.click('#test-connection'); await page.locator('#test-connection:not([disabled])').waitFor();
       assert.equal(await page.locator('#test-result').textContent(), label); assert.equal(calls, beforeCall + 1);
       guard.assertSafe(await page.content()); guard.assertSafe(await page.evaluate(() => JSON.stringify(localStorage)));
       evidence.push({ size, injected: response, displayed: label, calls: 1 });
+      if ([400, 404, 500, 'schema', 'truncated', 'thinking'].includes(response)) await measure(page, `error-${response}`, size);
     }
     await page.click('#clear-key'); await page.locator('#clear-key:not([disabled])').waitFor(); assert.equal(await page.locator('#start-ai').isDisabled(), true);
     const beforeClearTest = calls; await page.click('#test-connection'); await page.locator('#test-connection:not([disabled])').waitFor(); assert.equal(calls, beforeClearTest);
@@ -144,7 +150,7 @@ try {
   guard.assertSafe(await readFile(join(temp, 'usage.json'), 'utf8'));
   await writeFile(`${output}/verification.json`, JSON.stringify({ externalCalls: 0, fakeTransportCalls: calls, evidence }, null, 2) + '\n');
   await writeFile(`${usageOutput}/screenshots.json`, JSON.stringify({ externalCalls: 0, fakeTransportCalls: calls, evidence }, null, 2) + '\n');
-  console.log(`PASS start-screen: both sizes, 3 screens, keyboard, secret boundaries, 7 error/result categories, zero limit, clear, AI/Mock start, unchanged court; ${output}`);
+  console.log(`PASS start-screen: both sizes, 3 screens, keyboard, secret boundaries, 11 response scenarios, zero limit, clear, AI/Mock start, unchanged court; ${output}`);
 } finally {
   await browser.close(); await vite.close(); api.closeAllConnections(); await new Promise<void>(resolve => api.close(() => resolve())); await rm(temp, { recursive: true, force: true });
 }

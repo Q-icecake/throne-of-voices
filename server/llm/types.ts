@@ -40,7 +40,8 @@ export interface InterpretationProvider {
   /** Neutral telemetry is authoritative; null tokens mean unknown, including failed attempts. */
   readonly lastUsage?: ProviderUsage;
 }
-export type ProviderErrorCode = 'timeout' | 'rate_limited' | 'auth' | 'schema' | 'server' | 'budget' | 'aborted';
+export type ProviderErrorCode = 'timeout' | 'rate_limited' | 'auth' | 'schema' | 'server' | 'budget' | 'aborted' |
+  'truncated' | 'empty' | 'request' | 'model' | 'google_server' | 'parse';
 export interface AttemptUsage {
   inputTokens: number | null;
   outputTokens: number | null;
@@ -60,9 +61,17 @@ export const PROVIDER_MESSAGES: Record<ProviderErrorCode, string> = {
   auth: 'AI 인증 또는 연결 설정을 확인해 주세요.', schema: 'AI 제안의 형식이나 허용 범위가 맞지 않습니다.',
   server: 'AI 연결에 실패했습니다.', budget: '로컬 카운터를 확인할 수 없거나 호출 상한에 도달했습니다. 추가 호출을 차단했습니다.',
   aborted: 'AI 요청이 취소되었습니다.',
+  truncated: '응답이 잘림(출력 한도·사고 토큰). 모델 설정을 확인하고 다시 시도해 주세요.',
+  empty: '응답 없음(사고만 반환 또는 빈 응답). 모델 설정을 확인해 주세요.',
+  request: '요청 형식 거부(400)·모델 설정 불일치. 설정을 확인한 뒤 다시 눌러 주세요.',
+  model: '모델 없음(404). 모델 ID와 접근 권한을 확인해 주세요.',
+  google_server: 'Google 서버 오류(5xx). 잠시 후 다시 시도해 주세요.',
+  parse: '응답 파싱 실패. 응답 형식과 모델 설정을 확인해 주세요.',
 };
 const legacy = { timeout: 'PROVIDER_TIMEOUT', rate_limited: 'CALL_LIMIT', auth: 'PROVIDER_ERROR', schema: 'INVALID_PROPOSAL',
-  server: 'PROVIDER_ERROR', budget: 'CALL_LIMIT', aborted: 'PROVIDER_TIMEOUT' } as const;
+  server: 'PROVIDER_ERROR', budget: 'CALL_LIMIT', aborted: 'PROVIDER_TIMEOUT',
+  truncated: 'INVALID_PROPOSAL', empty: 'INVALID_PROPOSAL', request: 'PROVIDER_ERROR', model: 'PROVIDER_ERROR',
+  google_server: 'PROVIDER_ERROR', parse: 'INVALID_PROPOSAL' } as const;
 const neutral = { PROVIDER_ERROR: 'server', PROVIDER_TIMEOUT: 'timeout', CALL_LIMIT: 'budget', INVALID_PROPOSAL: 'schema' } as const;
 export class ProviderError extends Error {
   readonly code: 'PROVIDER_ERROR' | 'PROVIDER_TIMEOUT' | 'CALL_LIMIT' | 'INVALID_PROPOSAL';

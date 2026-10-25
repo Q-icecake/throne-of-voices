@@ -3,9 +3,11 @@ import background from './assets/court-background.svg';
 import type { ConnectionTestResult, LlmStatus } from '../../shared/contracts.ts';
 
 export const TEST_LABELS: Record<ConnectionTestResult, string> = {
-  untested: '시험 전', ok: '정상', auth: '키 오류', model: '모델 없음', rate_limited: 'Google 한도 초과(429)',
+  untested: '시험 전', ok: '정상', auth: '키 오류', model: '모델 없음(404)', rate_limited: 'Google 한도 초과(429)',
   daily_limit: '로컬 일일 상한(UTC) 도달', session_limit: '로컬 세션 상한 도달',
-  timeout: '시간 초과', schema: '응답 형식 오류', server: '서버 오류', budget: '로컬 카운터 확인 실패 · 호출 차단', stale: '설정 변경 · 이전 시험 무시',
+  timeout: '시간 초과', schema: '응답 형식 오류', server: '연결·내부 오류', budget: '로컬 카운터 확인 실패 · 호출 차단', stale: '설정 변경 · 이전 시험 무시',
+  truncated: '응답이 잘림(출력 한도·사고 토큰)', empty: '응답 없음(사고만 반환 또는 빈 응답)',
+  request: '요청 형식 거부(400)·모델 설정 불일치', google_server: 'Google 서버 오류(5xx)', parse: '응답 파싱 실패',
 };
 
 /** Court initialization (including its opening clock) begins only after explicit start. */
@@ -48,7 +50,7 @@ export async function enterStartScreen(): Promise<void> {
             <button id="save-settings" type="submit">설정 적용</button>
           </form>
           <h2>③ 연결 시험</h2>
-          <p class="start-field-note">누를 때만 고정 문장으로 1회 요청 · 출력 최대 8토큰</p>
+          <p class="start-field-note">누를 때만 1회 요청 · 사고·출력 합계 최대 256토큰</p>
           <button id="test-connection">연결 시험</button><p id="test-result" role="status" aria-live="polite">시험 전</p>
         </div>
       </div>

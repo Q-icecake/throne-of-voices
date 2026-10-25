@@ -18,7 +18,7 @@ async function fixture(t: TestContext, transport: typeof fetch, timeoutMs = 35) 
   return { runtime, budgetFile };
 }
 
-for (const [code, expected] of [[200, 'ok'], [401, 'auth'], [403, 'auth'], [404, 'model'], [429, 'rate_limited'], [400, 'schema'], [500, 'server'], [503, 'server']] as const) {
+for (const [code, expected] of [[200, 'ok'], [401, 'auth'], [403, 'auth'], [404, 'model'], [429, 'rate_limited'], [400, 'request'], [500, 'google_server'], [503, 'google_server']] as const) {
   test(`start connection test classifies ${code} as ${expected}, never leaks upstream errors`, async t => {
     let calls = 0;
     const { runtime, budgetFile } = await fixture(t, async (url, init) => {
@@ -26,7 +26,7 @@ for (const [code, expected] of [[200, 'ok'], [401, 'auth'], [403, 'auth'], [404,
       assert.equal(new Headers(init?.headers).get('x-goog-api-key'), fakeKey);
       assert.equal(init?.redirect, 'error');
       const body = JSON.parse(String(init?.body));
-      assert.equal(body.generationConfig.maxOutputTokens, 8);
+      assert.equal(body.generationConfig.maxOutputTokens, 256);
       assert.equal(body.contents[0].parts[0].text, 'Reply with exactly OK.');
       new SecretGuard(fakeKey).assertSafe(body);
       return code === 200 ? good() : new Response(fakeKey, { status: code });
@@ -41,10 +41,10 @@ for (const [code, expected] of [[200, 'ok'], [401, 'auth'], [403, 'auth'], [404,
 for (const [name, transport, expected] of [
   ['timeout ignoring abort', async () => new Promise<Response>(() => {}), 'timeout'],
   ['thrown credential', async () => { throw new Error(fakeKey); }, 'server'],
-  ['invalid JSON', async () => new Response('{'), 'schema'],
-  ['truncated', async () => Response.json({ candidates: [{ finishReason: 'MAX_TOKENS', content: { parts: [{ text: 'OK' }] } }] }), 'schema'],
-  ['oversized', async () => new Response('x'.repeat(65537)), 'schema'],
-  ['empty', async () => Response.json({}), 'schema'],
+  ['invalid JSON', async () => new Response('{'), 'parse'],
+  ['truncated', async () => Response.json({ candidates: [{ finishReason: 'MAX_TOKENS', content: { parts: [{ text: 'OK' }] } }] }), 'truncated'],
+  ['oversized', async () => new Response('x'.repeat(65537)), 'parse'],
+  ['empty', async () => Response.json({}), 'parse'],
   ['reflected credential', async () => Response.json({ candidates: [{ finishReason: 'STOP', content: { parts: [{ text: fakeKey }] } }] }), 'schema'],
 ] as [string, typeof fetch, ConnectionTestResult][]) {
   test(`start connection test rejects ${name}`, async t => {

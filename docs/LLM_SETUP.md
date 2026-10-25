@@ -1,5 +1,28 @@
 # LLM 연결 설정 (v0.2)
 
+## 연결 시험 오류와 사고 토큰 (031)
+
+Gemini의 `maxOutputTokens`는 **사고 + 보이는 출력의 합계**다. 사고 중 한도에 닿으면 `MAX_TOKENS`와 빈 텍스트가 올 수 있다. 연결 시험은 기존 8에서 **256토큰**으로 올렸으며 고정 문장만 전송한다(JSON MIME/스키마 없음). 명령 해석·NPC 대화는 JSON 스키마를 유지하고 합계 기본 **2048토큰**을 사용한다. 이는 성공 보장이 아니라 비용·출력 상한이며 큰 응답은 여전히 잘릴 수 있다.
+
+기본 `GEMINI_THINKING_MODE=low`는 모델 ID 접두사에 따라 Gemini 3.x Flash/Flash-Lite에 `thinkingLevel: minimal`, 3.x Pro에 `low`, 2.5 Flash/Flash-Lite에 `thinkingBudget: 0`, 2.5 Pro에 `128`을 보낸다. 알 수 없는 접두사에는 thinking 설정을 보내지 않는다. `minimal`은 완전한 사고 끄기를 보장하지 않는다. 모델별 실제 지원·접근성은 라이브 미검증이다. [Google thinking 문서](https://ai.google.dev/gemini-api/docs/generate-content/thinking), [Gemini 3 지원 수준](https://ai.google.dev/gemini-api/docs/generate-content/gemini-3)을 기준으로 한 접두사 정책이다.
+
+필요하면 서버 환경 설정 `GEMINI_THINKING_MODE=default`로 thinking 필드를 생략할 수 있다. `GEMINI_MAX_OUTPUT_TOKENS`는 게임 상한만 바꾸며 허용 256~32768, 기본 2048이다. 연결 시험은 항상 256이다. 두 설정은 서버를 다시 시작해야 적용되며 잘못된 값은 호출 전에 차단한다. **400 거부 시 같은 클릭 안에서 설정을 바꿔 재시도하지 않는다.** 게임 경로도 400/404/잘림/파싱 오류는 재시도하지 않으며 화면 경로는 모든 오류에서 자동 재시도 0회다.
+
+| 화면 문구 | 의미와 대처 |
+| --- | --- |
+| 응답이 잘림(출력 한도·사고 토큰) | `MAX_TOKENS`. 게임 상한/사고 설정을 조정하거나 요청을 줄이고 다시 시도한다. |
+| 응답 없음(사고만 반환 또는 빈 응답) | 보이는 텍스트가 없다. 모델·사고 설정을 확인한다. thought 부분은 답변으로 쓰지 않는다. |
+| 요청 형식 거부(400)·모델 설정 불일치 | 모델이 thinking/스키마 등 요청을 거부했다. 지원 설정·모델 ID를 확인하고 필요하면 thinking을 `default`로 바꿔 재시작한 뒤 직접 다시 누른다. |
+| 모델 없음(404) | 모델 ID·접근 권한을 확인한다. |
+| Google 서버 오류(5xx) | 공급자 HTTP 오류. 잠시 후 직접 재시도한다. |
+| 응답 파싱 실패 | JSON/응답 구조가 잘못됐거나 본문 크기 제한을 넘었다. 모델·형식 지원을 확인한다. |
+| 응답 형식 오류 | JSON 제안의 스키마/허용 범위 불일치 또는 키 반사 방어로 차단했다. |
+| 연결·내부 오류 | HTTP 응답 전 전송 예외 등. 로컬 연결 상태를 확인한다. Google 5xx와 구별한다. |
+
+서버 콘솔과 `artifacts/llm-diagnostics.jsonl`에는 HTTP 상태, 허용 목록의 Google status/reason·finishReason, 입력/출력/사고 토큰 숫자만 기록한다. 미제공·알 수 없는 값은 `null`이다. 키 반사 guard를 적용하며 키·헤더·프롬프트·응답 원문·오류 message는 기록하지 않는다. 파일 쓰기 실패는 요청 결과를 바꾸지 않는다. 이 파일은 로컬 진단용이며 브라우저 API로 내보내지 않는다. 카운터 경로를 바꾸면 진단 기본 경로도 같은 폴더로 이동하며 테스트·검증은 임시 폴더에 격리한다.
+
+다시 시험: 업데이트한 서버를 재시작 → `AI 연결 설정`에서 모델·키·남은 일일/세션 상한 확인 → `연결 시험` **한 번** 클릭 → 구체 결과 확인. 이미 오늘/세션 1/1이면 다시 누르기 전에 사용자가 상한을 결정해야 하며, 업데이트는 실제 카운터를 초기화하지 않는다. 이번 검증은 가짜 transport만 사용했고 실제 모델 요청은 0회다.
+
 ## 로컬 호출 사용량과 초기화 (030)
 
 `AI 연결 설정`에 **오늘(UTC) 로컬 호출 수/일일 상한**과 **이번 서버 세션 호출 수/세션 상한**을 표시한다. 이는 Google 실제 요청 통계나 할당량이 아니라 앱의 로컬 안전장치다. `로컬 일일 상한(UTC) 도달`, `로컬 세션 상한 도달`, `Google 한도 초과(429)`는 별개다. 파일을 읽을 수 없으면 `확인 불가`로 표시하고 호출을 차단한다.
@@ -115,7 +138,7 @@ foreach ($name in @('GEMINI_API_KEY', 'GEMINI_MODEL_ID', 'OPENAI_COMPAT_API_KEY'
 
 모든 실제 시도 직전에 예약하고 실패·재시도도 차감한다. 429·인증·스키마 오류는 재시도하지 않으며 서버/전송 오류만 설정 횟수 안에서 재시도한다. 전체 시간 제한을 재시도마다 초기화하지 않는다. UTC 일일 예약은 `artifacts/llm-usage.json`의 날짜와 호출 수만 저장한다. 세션은 Provider 인스턴스 기준이며 게임 리셋으로 초기화하지 않는다. 두 공급자는 같은 일일 파일을 사용한다. 잠금 경합·손상·쓰기 실패는 차단한다. 비정상 종료의 `.lock`은 운영자가 실행 프로세스가 없는지 확인한 뒤 복구하며 일일 기록을 지워 한도를 우회하지 않는다.
 
-중립 오류는 `timeout`, `rate_limited`, `auth`, `schema`, `server`, `budget`, `aborted`이다. `ProviderError.neutralCode`와 HTTP `outcome.providerCode`가 같은 값을 쓰며 기존 상태 칩·오류칸에 코드와 한국어 안내를 표시한다. 엔진/기존 평가기의 `ProviderError.code` 및 HTTP `outcome.code`는 기존 대문자 코드 호환 별칭이다. 다른 작업 소유의 엔진·shared/UI 파일은 변경하지 않았다.
+기존 중립 오류 `timeout`, `rate_limited`, `auth`, `schema`, `server`, `budget`, `aborted`에 031에서 `truncated`, `empty`, `request`, `model`, `google_server`, `parse`를 추가했다. `ProviderError.neutralCode`와 HTTP `outcome.providerCode`가 같은 값을 쓰며 기존 상태 칩·오류칸에 코드와 한국어 안내를 표시한다. 엔진/기존 평가기의 `ProviderError.code` 및 HTTP `outcome.code`는 기존 대문자 코드 호환 별칭이다. 칩의 짧은 분류에 대한 상세 의미·대처는 title/오류칸과 이 문서의 031 절에 있다.
 
 중립 `ProviderUsage`는 `lastUsage`로 마지막 완료 호출에서 읽고, 실패는 `ProviderError.usage`에도 기록한다. 입력/출력 토큰, 총/시도별 지연, 시도·재시도·예약·외부 호출 수, 총/시도별 오류를 제공한다. 실패 응답이나 누락 메타데이터의 토큰은 **null (미상)**이며 성공한 재시도의 토큰만으로 전체를 추정하지 않는다. 평가기는 매 호출 직후 이 정보를 복사해 기록해야 한다. `lastUsage`는 누적 감사 파일이 아니며 동시 호출별 실패는 예외의 usage로 구분한다. 기존 Proposal의 4필드 usage는 호환을 유지하며 숫자만 허용하므로 미상은 0 자리를 사용한다. 비용은 단가를 추정하지 않고 null이다. 외부 응답 본문·헤더·예외 원문·요청 원문·키는 계측에 포함하지 않는다.
 

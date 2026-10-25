@@ -1,5 +1,14 @@
 # Development Log
 
+## 2026-10-25 — 031 V9 / 연결 시험 오류 분류·사고 예산
+
+- 기준 `v0.2/real-ai`, HEAD `f59ec89`. 수정 전 가짜 transport: MAX_TOKENS 빈 응답/사고만/400은 schema, 404는 model, 500/503은 server였다. 사용자 1회 “서버 오류”의 실제 원인은 당시 HTTP 증거가 없어 미확정; 8토큰 위험과 진단 부재는 확인했다. `.codex-runs/031/baseline.json`, `diagnosis.md`에 요청·분류·공식 문서 근거를 기록했다.
+- 시험 256/게임 기본2048(사고 포함), 모델 접두사별 최소 thinking과 명시적 default 생략 설정. MAX_TOKENS/빈 응답/400/404/Google5xx/파싱 구분, thought 제외, 400 자동 대체·재시도 없음. 콘솔/JSONL은 HTTP·allowlist enum·토큰만 기록하고 키 반사 guard 적용; 검증 진단도 임시 폴더에 격리. 기존 칩/오류칸·안내 문구만 수정, CSS/그림/의존성 변경0.
+- 신규 진단/모델/HTTP/게임/보안 시험29개. 전체 테스트900/900, 관련 회귀43/43, 타입 검사 통과. 기존 테스트 변경은 8→256 및 구체 오류 코드 기대값뿐이며 카운터·입력·엔진 불변·보안 단언 유지. Edge 설정 오류11시나리오×2해상도·게임 오류/재시도18/18 통과. 1366의400/게임잘림,1920의잘림 PNG 직접 확인.
+- 첫 종합17/19: 기존 usage-counter의503 기대값(server) 누락 및 추가된 UI 오류 뒤 다음 해상도에 오류 상태를 남긴 검증 fixture 문제. 전자는 google_server로 정정, 후자는 같은 명령에 대한 정상 초안 응답으로 수동 재시도 복구를 검증해 해결했다. 중간 신규 시험의 합성 문자열/키 접두사 충돌과 상태 안내 변경 비교도 fixture에서 교정했다. 실패 기록은 `.codex-runs/031/`에 보존했다.
+- 최종 `node scripts/verify-all.ts` **19/19 종료0**, 전체900/900·타입·빌드·Edge 시각/게임/시작 검사 통과. 실제 카운터19작업 전후 SHA-256 `a263494d…447a` 동일. `.codex-runs/031/report.md`, `artifacts/diagnostics-031/verification-final.json`, `hash-verification-final.json` 참조. 외부 모델 API0, 실제 키/환경값 열람·출력0. 모델 접근성·라이브 성공·한국어 품질은 미검증.
+- 원 Git 메타데이터는 허용 범위 밖이므로 원 HEAD/브랜치를 변경하지 않고 허용 경로에 독립 커밋·검증된 bundle·binary patch로 제출한다. ID/해시는 `artifacts/diagnostics-031/submission.json`. 원격 push/다른 worktree 변경/전역 설정/확인 팝업 없음. 리드의 쓰기 가능한 환경에서 반영 필요.
+
 ## 2026-10-25 — 030 V8 / 로컬 호출 카운터 격리·사용량 확인
 
 - 원인: review-025 HTTP 분기의 가짜 Provider가 기본 파일에 실행당 24회를 예약. eval budgetFile 생략 경로도 같은 위험. 연결 시험 자체의 중복 차감은 없었다.

@@ -1,6 +1,7 @@
 import type { InterpretationProvider } from './types.ts';
 import { GeminiProvider } from './gemini.ts';
 import { OpenAICompatibleProvider } from './openai-compatible.ts';
+import type { ThinkingMode } from './gemini-response.ts';
 
 export interface ProviderConfig {
   model: string;
@@ -8,6 +9,8 @@ export interface ProviderConfig {
   retries: number;
   dailyLimit: number;
   sessionLimit: number;
+  maxOutputTokens?: number;
+  thinkingMode?: ThinkingMode;
 }
 export function providerConfig(env: NodeJS.ProcessEnv, model: string): ProviderConfig | undefined {
   const integer = (key: string, fallback: number): number => {
@@ -25,7 +28,23 @@ export function providerConfig(env: NodeJS.ProcessEnv, model: string): ProviderC
 /** Compatibility for the existing evaluation entry point; new callers use configuredProvider. */
 export function geminiConfig(env: NodeJS.ProcessEnv = process.env): ProviderConfig | undefined {
   const model = env.GEMINI_MODEL_ID ?? '';
-  return /^[a-zA-Z0-9._-]+$/.test(model) ? providerConfig(env, model) : undefined;
+  const config = /^[a-zA-Z0-9._-]+$/.test(model) ? providerConfig(env, model) : undefined;
+  if (!config) return undefined;
+  const generation = geminiGenerationSettings(env);
+  return generation ? { ...config, ...generation } : undefined;
+}
+export function geminiGenerationSettings(env: NodeJS.ProcessEnv): Pick<ProviderConfig, 'maxOutputTokens' | 'thinkingMode'> | undefined {
+  const result: Pick<ProviderConfig, 'maxOutputTokens' | 'thinkingMode'> = {};
+  if (env.GEMINI_MAX_OUTPUT_TOKENS !== undefined) {
+    const value = Number(env.GEMINI_MAX_OUTPUT_TOKENS);
+    if (!Number.isSafeInteger(value) || value < 256 || value > 32768) return undefined;
+    result.maxOutputTokens = value;
+  }
+  if (env.GEMINI_THINKING_MODE !== undefined) {
+    if (env.GEMINI_THINKING_MODE !== 'low' && env.GEMINI_THINKING_MODE !== 'default') return undefined;
+    result.thinkingMode = env.GEMINI_THINKING_MODE;
+  }
+  return result;
 }
 export interface ProviderSelection { provider?: InterpretationProvider; status: string; timeoutMs: number }
 export function configuredProvider(env: NodeJS.ProcessEnv = process.env, transport: typeof fetch = globalThis.fetch): ProviderSelection {

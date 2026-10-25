@@ -1,12 +1,12 @@
 import type { ProviderConfig } from './config.ts';
 import { CallBudget } from './budget.ts';
-import type { InterpretationProvider, ProviderInput, ProviderUsage, AttemptUsage } from './types.ts';
+import type { InterpretationProvider, ProviderInput, ProviderUsage, AttemptUsage, ProviderErrorCode } from './types.ts';
 import { ProviderError, PROVIDER_MESSAGES, abortError, providerMessage } from './types.ts';
 import { withDeadline } from './pipeline.ts';
 import { validateProposal } from './validator.ts';
 import { SecretGuard } from './secrets.ts';
 
-export interface DecodedOutput { text: string; inputTokens: unknown; outputTokens: unknown; complete: boolean }
+export interface DecodedOutput { text: string; inputTokens: unknown; outputTokens: unknown; complete: boolean; errorCode?: ProviderErrorCode }
 export const tokenCount = (value: unknown): number | null =>
   typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 && value <= 10000000 ? value : null;
 
@@ -36,6 +36,16 @@ export abstract class RemoteProvider implements InterpretationProvider {
   }
   protected abstract request(input: ProviderInput, signal: AbortSignal, key: string): [string, RequestInit];
   protected abstract decode(envelope: unknown): DecodedOutput;
+  protected parseErrorCode: ProviderErrorCode = 'schema';
+  protected async readResponse(response: Response, signal: AbortSignal, _guard: SecretGuard): Promise<unknown> {
+    if (!response.ok) {
+      void response.body?.cancel().catch(() => {});
+      if (response.status === 429) throw new ProviderError('rate_limited');
+      if (response.status === 401 || response.status === 403) throw new ProviderError('auth');
+      throw new ProviderError(response.status >= 500 ? 'server' : 'schema');
+    }
+    return this.#read(response, signal);
+  }
   async interpret(input: ProviderInput, signal: AbortSignal): Promise<unknown> {
     const started = performance.now();
     const attempts: (AttemptUsage & { started: number; finished?: boolean })[] = [];
@@ -54,18 +64,12 @@ export abstract class RemoteProvider implements InterpretationProvider {
             const [url, init] = this.request(input, bounded, this.#key);
             const response = await this.#transport(url, init);
             bounded.throwIfAborted();
-            if (!response.ok) {
-              // Never read error text/headers: upstream can reflect credentials in either.
-              void response.body?.cancel().catch(() => {});
-              if (response.status === 429) throw new ProviderError('rate_limited');
-              if (response.status === 401 || response.status === 403) throw new ProviderError('auth');
-              throw new ProviderError(response.status >= 500 ? 'server' : 'schema');
-            }
-            const envelope = await this.#read(response, bounded);
+            const envelope = await this.readResponse(response, bounded, this.#guard);
             bounded.throwIfAborted();
             let decoded: DecodedOutput;
-            try { decoded = this.decode(envelope); } catch { throw new ProviderError('schema'); }
+            try { decoded = this.decode(envelope); } catch { throw new ProviderError(this.parseErrorCode); }
             attempt.inputTokens = tokenCount(decoded.inputTokens); attempt.outputTokens = tokenCount(decoded.outputTokens);
+            if (decoded.errorCode) throw new ProviderError(decoded.errorCode);
             if (!decoded.complete || this.#guard.reflects(decoded.text)) throw new ProviderError('schema');
             const raw: unknown = JSON.parse(decoded.text);
             if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new ProviderError('schema');
@@ -74,9 +78,9 @@ export abstract class RemoteProvider implements InterpretationProvider {
               externalCalls: attempts.length, costUsd: null } }, input);
           } catch (caught) {
             const safe = bounded.aborted ? abortError(bounded) :
-              caught instanceof ProviderError ? caught : new ProviderError(caught instanceof SyntaxError ? 'schema' : 'server');
+              caught instanceof ProviderError ? caught : new ProviderError(caught instanceof SyntaxError ? this.parseErrorCode : 'server');
             attempt.errorCode = safe.neutralCode;
-            if (safe.neutralCode !== 'server' || index >= this.#settings.retries) throw safe;
+            if (!['server', 'google_server'].includes(safe.neutralCode) || index >= this.#settings.retries) throw safe;
           } finally { attempt.latencyMs = Math.round(performance.now() - attempt.started); attempt.finished = true; }
         }
         throw new ProviderError('server');

@@ -216,7 +216,8 @@ export interface TalkRequest { characterId: CharacterId; text: string }
 export interface TalkResponse {
   /** Optional v0.2 metadata; legacy clients can ignore it. No prompt content. */
   speakers?: { id: CharacterId; source: 'AI' | 'offline'; fallback?: boolean }[];
-  failureCode?: 'timeout' | 'rate_limited' | 'auth' | 'schema' | 'server' | 'budget' | 'aborted';
+  failureCode?: 'timeout' | 'rate_limited' | 'auth' | 'schema' | 'server' | 'budget' | 'aborted' |
+    'truncated' | 'empty' | 'request' | 'model' | 'google_server' | 'parse';
   usage?: { inputChars: number; inputBytes: number; inputTokens: number | null; outputTokens: number | null; externalCalls: number | null };
 
   source: 'offline' | 'AI' | 'mixed';
@@ -227,7 +228,8 @@ export interface TalkResponse {
   notice?: string;
 }
 /** Public start-screen settings. Credentials are never part of this contract. */
-export type ConnectionTestResult = 'daily_limit' | 'session_limit' | 'untested' | 'ok' | 'auth' | 'model' | 'rate_limited' | 'timeout' | 'schema' | 'server' | 'budget' | 'stale';
+export type ConnectionTestResult = 'daily_limit' | 'session_limit' | 'untested' | 'ok' | 'auth' | 'model' | 'rate_limited' | 'timeout' | 'schema' | 'server' | 'budget' | 'stale' |
+  'truncated' | 'empty' | 'request' | 'google_server' | 'parse';
 export interface LlmStatus {
   dailyCalls: number;
   dailyLimit: number;

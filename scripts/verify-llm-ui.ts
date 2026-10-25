@@ -10,6 +10,7 @@ import { GameEngine } from '../server/engine.ts';
 import { createGameServer } from '../server/http.ts';
 import { ScriptedProvider } from '../tests/fixtures/scripted-provider.ts';
 import type { Proposal } from '../server/llm/types.ts';
+import { ProviderError } from '../server/llm/types.ts';
 
 const outIndex = process.argv.indexOf('--out');
 const output = outIndex >= 0 ? process.argv[outIndex + 1]! : 'artifacts/m2';
@@ -21,6 +22,8 @@ const perViewport = () => [
   { ...order, intent: 'ambiguous', proposedActions: [], unresolvedQuestions: ['대상을 다시 알려 주시겠습니까?'] },
   () => new Promise(() => {}), order,
   { ...order, intent: 'question', proposedActions: [], dialogue: '장부에 기록된 정보만으로 판단해야 합니다. '.repeat(40) },
+  new ProviderError('truncated'), new ProviderError('request'),
+  order,
 ];
 const provider = new ScriptedProvider(...perViewport(), ...perViewport());
 const engine = new GameEngine(undefined, undefined, provider, 100);
@@ -108,6 +111,19 @@ try {
     assert.ok(await page.locator('#reply').evaluate(el => el.scrollHeight > el.clientHeight));
     await page.screenshot({ path: `${output}/ai-long-answer-${size}.png` });
     checks.push({ size, check: 'long AI answer scrolls within its own region and never overlaps command panel' });
+    for (const [code, label] of [['truncated', '응답이 잘림'], ['request', '요청 형식 거부(400)']] as const) {
+      const before = JSON.stringify({ tasks: engine.view().tasks, drafts: engine.view().drafts });
+      await page.fill('#speech-input', text); await page.click('#speech-submit');
+      await page.locator('#error:not([hidden])').filter({ hasText: label }).waitFor();
+      assert.equal(await page.inputValue('#speech-input'), text);
+      assert.equal(JSON.stringify({ tasks: engine.view().tasks, drafts: engine.view().drafts }), before);
+      await readable(); await page.screenshot({ path: `${output}/ai-${code}-${size}.png` });
+      checks.push({ size, check: `${code}: readable game error, preserved input and world` });
+    }
+    await page.click('#speech-submit'); await page.waitForSelector('.draft-card');
+    assert.match(await page.locator('#interpretation-status').innerText(), /AI.*시험 응답/);
+    assert.equal(await page.inputValue('#speech-input'), '');
+    checks.push({ size, check: 'manual retry after classified errors restores AI success status' });
     assert.deepEqual(errors, []);
     await page.close();
   }

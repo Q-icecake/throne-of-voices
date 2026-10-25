@@ -154,7 +154,9 @@ function render(next: PlayerView): void {
   const interpretation = next.interpretation ?? { source: 'Mock', status: 'AI 미연결, Mock 사용 중' };
   // Keep the existing chip readable at both supported widths; full guidance is
   // available in its title and the existing error region, without changing CSS.
-  const codes: Record<string, string> = { timeout: '시간 초과', rate_limited: '호출 한도', auth: '인증 오류', schema: '응답 형식', server: '서버 오류', budget: '예산 소진', aborted: '요청 취소' };
+  const codes: Record<string, string> = { timeout: '시간 초과', rate_limited: '호출 한도', auth: '인증 오류', schema: '응답 형식', server: '연결·내부 오류', budget: '예산 소진', aborted: '요청 취소',
+    truncated: '응답 잘림', empty: '빈 응답', request: '요청 거부(400)',
+    model: '모델 없음(404)', google_server: 'Google 서버 오류(5xx)', parse: '응답 파싱 실패' };
   const code = interpretation.status.match(/^\[(\w+)\]/)?.[1];
   const status = code && codes[code] ? `[${code}] ${codes[code]}${interpretation.status.includes('작성 대사') ? ' · 작성 대사로 응답함' : ''}`
     : interpretation.status.includes('작성 대사') ? '작성 대사로 응답함' : interpretation.status;

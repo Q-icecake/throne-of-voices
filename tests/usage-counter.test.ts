@@ -71,7 +71,7 @@ test('connection success, failure and 429 each reserve exactly once; settings an
   const file = fixture(t); let calls = 0, code = 200;
   const runtime = new RuntimeSettings({ env: {}, budgetFile: file, transport: async () => { calls++; return code === 200 ? good() : new Response('', { status: code }); } });
   runtime.configure('offline-model', 'synthetic-Q7v9K3w2N6r4', 3);
-  for (const [http, result] of [[200, 'ok'], [503, 'server'], [429, 'rate_limited']] as const) {
+  for (const [http, result] of [[200, 'ok'], [503, 'google_server'], [429, 'rate_limited']] as const) {
     code = http; assert.equal(await runtime.test(), result);
     assert.equal(runtime.status().dailyCalls, calls); assert.equal(runtime.status().sessionCalls, calls);
   }

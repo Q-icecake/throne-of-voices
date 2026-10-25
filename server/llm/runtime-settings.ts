@@ -1,12 +1,15 @@
 import { GeminiProvider } from './gemini.ts';
 import { CallBudget } from './budget.ts';
 import type { ProviderConfig } from './config.ts';
+import { geminiGenerationSettings } from './config.ts';
+import { CONNECTION_MAX_TOKENS, decodeGemini, GeminiDiagnostics, readGeminiResponse, thinkingConfig } from './gemini-response.ts';
 import { SecretGuard } from './secrets.ts';
 import { ProviderError } from './types.ts';
 import { withDeadline } from './pipeline.ts';
 import type { ConnectionTestResult, LlmStatus } from '../../shared/contracts.ts';
+import { dirname, join } from 'node:path';
 
-export interface RuntimeOptions { env?: NodeJS.ProcessEnv; transport?: typeof fetch; budgetFile?: string; timeoutMs?: number }
+export interface RuntimeOptions { env?: NodeJS.ProcessEnv; transport?: typeof fetch; budgetFile?: string; timeoutMs?: number; diagnosticsFile?: string }
 export class RuntimeSettings {
   #key: string;
   #source: LlmStatus['keySource'];
@@ -20,8 +23,12 @@ export class RuntimeSettings {
   #transport: typeof fetch;
   #timeout: number;
   #budget: CallBudget;
+  #diagnostics: GeminiDiagnostics;
+  #generation: ReturnType<typeof geminiGenerationSettings>;
   constructor(options: RuntimeOptions = {}) {
     const env = options.env ?? process.env;
+    this.#generation = geminiGenerationSettings(env);
+    this.#diagnostics = new GeminiDiagnostics(options.diagnosticsFile ?? (options.budgetFile ? join(dirname(options.budgetFile), 'llm-diagnostics.jsonl') : undefined));
     this.#key = env.GEMINI_API_KEY ?? '';
     this.#source = this.#key ? 'env' : 'none';
     this.#guards.push(new SecretGuard(this.#key));
@@ -47,12 +54,14 @@ export class RuntimeSettings {
   clear() { this.#invalidate(); this.#key = ''; this.#source = 'none'; this.#mode = 'mock'; }
   select(mode: 'mock' | 'ai') {
     if (mode === 'ai' && (!this.#key || !this.#model)) throw new ProviderError('auth');
+    if (mode === 'ai' && !this.#generation) throw new ProviderError('request');
     this.#version++; this.#pending?.abort(); this.#pending = undefined; this.#mode = mode;
   }
   provider() {
     if (this.#mode !== 'ai') return undefined;
-    const config: ProviderConfig = { model: this.#model, timeoutMs: this.#timeout, retries: 0, dailyLimit: this.#limit, sessionLimit: this.#limit };
-    return new GeminiProvider(config, this.#transport, this.#budget, this.#key);
+    if (!this.#generation) throw new ProviderError('request');
+    const config: ProviderConfig = { ...this.#generation, model: this.#model, timeoutMs: this.#timeout, retries: 0, dailyLimit: this.#limit, sessionLimit: this.#limit };
+    return new GeminiProvider(config, this.#transport, this.#budget, this.#key, this.#diagnostics);
   }
   async test(): Promise<ConnectionTestResult> {
     // A second click invalidates the first, but never refunds its reservation.
@@ -62,35 +71,19 @@ export class RuntimeSettings {
     let result: ConnectionTestResult;
     try {
       if (!key || !model) throw new ProviderError('auth');
+      if (!this.#generation) throw new ProviderError('request');
       this.#budget.reserve();
       result = await withDeadline(async signal => {
         const response = await this.#transport('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', {
           method: 'POST', redirect: 'error', signal, headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-          body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'Reply with exactly OK.' }] }], generationConfig: { maxOutputTokens: 8, temperature: 0 } }),
+          body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'Reply with exactly OK.' }] }],
+            generationConfig: { maxOutputTokens: CONNECTION_MAX_TOKENS, temperature: 0, ...thinkingConfig(model, this.#generation?.thinkingMode) } }),
         });
         signal.throwIfAborted();
-        if (!response.ok) {
-          void response.body?.cancel().catch(() => {});
-          return response.status === 401 || response.status === 403 ? 'auth' : response.status === 404 ? 'model' : response.status === 429 ? 'rate_limited' : response.status >= 500 ? 'server' : 'schema';
-        }
-        const reader = response.body?.getReader();
-        if (!reader) return 'schema';
-        const cancel = () => { void reader.cancel().catch(() => {}); };
-        signal.addEventListener('abort', cancel, { once: true });
-        try {
-          let text = '', bytes = 0;
-          const decoder = new TextDecoder();
-          for (;;) {
-            const chunk = await reader.read(); signal.throwIfAborted();
-            if (chunk.done) break;
-            bytes += chunk.value.byteLength; if (bytes > 65536) return 'schema';
-            text += decoder.decode(chunk.value, { stream: true });
-          }
-          text += decoder.decode(); this.assertSafe(text);
-          const value = JSON.parse(text);
-          const candidate = value?.candidates?.[0];
-          return candidate?.finishReason === 'STOP' && candidate?.content?.parts?.length === 1 && candidate.content.parts[0]?.text?.trim() === 'OK' ? 'ok' : 'schema';
-        } finally { signal.removeEventListener('abort', cancel); cancel(); }
+        const value = await readGeminiResponse(response, signal, { reflects: text => this.reflects(text) }, this.#diagnostics);
+        const decoded = decodeGemini(value);
+        if (decoded.errorCode) throw new ProviderError(decoded.errorCode);
+        return decoded.complete && decoded.text.trim() === 'OK' ? 'ok' : 'schema';
       }, this.#timeout, controller.signal);
     } catch (error) {
       result = error instanceof ProviderError ? error.neutralCode === 'aborted' ? 'stale' : error.budgetDetail ? error.budgetDetail.scope === 'daily' ? 'daily_limit' : 'session_limit' : error.neutralCode : error instanceof SyntaxError ? 'schema' : 'server';
