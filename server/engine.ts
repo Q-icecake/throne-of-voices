@@ -7,8 +7,8 @@ import { FakeClock } from './clock.ts';
 import { knowledgeFor, playerView } from './knowledge.ts';
 import { MockCommandInterpreter } from './mock-interpreter.ts';
 import type { CommandInterpreter, Interpretation } from './mock-interpreter.ts';
-import type { InterpretationProvider, ProviderInput } from './llm/types.ts';
-import { ProviderError } from './llm/types.ts';
+import type { InterpretationProvider, ProviderInput, ProviderErrorCode } from './llm/types.ts';
+import { ProviderError, PROVIDER_MESSAGES } from './llm/types.ts';
 import { interpret, toReading } from './llm/pipeline.ts';
 import { hasUnsupportedClaim } from './llm/claims.ts';
 import { actionVocabulary, validateProposal } from './llm/validator.ts';
@@ -18,8 +18,11 @@ import { ACTION_LABELS, ACTION_RULES, DIPLOMACY_RULES, deadlineDuration, ENGAGEM
 import { createInitialWorld } from './world.ts';
 import type { DraftRecord, EventCause, EventRecord, TaskRecord, WorldState } from './world.ts';
 import type { AudienceRequest, CharacterId, TalkRequest, TalkResponse, TalkTurn } from '../shared/contracts.ts';
-import { CHARACTER_IDS, HOME_LOCATIONS, characterInput, offlineReply, remember, unknowable } from './characters.ts';
-import { mayTransmit, providerKnowledge } from './llm/context-policy.ts';
+import { CHARACTER_IDS, HOME_LOCATIONS, characterInput, meetingInput, offlineReply, remember, unknowable } from './characters.ts';
+import { npcSettings, mayTransmit, providerKnowledge } from './llm/context-policy.ts';
+
+import type { NpcSettings } from './llm/context-policy.ts';
+import { recordFailure } from './llm/failure-context.ts';
 
 const pad = (value: number) => String(value).padStart(4, '0');
 const INTENT_LABELS = { question: '질문', hypothetical: '가정·검토', discussion: '논의', ambiguous: '확인 질문', unsupported: '미지원' } as const;
@@ -53,21 +56,29 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
   #context: ProviderInput['context'] = [];
   #timeoutMs: number;
   #connectionStatus: string;
+  #initialStatus: string;
+  #npcSettings: NpcSettings;
+  #npcUsage: NonNullable<TalkResponse['usage']>[] = [];
+  npcUsage() { return structuredClone(this.#npcUsage); }
+
 
   constructor(provider: LLMProvider = new MockLLMProvider(), interpreter: CommandInterpreter = new MockCommandInterpreter(),
-    interpretationProvider?: P, timeoutMs = 15000, status = 'AI 미연결, Mock 사용 중', opening?: { mode: 'manual' | 'auto'; ready?: boolean }) {
+    interpretationProvider?: P, timeoutMs = 15000, status = 'AI 미연결, Mock 사용 중', opening?: { mode: 'manual' | 'auto'; ready?: boolean }, settings: NpcSettings = npcSettings()) {
     this.#openingOptions = opening;
+    this.#npcSettings = { ...settings };
     this.#provider = provider;
     this.#interpreter = interpreter;
     this.#interpretationProvider = interpretationProvider;
     if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0 || timeoutMs > 15000) throw new Error('INVALID_TIMEOUT');
     this.#timeoutMs = timeoutMs;
-    this.#connectionStatus = interpretationProvider?.status ?? status;
+    this.#initialStatus = this.#connectionStatus = interpretationProvider?.status ?? status;
     this.reset();
   }
 
   reset(): void {
     this.#requestVersion++;
+    this.#connectionStatus = this.#initialStatus;
+    this.#npcUsage = [];
     this.#providerWaits.clear();
     this.#context = [];
     this.#clock = new FakeClock();
@@ -216,15 +227,33 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
     const version = ++this.#requestVersion;
     const ids = [...this.#world.audience.participants];
     let source: TalkResponse['source'] = 'offline';
-    const respond = (turns: TalkTurn[], outcome?: CommandOutcome, notice?: string): TalkResponse => ({ state: this.view(), turns, inputOwner: 'player', source, ...(outcome ? { outcome } : {}), ...(notice ? { notice } : {}) });
+    let failureCode: ProviderErrorCode | undefined;
+    let notice: string | undefined;
+    let usage: TalkResponse['usage'];
+    const speakers: NonNullable<TalkResponse['speakers']> = [];
+    const fail = (code: ProviderErrorCode) => {
+      failureCode = code; recordFailure(code);
+      notice = `[${code}] ${PROVIDER_MESSAGES[code]} 작성 대사로 응답함. 입력과 초안은 보존되었습니다. 고쳐 쓰거나 재시도해 주세요.`;
+      this.#connectionStatus = notice;
+    };
+
+    const respond = (turns: TalkTurn[], outcome?: CommandOutcome, message: string | undefined = notice): TalkResponse => ({ state: this.view(), turns, inputOwner: 'player', source, ...(outcome ? { outcome } : {}), ...(message ? { notice: message } : {}), ...(failureCode ? { failureCode } : {}), ...(usage ? { usage } : {}), speakers });
     if (!ids.includes(request.characterId)) return respond([], undefined, '먼저 해당 인물을 접견에 불러 주십시오.');
     if (ids.some(id => this.#world.tasks.some(t => t.assignee === id && !['completed', 'stopped'].includes(t.stage)))) return respond([], undefined, '참석자가 임무 중입니다. 접견을 다시 구성해 주십시오.');
     this.#opening?.input(request.text, this.#world.clock.activeMs);
-    const input = characterInput(this.#world, request.characterId, request.text, ids);
-    const localInput = characterInput(this.#world, request.characterId, request.text, ids, true);
+    const input = characterInput(this.#world, request.characterId, request.text, ids, false, this.#npcSettings);
+    const localInput = characterInput(this.#world, request.characterId, request.text, ids, true, this.#npcSettings);
     const localEvidence = /기억|아까|지난|이전|문서|보고|서신|장부/.test(request.text)
       && JSON.stringify(localInput) !== JSON.stringify(input);
+    const second = ids.find(id => id !== request.characterId);
+    const counter = second && !unknowable(request.text) && !/문서|보고|서신|장부|기억|아까|이전/.test(request.text)
+      ? characterInput(this.#world, second, request.text, ids, false, this.#npcSettings) : undefined;
     let reading = this.#readMock(request.text);
+    const paired = this.#npcSettings.meeting && counter && !localEvidence
+      && reading.intent !== 'command' && reading.intent !== 'ambiguous'
+      && !(reading.intent === 'unsupported' && /시켜|하라|해라|보내|공격해|걷어|정비해/.test(request.text));
+    let pairedAnswers: string[] | undefined;
+    let mainFallback = false;
     let answer = offlineReply(localEvidence ? localInput : input);
     if (this.#opening && !localEvidence && !unknowable(request.text) && !/기억|신뢰|존중/.test(request.text)) {
       const tag = /급보|형주/.test(request.text) ? 'dispatch-question' : /도움|모르겠/.test(request.text) ? 'weak-hint' : /문서|보고|서신/.test(request.text) ? 'after-document' : /위험|손실/.test(request.text) ? 'risk-explanation' : /의견|생각/.test(request.text) ? 'opposing-view' : 'information-request';
@@ -232,18 +261,86 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
     }
     if (this.#interpretationProvider && !unknowable(request.text) && !localEvidence) {
       try {
-        const proposal = await interpret(this.#interpretationProvider, input, this.#timeoutMs);
-        if (version !== this.#requestVersion) return respond([], { kind: 'error', code: 'STALE_RESPONSE', input: request.text, reply: '접견이나 입력이 바뀌어 이전 응답을 무시했습니다.' });
-        reading = toReading(proposal, text => this.#guardReply(text, input));
-        if (reading.intent !== 'command') {
-          const sentences = reading.reply.split(/[.!?。！？]+/).filter(s => s.trim());
-          if (reading.reply.length > 600 || sentences.length > 4) throw new ProviderError('INVALID_PROPOSAL');
-          answer = reading.reply;
+        const sent = paired ? meetingInput([input, counter!]) : input;
+        const inputChars = JSON.stringify(sent).length;
+        usage = { inputChars, inputBytes: Buffer.byteLength(JSON.stringify(sent)), inputTokens: null, outputTokens: null, externalCalls: null };
+        let proposal;
+        try { proposal = await interpret(this.#interpretationProvider, sent, this.#timeoutMs); }
+        finally {
+          const measured = this.#interpretationProvider.lastUsage;
+          if (measured && usage) Object.assign(usage, { inputTokens: measured.inputTokens, outputTokens: measured.outputTokens, externalCalls: measured.externalCalls });
+          if (version === this.#requestVersion && usage) { this.#npcUsage.push(structuredClone(usage)); this.#npcUsage = this.#npcUsage.slice(-50); }
         }
-        source = 'AI';
+        if (version !== this.#requestVersion) return respond([], { kind: 'error', code: 'STALE_RESPONSE', input: request.text, reply: '접견이나 입력이 바뀌어 이전 응답을 무시했습니다.' });
+        this.#connectionStatus = this.#interpretationProvider.status;
+        if (paired && (proposal.intent === 'question' || proposal.intent === 'discussion')) {
+          let entries: unknown[] = [];
+          try {
+            const envelope = JSON.parse(proposal.dialogue);
+            if (!envelope || Object.keys(envelope).join() !== 'speeches' || !Array.isArray(envelope.speeches) || envelope.speeches.length > 2) throw new Error();
+            entries = envelope.speeches;
+          } catch { /* Missing/malformed speakers independently use authored replies below. */ }
+          pairedAnswers = [input, counter!].map((projection, index) => {
+            const id = projection.character!.id;
+            let text: string;
+            let fallback = false;
+            try {
+              const matches = entries.filter(entry => entry !== null && typeof entry === 'object' && 'id' in entry && entry.id === id);
+              if (matches.length !== 1) throw new ProviderError('schema');
+              const entry = matches[0] as { id: CharacterId; text: string; referencedKnowledgeIds: string[] };
+              if (Object.keys(entry).sort().join() !== 'id,referencedKnowledgeIds,text' ||
+                typeof entry.text !== 'string' || entry.text.length > (index ? 240 : 600) ||
+                entry.text.split(/[.!?。！？]+/).filter(part => part.trim()).length < 2 ||
+                entry.text.split(/[.!?。！？]+/).filter(part => part.trim()).length > 4 ||
+                !/(?:니다|시오|까요|어요|아요|지요)[.!?。！？]?$/.test(entry.text.trim()) || /멍청|바보|닥쳐|죽여/.test(entry.text)) throw new ProviderError('schema');
+              validateProposal({ ...proposal, intent: 'discussion', dialogue: entry.text, referencedKnowledgeIds: entry.referencedKnowledgeIds }, projection);
+              text = this.#guardReply(entry.text, projection);
+              if (text !== entry.text) throw new ProviderError('schema');
+            } catch {
+              fallback = true;
+              text = this.#guardReply(offlineReply(projection, index === 1), projection, true);
+              fail('schema');
+              this.#record('dialogue-filtered', `${id}: [schema] 작성 대사로 응답함`, null);
+            }
+            speakers.push({ id, source: fallback ? 'offline' : 'AI', ...(fallback ? { fallback: true } : {}) });
+            return text;
+          });
+          answer = pairedAnswers[0]!;
+          const ai = speakers.filter(speaker => speaker.source === 'AI').length;
+          source = ai === 2 ? 'AI' : ai ? 'mixed' : 'offline';
+          reading = { intent: 'discussion', reply: answer, reason: '회의 발언 · 실행 없음' };
+        } else {
+          reading = toReading(proposal, text => {
+            const guarded = this.#guardReply(text, input);
+            if (guarded !== text) { mainFallback = true; fail('schema'); }
+            return guarded;
+          });
+          if (reading.intent !== 'command') {
+            const sentences = reading.reply.split(/[.!?。！？]+/).filter(s => s.trim());
+            if (reading.reply.length > 600 || sentences.length > 4) throw new ProviderError('INVALID_PROPOSAL');
+            answer = reading.reply;
+          }
+          source = mainFallback ? 'offline' : 'AI';
+        }
       } catch (error) {
         if (version !== this.#requestVersion) return respond([], { kind: 'error', code: 'STALE_RESPONSE', input: request.text, reply: '이전 응답을 무시했습니다.' });
-        return respond([], { kind: 'error', code: error instanceof ProviderError ? error.code : 'PROVIDER_ERROR', input: request.text, reply: '대화 해석에 실패했습니다. 입력은 보존되었고 실행하지 않았습니다.' });
+        const code = error instanceof ProviderError ? error.neutralCode : 'server';
+        fail(code);
+        // Legacy single-speaker errors remain mutation-free. Opt-in meetings
+        // explicitly identify each authored fallback and always return the turn.
+        if (paired && reading.intent !== 'command') {
+          pairedAnswers = [input, counter!].map((projection, index) => {
+            speakers.push({ id: projection.character!.id, source: 'offline', fallback: true });
+            return this.#guardReply(offlineReply(projection, index === 1), projection, true);
+          });
+          answer = pairedAnswers[0]!;
+          this.#record('dialogue-filtered', `[${code}] 회의 두 인물: 작성 대사로 응답함`, null);
+        } else {
+          this.#connectionStatus = `[${code}] ${PROVIDER_MESSAGES[code]}`;
+          return respond([], { kind: 'error', code: error instanceof ProviderError ? error.code : 'PROVIDER_ERROR', input: request.text,
+            reply: `[${code}] ${PROVIDER_MESSAGES[code]} 입력과 초안은 보존되었습니다. 고쳐 쓰거나 재시도해 주세요. Mock으로 전환하지 않았습니다.` },
+            '대화 응답 실패 · 입력을 고쳐 쓰거나 다시 시도해 주세요.');
+        }
       }
     }
     if (reading.intent === 'command') {
@@ -261,13 +358,17 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
         { providerExcluded: localEvidence || !mayTransmit(this.#world, {}, request.text) });
     };
     add('player', request.text);
-    add(request.characterId, source === 'AI' ? answer : this.#guardReply(answer, localEvidence ? localInput : input, true));
-    const second = ids.find(id => id !== request.characterId);
-    if (second && !unknowable(request.text) && !/문서|보고|서신|장부|기억|아까|이전/.test(request.text)) {
-      const secondInput = characterInput(this.#world, second, request.text, ids);
-      add(second, this.#guardReply(offlineReply(secondInput, true), secondInput, true));
-      if (source === 'AI') source = 'mixed';
+    if (!speakers.length) speakers.push({ id: request.characterId, source: source === 'AI' ? 'AI' : 'offline', ...(mainFallback ? { fallback: true } : {}) });
+    add(request.characterId, pairedAnswers ? pairedAnswers[0]! : source === 'AI' ? answer : this.#guardReply(answer, localEvidence ? localInput : input, true));
+    if (counter) {
+      add(second!, pairedAnswers ? pairedAnswers[1]! : this.#guardReply(offlineReply(counter, true), counter, true));
+      if (!pairedAnswers) {
+        speakers.push({ id: second!, source: 'offline' });
+        if (source === 'AI') source = 'mixed';
+      }
     }
+    if (!failureCode && source !== 'AI') this.#connectionStatus = this.#interpretationProvider
+      ? `${this.#interpretationProvider.status} · 작성 대사로 응답함` : `${this.#initialStatus} · 작성 대사로 응답함`;
     if (this.#opening) this.#opening.discussed = true;
     this.#evaluateOpening();
     return respond(turns);
@@ -302,11 +403,11 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
     } catch (error) {
       if (version !== this.#requestVersion) return stale();
       const code = error instanceof ProviderError ? error.code : 'PROVIDER_ERROR';
-      const messages = { PROVIDER_TIMEOUT: 'AI 응답 시간이 초과되었습니다.', CALL_LIMIT: 'AI 호출 상한에 도달했습니다. 추가 호출을 차단했습니다.',
-        INVALID_PROPOSAL: 'AI 제안의 형식이나 허용 범위가 맞지 않습니다.', PROVIDER_ERROR: 'AI 연결에 실패했습니다.' };
-      this.#connectionStatus = messages[code];
+      const neutral = error instanceof ProviderError ? error.neutralCode : 'server';
+      recordFailure(neutral);
+      this.#connectionStatus = `[${neutral}] ${PROVIDER_MESSAGES[neutral]}`;
       return { state: this.view(), outcome: { kind: 'error', code, input: request.text,
-        reply: `${messages[code]} 입력과 초안은 보존되었습니다. 문장을 고쳐 쓰거나 다시 시도해 주세요. Mock으로 전환하지 않았습니다.` } };
+        reply: `${this.#connectionStatus} 입력과 초안은 보존되었습니다. 문장을 고쳐 쓰거나 다시 시도해 주세요. Mock으로 전환하지 않았습니다.` } };
     }
   }
 

@@ -3,8 +3,8 @@ import type { WorldState } from './world.ts';
 import { knowledgeFor } from './knowledge.ts';
 import type { ProviderInput } from './llm/types.ts';
 import { actionVocabulary } from './llm/validator.ts';
-import { mayTransmit, providerKnowledge } from './llm/context-policy.ts';
-import type { EvidenceScope } from './llm/context-policy.ts';
+import { boundedItems, npcSettings, mayTransmit, providerKnowledge } from './llm/context-policy.ts';
+import type { NpcSettings, EvidenceScope } from './llm/context-policy.ts';
 
 export const CHARACTER_IDS: CharacterId[] = ['zhang-hong', 'zhang-zhao', 'zhou-yu', 'lu-su'];
 export const HOME_LOCATIONS: Record<CharacterId, string> = { 'zhang-hong': 'office', 'zhang-zhao': 'residence', 'zhou-yu': 'naval-base', 'lu-su': 'residence' };
@@ -38,8 +38,12 @@ export function remember(world: WorldState, ids: CharacterId[], eventId: string,
   }
 }
 
-/** Detached allowlist: never pass WorldState, other minds, hidden truth or unshared private facts. */
-export function characterInput(world: WorldState, id: CharacterId, text: string, audience: CharacterId[], local = false): ProviderInput {
+/** Current text is a deliberate disclosure by the player to THIS room only, verbatim.
+ * Never copy it into a different room's request. Historical turns require every
+ * current participant to have witnessed them; secret history stays provider-excluded.
+ * No absent person's documents, memories or conversation are appended to current text.
+ * Detached allowlist: never pass WorldState, other minds, hidden truth or unshared private facts. */
+export function characterInput(world: WorldState, id: CharacterId, text: string, audience: CharacterId[], local = false, limits: NpcSettings = npcSettings()): ProviderInput {
   const mind = world.minds[id];
   const visibleToRoom = (readers: ('player' | CharacterId)[]) => readers.includes('player') && audience.every(p => readers.includes(p));
   const allowed = new Set(world.documents.filter(d => visibleToRoom(d.readers)).map(d => d.id));
@@ -51,17 +55,23 @@ export function characterInput(world: WorldState, id: CharacterId, text: string,
   const knowledge: KnowledgeView = local ? knowledgeFor(world, id) : providerKnowledge(world, id);
   knowledge.documents = knowledge.documents.filter(d => allowed.has(d.id));
   if (local) knowledge.documents = knowledge.documents.filter(localScope);
-  const facts = mind.facts.filter(f => audience.every(p => f.witnesses.includes(p)) && (local ? localScope(f) : mayTransmit(world, f, f.fact)))
-    .map(({ eventId, fact, witnesses }) => ({ eventId, fact, witnesses: [...witnesses] }));
+  knowledge.documents = boundedItems(knowledge.documents, limits.documents, limits.documentChars);
+  const facts = boundedItems(mind.facts.filter(f => audience.every(p => f.witnesses.includes(p)) && (local ? localScope(f) : mayTransmit(world, f, f.fact)))
+    .map(({ eventId, fact, witnesses }) => ({ eventId, fact, witnesses: [...witnesses] })), limits.memories, limits.memoryChars);
+  const summary = boundedItems(facts.slice(-6).map(f => ({ eventId: f.eventId, fact: `[${f.eventId}] ${f.fact}` })), 6, limits.summaryChars);
+  const memorySummary = () => ({ text: summary.map(f => f.fact).join(' / '), eventIds: summary.map(f => f.eventId) });
+  // The summary has a different JSON wrapper from its source items. Account for
+  // that wrapper too, including the one-item boundary, before transmitting it.
+  while (summary.length && JSON.stringify(memorySummary()).length > limits.summaryChars) summary.shift();
   return {
     text, knowledge, actions: actionVocabulary(),
     character: { id, identity: mind.identity, stance: mind.stance, expertise: mind.expertise, concerns: mind.concerns,
       relationship: mind.trust >= 70 ? '주군을 신뢰하며 판단은 주군에게 맡긴다' : '근거를 더 확인하며 신중하게 보좌한다',
-      cards: structuredClone(mind.cards), memories: structuredClone(facts),
-      memorySummary: { text: facts.slice(-6).map(f => `[${f.eventId}] ${f.fact}`).join(' / '), eventIds: facts.slice(-6).map(f => f.eventId) } },
-    context: world.conversation.filter(t => t.participants.includes(id) && audience.every(p => t.participants.includes(p))
+      cards: boundedItems(structuredClone(mind.cards), limits.cards, limits.cardChars), memories: structuredClone(facts),
+      memorySummary: memorySummary() },
+    context: boundedItems(world.conversation.filter(t => t.participants.includes(id) && audience.every(p => t.participants.includes(p))
       && mayTransmit(world, mind.facts.find(f => f.eventId === t.eventId), t.text))
-      .slice(-6).map(t => ({ role: t.speaker === 'player' ? 'player' : 'assistant', text: t.text })),
+      .slice(-6).map(t => ({ role: t.speaker === 'player' ? 'player' : 'assistant', text: t.text })), 6, limits.contextChars),
   };
 }
 
@@ -101,4 +111,15 @@ export function offlineReply(input: ProviderInput, rebuttal = false): string {
     'lu-su': '그 우려는 남아 있습니다. 접촉으로 조건을 묻는 일과 약속을 확정하는 일은 구분할 수 있습니다.',
   };
   return rebuttal ? counters[id] : replies[id];
+}
+
+/** Optional nested envelope inside the existing dialogue string: no adapter/schema changes.
+ * Both projections already contain only room-readable evidence. The third attendee
+ * contributes no private mind. Outer references stay empty; validate nested refs per speaker. */
+export function meetingInput(inputs: ProviderInput[]): ProviderInput {
+  const first = structuredClone(inputs[0]!);
+  first.context.push({ role: 'assistant', text: JSON.stringify({ protocol: 'npc-meeting-v1',
+    instruction: '현재 질문은 text이다. 명령이면 기존 명령 형식을 유지한다. 논의이면 intent=discussion, proposedActions=[], referencedKnowledgeIds=[]로 답한다. dialogue 문자열 안에 JSON {"speeches":[{"id":"인물 id","text":"한국어 발언","referencedKnowledgeIds":[]}]}를 넣는다. 정확히 아래 두 인물만 각 2~4문장, 첫 발언 600자 이하, 반론 240자 이하. 각자의 identity/stance/expertise/concerns를 따르고 존댓말로 의견과 확인된 사실을 구분한다. 각 인물은 자기 projection의 근거 id만 인용한다. 작업 완료를 꾸미거나 다른 인물의 근거를 빌리지 않는다.',
+    projections: inputs.map(input => ({ character: input.character, knowledge: input.knowledge, context: input.context })) }) });
+  return first;
 }

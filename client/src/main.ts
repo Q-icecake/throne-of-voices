@@ -149,7 +149,13 @@ function render(next: PlayerView): void {
   renderAudience();
   stage.dataset.interpretation = next.mode;
   const interpretation = next.interpretation ?? { source: 'Mock', status: 'AI 미연결, Mock 사용 중' };
-  byId('interpretation-status').textContent = `${interpretation.source} · ${interpretation.status}`;
+  // Keep the existing chip readable at both supported widths; full guidance is
+  // available in its title and the existing error region, without changing CSS.
+  const codes: Record<string, string> = { timeout: '시간 초과', rate_limited: '호출 한도', auth: '인증 오류', schema: '응답 형식', server: '서버 오류', budget: '예산 소진', aborted: '요청 취소' };
+  const code = interpretation.status.match(/^\[(\w+)\]/)?.[1];
+  const status = code && codes[code] ? `[${code}] ${codes[code]}${interpretation.status.includes('작성 대사') ? ' · 작성 대사로 응답함' : ''}`
+    : interpretation.status.includes('작성 대사') ? '작성 대사로 응답함' : interpretation.status;
+  byId('interpretation-status').textContent = `${interpretation.source} · ${status}`;
   byId('interpretation-status').title = interpretation.status;
   byId('active-time').textContent = seconds(next.clock.activeMs);
   byId('held-time').textContent = seconds(next.clock.heldMs);
@@ -219,11 +225,21 @@ async function audience(request: AudienceRequest): Promise<void> {
 }
 
 async function talk(text: string): Promise<CommandOutcome> {
+  if (state?.mode === 'ai') showReply('AI 대화를 기다리는 중입니다 (최대 15초). 입력은 계속 고쳐 쓸 수 있습니다.', '대화 상태');
   const response = await api<TalkResponse>('/api/talk', { characterId: addressee, text });
   render(response.state);
   await refreshLogs();
   const spoken = response.turns.filter(t => t.speaker !== 'player');
-  showReply(response.notice ?? response.outcome?.reply ?? spoken.map(t => `${state!.characters.find(c => c.id === t.speaker)!.name}: ${t.text}`).join('\n'), `${{ offline: '오프라인', AI: 'AI', mixed: 'AI + 작성 대사' }[response.source]} 대화 · 주군의 차례`);
+  const dialogue = spoken.map(turn => {
+    const fallback = response.speakers?.some(speaker => speaker.id === turn.speaker && speaker.fallback);
+    return `${state!.characters.find(character => character.id === turn.speaker)!.name}: ${fallback ? '[작성 대사] ' : ''}${turn.text}`;
+  }).join('\n');
+  showReply((response.failureCode && spoken.length ? undefined : response.notice) ?? response.outcome?.reply ?? dialogue, `${{ offline: '오프라인', AI: 'AI', mixed: 'AI + 작성 대사' }[response.source]} 대화 · 주군의 차례`);
+  if (response.outcome?.kind === 'error' || response.failureCode) {
+    errorBox.textContent = response.outcome?.kind === 'error' ? response.outcome.reply
+      : response.notice ?? response.state.interpretation?.status ?? '입력을 고쳐 쓰거나 다시 시도해 주세요.';
+    errorBox.hidden = false;
+  }
   if (response.outcome?.kind === 'draft' && focus.panel !== 'command') setFocus({ type: 'open', panel: 'command' });
   return response.outcome ?? { kind: 'answer', intent: response.notice ? 'ambiguous' : 'discussion', reply: response.notice ?? '', reason: '실행 없음' };
 }

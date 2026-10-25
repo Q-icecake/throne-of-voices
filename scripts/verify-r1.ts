@@ -1,3 +1,5 @@
+import { createServer as createPortProbe } from 'node:net';
+import type { AddressInfo } from 'node:net';
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { once } from 'node:events';
@@ -9,9 +11,15 @@ import { GameEngine } from '../server/engine.ts';
 const outIndex = process.argv.indexOf('--out');
 const output = outIndex >= 0 ? process.argv[outIndex + 1]! : 'artifacts/r1-fixes';
 const repro = process.argv.includes('--repro');
-const api = createGameServer(new GameEngine(), 5277);
-api.listen(3107, '127.0.0.1'); await once(api, 'listening');
-const vite = await createServer({ logLevel: 'error', server: { port: 5277, strictPort: true, proxy: { '/api': 'http://127.0.0.1:3107' } } });
+// Allocate isolated ports: another worktree's verification must not be stopped.
+const probe = createPortProbe(); probe.listen(0, '127.0.0.1'); await once(probe, 'listening');
+const webPort = (probe.address() as AddressInfo).port;
+await new Promise<void>(resolve => probe.close(() => resolve()));
+const base = `http://127.0.0.1:${webPort}`;
+const api = createGameServer(new GameEngine(), webPort);
+api.listen(0, '127.0.0.1'); await once(api, 'listening');
+const apiPort = (api.address() as AddressInfo).port;
+const vite = await createServer({ logLevel: 'error', server: { port: webPort, strictPort: true, proxy: { '/api': `http://127.0.0.1:${apiPort}` } } });
 await vite.listen();
 let browser;
 const checks: { size: string; check: string; passed: boolean; error?: string }[] = [];
@@ -28,8 +36,8 @@ try {
       ['partial', '수군을 정비하고 세금을 걷어.'],
     ]) {
       try {
-        await page.request.post('http://127.0.0.1:5277/api/test/reset', { data: {} });
-        await page.goto('http://127.0.0.1:5277');
+        await page.request.post(`${base}/api/test/reset`, { data: {} });
+        await page.goto(base);
         await page.locator('#speech-input').fill(text!); await page.locator('#speech-submit').click();
         await page.waitForSelector('.draft-card');
         await page.screenshot({ path: `${output}/${repro ? 'repro-' : ''}${check}-${size}.png`, animations: 'disabled' });
