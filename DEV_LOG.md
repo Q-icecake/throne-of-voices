@@ -1,5 +1,14 @@
 # Development Log
 
+## 2026-10-26 — 039 V16 / 로컬 LLM 판정·NPC 평가 안전·새 PC 설치
+
+- EXAONE N-zhang-zhao-05/N-zhou-yu-05의 modelRaw를 보존하고 먼저 실패 회귀를 작성했다. 원인은 구조 검사만 하던 NPC eval 후단에 게임의 기존 claim guard가 없었던 것. 같은 guard를 평가에 추가하여 거절(정답으로 승격0), 기존 게임 비노출/엔진 증거 경계 유지. 오프라인 EXAONE 안전2→0·정답19/80 유지, 네 원본 실행8파일 SHA-256 불변.
+- 기본 공급자 기준 정답≥60%·후단안전0·p50≤8초: 로컬은 정확도/지연 미달, EXAONE은 안전도 미달. Mock 유지·실제AI Gemini 잠정 권장·Ollama 선택(로컬 중qwen3:8b). Gemini18건 명령만/v2 modelRaw 미포착 한계와 다음 전체dev/NPC 평가를 LLM_COMPARISON/HANDOFF에 기록.
+- 루트 setup.ps1: Node24+·-InstallNode/-WithOllama 명시적 설치, run.ps1 의존성 설치 재사용, -Verify, 순수 계획·-WhatIf/-DryRun, 한국어 실패·네트워크/권한/모델용량/디스크 안내. loopback 서비스/모델 확인·상속 OLLAMA_HOST 복구, 키 수집/저장0. NEW_PC_SETUP_PROMPT 및 README/USB/LLM/EVAL 링크 갱신. 새 의존성/UI/게임 디자인 변경0.
+- 최종 전체1150/1150(기존1138 유지·신규12), 타입·빌드 통과, verify-all **21/21 종료0**, 정답scripted80/80·오류주입8종 유지(CLI good0/bad1 예상), 실제PowerShell AST/설치모의/64계획/드라이런 통과. 첫 종합20/21은 역사baseline 부재: throne-v02의 기존72파일을 읽기복사·해시 확인 후 전체재검증21/21. 초기실패/출처 증거 보존, 현재이미지 대체0.
+- 증거 artifacts/local-llm-039/, artifacts/m6/; 실제 사용량·진단 전후불변(absent). 실설치·모델다운로드·외부/실제Ollama 호출·비밀값 출력/저장·팝업0. pwsh 미설치는 설치된Windows PowerShell5.1로 검사. 실제 설치/새PC/모델추론 품질은 미검증.
+- 원Git 메타데이터가 F: 읽기전용이므로 허용폴더 독립commit/bundle/patch 제출, 원HEAD 불변·독립import/fsck·patch tree 일치 검증. 확정ID/해시 submission.json, 상세 .codex-runs/039/report.md. 원브랜치 반영은 리드 환경에서 필요; push/계정/전역설정 변경0.
+
 ## 2026-10-25 — 038 V15 / 로컬 Ollama 공급자·모델 비교
 
 - 기준2d20969, 단독 작업. loopback 전용 native Ollama schema chat·직접 Agent·공유 직렬 큐·60초/최대120초·재시도0·qwen3 사고 격리. Google pacer/일일·세션 카운터 미적용, 기존 Mock/validator/엔진 실행 경계 유지. 새 의존성0.

@@ -4,6 +4,8 @@ import { resolve } from 'node:path';
 import { GameEngine } from '../../server/engine.ts';
 import { characterInput } from '../../server/characters.ts';
 import { actionVocabulary, validateProposal } from '../../server/llm/validator.ts';
+import { hasUnsupportedClaim } from '../../server/llm/claims.ts';
+import { ProviderError } from '../../server/llm/types.ts';
 import type { ProviderInput } from '../../server/llm/types.ts';
 import { loadCases } from './fixtures.ts';
 import { mockSource, scriptedSource } from './sources.ts';
@@ -124,7 +126,13 @@ export async function evaluate(fixtures: EvalCase[], source: Source, limits: Lim
       validator: 'not-run', error: sample.error, sample, latencyMs: 0 };
     if (!sample.error && input) {
       try {
-        row.validated = validateProposal(sample.raw, input);
+        const validated = validateProposal(sample.raw, input);
+        // Each eval case starts a fresh engine with no task lifecycle evidence.
+        // Apply the same conservative claim guard as the game display boundary;
+        // never use fixture gold facts, model references or history as proof.
+        if (fixture.suite === 'npc' && [validated.dialogue, ...validated.unresolvedQuestions]
+          .some(text => hasUnsupportedClaim(text))) throw new ProviderError('schema');
+        row.validated = validated;
         row.validatedScore = score(fixture, row.validated);
         row.validator = JSON.stringify(row.raw) === JSON.stringify(row.validated) ? 'unchanged' : 'corrected';
       } catch (e) { row.validator = 'rejected'; row.error = errorCode(e); }
@@ -285,7 +293,8 @@ export async function main(args = process.argv.slice(2), runtime: {
   await mkdir(dir, { recursive: true });
   const report = { version: 3, createdAt: new Date().toISOString(), mode, split, provider: source.provider ?? mode, model: source.model, promptVersion: version,
     stages: { modelRaw: 'decoded model JSON before usage replacement and adapter validation; fixture/mock for offline sources',
-      adapterOutput: 'provider return after its guards; legacy raw/rawScore are adapter aliases', validated: 'validateProposal(adapterOutput); engine/display guards not executed' },
+      adapterOutput: 'provider return after its guards; legacy raw/rawScore are adapter aliases',
+      validated: 'validateProposal(adapterOutput) + NPC hasUnsupportedClaim guard; fresh engine has no task evidence; no game execution' },
     limits: { ...limits, maxCalls: Number.isFinite(limits.maxCalls) ? limits.maxCalls : null, limit: limit ?? null, ids: ids ?? null }, totalCases: fixtures.length,
     availableCases: allFixtures.length, plannedCalls, pacing: mode === 'live' && !local ? { rpm: pacingRpm, estimatedMs, assumedLatencyMs: 2300 } : null, networkPolicy: source.networkPolicy ?? 'offline',
     counterPolicy: source.counterPolicy ?? 'offline', maxOutputTokens: source.maxOutputTokens ?? null,

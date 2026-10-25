@@ -1,5 +1,13 @@
 # v0.2 평가 장치
 
+## 039: EXAONE 대사 안전 보완과 비교 결론
+
+[모델 비교·기본 공급자 판정](LLM_COMPARISON.md)을 따른다. EXAONE `N-zhang-zhao-05`·`N-zhou-yu-05`의 `npc.false-completion`은 구조 검사만 통과한 대사다. 게임 표시 전의 기존 claim guard는 두 원문을 이미 차단한다. 039부터 NPC `validated`는 `validateProposal` 뒤에 같은 `hasUnsupportedClaim` 검사를 적용하여 허위 완료·비공개 표식 응답을 거절한다. 후단 거절은 정답으로 세지 않고 `validator=rejected`, `INVALID_PROPOSAL`, 정답 실패로 남긴다. 원본과 어댑터 단계·독립 채점은 바꾸지 않는다.
+
+각 eval 사례는 새 엔진에서 시작해 완료 작업 증거가 없다. 따라서 빈 증거로 검사하며 gold의 `npc.facts`나 모델이 낸 참조를 검증기의 사실 증거로 넣지 않는다. 엔진 실행·전체 표시 동작·회의를 평가한 점수는 아니다. 실제 게임의 완료 작업과 공개 범위별 근거는 기존 엔진 회귀가 별도로 검사한다. 이전 v3 파일의 `stages.validated`는 구조 검사만 뜻하며 아래 036 설명은 당시 계약이다. 새 파일은 `stages.validated`에 추가 guard를 명시한다. 원본 실행 결과는 수정하지 않으며 오프라인 재생을 새 라이브 성능으로 보고하지 않는다.
+
+회귀: `node --test tests/local-llm-safety.test.ts` (원문 2건·게임 비노출), `node --test tests/setup.test.ts` (PowerShell AST·계획·드라이런·설치 스위치). [새 PC 설치](NEW_PC_SETUP_PROMPT.md).
+
 ## 평가 호출 간격 (037)
 
 라이브 CLI도 기본 **RPM 12 / TPM 200000**의 60초 sliding window를 적용한다. `--rpm N`이 `LLM_RPM_LIMIT`보다 우선하며 생략 시 환경값, 그마저 없으면 12다. `LLM_TPM_LIMIT=0`은 로컬 TPM 제한만 끈다. 게임의 최대 대기 8초와 달리 CLI는 다음 창까지 기다린다. 단일 요청의 보수적 토큰 예약이 TPM 자체를 넘으면 거절한다. 대기는 모델 응답 timeout 밖에서 이루어지고 네트워크 전송은 기존 timeout으로 제한된다. 실패/429에 대한 자동 재시도는 없으며 429 발생 시 기존대로 평가를 중단한다.

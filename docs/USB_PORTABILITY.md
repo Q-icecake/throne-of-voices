@@ -4,6 +4,8 @@
 
 이 폴더(`Throne of Voices`) **하나**면 된다. git 저장소(`.git`)에 전체 히스토리와 백업 태그가 들어 있다. 코드에는 이 PC의 절대 경로가 없다(통합 시 검사함).
 
+단, `.git`이 디렉터리가 아니라 다른 저장소를 가리키는 **파일인 worktree**는 폴더만 복사하면 Git 기록을 옮길 수 없다. USB에는 정본 clone을 복사하거나 독립 clone을 준비한다. 설치 스크립트는 Git 메타데이터를 수정하지 않는다.
+
 **제외해도 되는 것(용량 절약, 다시 만들 수 있음)**: `node_modules/`(수백 MB, `.pnpm-store` 포함), `dist/`, `artifacts/`(스크린샷·평가 결과).
 단, `artifacts/eval/`의 평가 결과는 다시 만들기 어렵다(실호출 결과). 필요하면 함께 복사한다. 그 안에 키는 없다.
 
@@ -20,6 +22,18 @@ robocopy "C:\경로\Throne of Voices" "E:\Throne of Voices" /E /XD node_modules 
 OneDrive 폴더에서 복사하는 경우 파일이 "클라우드에만 있는" 상태일 수 있으니 폴더를 "항상 이 장치에 유지"로 두고 복사한다. 복사 후 USB에서 `git status`가 깨끗한지 확인한다. 프로젝트를 USB 파일시스템에서 직접 열 때 git이 "dubious ownership"을 말하면 한 번만 `git config --global --add safe.directory "E:/Throne of Voices"`를 실행한다. NTFS/exFAT 어느 쪽이든 동작한다.
 
 ## 새 PC에서 처음 한 번 (준비물)
+
+한 번에 준비하려면 저장소 루트의 `setup.ps1`을 사용한다. [새 Claude 창용 설치 프롬프트](NEW_PC_SETUP_PROMPT.md)를 그대로 붙여 넣어도 된다.
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\setup.ps1 -WhatIf -Verify
+# 위 계획을 확인한 뒤 실제 설치 (인터넷 필요)
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\setup.ps1 -Verify
+# Node가 없거나 24 미만일 때만 자동 설치 허용: -InstallNode
+# 로컬 모델을 원할 때만: -WithOllama (-OllamaModel 기본 qwen3:8b)
+```
+
+실행 위치 대신 스크립트 폴더를 기준으로 의존성을 설치하므로 USB의 공백·한글 경로에서도 동작한다. `-WhatIf`/`-DryRun`은 설치·서비스 접속·모델 다운로드를 하지 않는다. 실제 설치의 고정 pnpm·프로젝트 내부 store·frozen lockfile은 `run.ps1 install`을 재사용한다. winget 단계는 설치 관리자 권한이 필요할 수 있으며 자동 권한 상승은 하지 않는다. 실패하면 원인과 다음 조치를 한국어로 출력하고 종료한다. 키는 받거나 저장하지 않는다. 모델은 USB가 아니라 Ollama의 모델 저장 드라이브(기본 사용자 프로필, 선택적 `OLLAMA_MODELS`)에 내려받는다. qwen3:8b는 약 5.2GB이며 여유 10GB 이상을 권장한다.
 
 1. **Node.js 24 이상**(개발 기준 26.12) — npm이 같이 설치된다. https://nodejs.org
 2. **Git** (`git log`로 히스토리를 보려면)

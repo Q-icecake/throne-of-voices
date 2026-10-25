@@ -2,6 +2,8 @@
 
 > **처음이면 [HANDOFF.md](HANDOFF.md)부터 읽는다** (현재 상태, 실행법, 다음 단계, 다른 PC로 옮기는 법).
 
+새 PC는 [Claude Code 설치 프롬프트](docs/NEW_PC_SETUP_PROMPT.md)를 사용하거나 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\setup.ps1 -WhatIf -Verify`로 계획 확인 후 `-WhatIf`를 빼고 설치한다. 자동 Node 설치는 `-InstallNode`, Ollama는 `-WithOllama`로만 선택한다. 키 입력·저장 없음. [모델 비교와 기본 Mock 유지 판정](docs/LLM_COMPARISON.md)을 참고한다.
+
 208년 적벽 전야의 손권이 되어 한국어로 질문하고 명령하는 로컬 역사 전략 게임 시험판이다. 명령 초안 → 확인 → 전달·진행 → 보고 → 인물 반응을 연결한다. 역사 자료·대사·수치는 시험용 재구성이며 사람의 사료 대조가 필요하다. 자동 검증 통과는 역사 정확성이나 사람의 재미를 입증하지 않는다.
 
 ## 실행
@@ -84,8 +86,8 @@ LLM은 행동을 제안할 뿐이다. 엔진이 원문 조건·담당·자원·�
 
 AI 연결 설정은 **자동(권장) / VPN·프록시 / 직접 연결**을 지원한다. 자동은 입력 주소·환경변수·Windows 시스템 프록시·직접 순서로 호출 직전에 하나를 선택하며 자동 재시도는 없다. VPN 끔/TUN·전역 모드는 직접 연결을 사용할 수 있다. 주소는 password 입력 후 서버 메모리에만 보관한다. 요청별 전환이 시작 시 Node 내장 환경 프록시만으로는 부족해 `undici` **8.5.0**의 `ProxyAgent`/`Agent`를 고정 런타임 의존성으로 추가했다. Google 요청에만 적용하며 전역 설정은 바꾸지 않는다. [VPN 사용법 표와 오류 안내](docs/LLM_SETUP.md), 오프라인 검증 `node scripts/verify-network-mode.ts`를 참고한다.
 
-실제 Gemini 호출은 코드가 있으나 **라이브 미검증**이다. 키가 없는 지금은 `eval-llm.ts`도 실행하지 않는다. 추후 사용자가 외부 호출을 승인하고 계정의 무료/유료 여부·모델 접근·한도를 확인한 환경에서만 서버 환경변수로 `LLM_PROVIDER=gemini`, `GEMINI_API_KEY`, `GEMINI_MODEL_ID`, `LLM_TIMEOUT_MS`(최대 15000), `LLM_RETRIES`(기본 0), `LLM_DAILY_CALL_LIMIT`, `LLM_SESSION_CALL_LIMIT`를 설정한다. 두 호출 한도의 기본 0은 호출 차단이다. 키는 파일·브라우저·명령 로그에 넣지 않는다.
+리드가 실행한 Gemini dev 명령 18건은 11/18 정답, NPC는 미측정이다. 로컬 80건과의 [비교·한계](docs/LLM_COMPARISON.md)를 보고 기본 Mock을 유지한다. 이번 작업에서는 라이브 호출을 추가하지 않았다. 추후 사용자가 외부 호출을 승인하고 무료 할당량·모델 접근·한도를 확인한 환경에서만 [LLM 설정](docs/LLM_SETUP.md)을 따른다. 키는 첫 화면에 직접 입력하거나 현재 창 환경변수로만 주고 파일·채팅·명령 로그에 넣지 않는다.
 
-승인된 환경에서 `tests/fixtures/llm-eval.json`의 30문장을 먼저 검토한 뒤 `node scripts/eval-llm.ts --live`를 실행한다. 결과 `artifacts/m2/live-eval.json`의 의도·행동·제한·지연과 원문의 조건을 사람이 대조한다. 현재 평가기의 성공 판정은 조건 배열 전부를 자동 대조하지 않으므로 이 결과만으로 일반 의미 보존을 승인하면 안 된다. 실패 시 추가 호출을 중단하며 유료/다른 모델로 자동 전환하지 않는다. 재시도도 한도에 포함한다. 상세 설정과 일일 사용량 잠금은 [Provider 설명](server/llm/README.md)을 따른다.
+평가 명령과 modelRaw/어댑터/검증 후 단계 계약은 [EVAL.md](docs/EVAL.md)를 따른다. dev는 명령 60+NPC 20건이며 final holdout은 개발 중 채점하지 않는다. 결과는 `artifacts/eval/<실행 ID>/`에 저장하고 사람이 원문의 의미와 대사를 함께 검토한다. 오프라인 `--scripted tests/fixtures/eval-scripted-good.json --split dev`는 외부 호출 없이 실행할 수 있다. 라이브는 별도 승인된 환경에서만 수행하고 한도에 닿으면 중단하며 유료·다른 모델로 자동 전환하지 않는다.
 
 전투·음성·범용 정치 명령·저장 기능은 없다. 전체 구현 범위, 임시 아트와 라이브/사람 미검증 항목은 [알려진 한계](docs/KNOWN_LIMITS.md), 단계 기록은 [DEV_LOG](DEV_LOG.md)에 있다.

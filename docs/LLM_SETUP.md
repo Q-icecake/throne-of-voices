@@ -1,5 +1,7 @@
 # LLM 연결 설정 (v0.2)
 
+039 설치 자동화: `setup.ps1 -WhatIf -WithOllama`로 계획을 확인하고 `-WhatIf`를 빼면 Ollama 설치(필요 시)·loopback 서비스·모델 다운로드·설치 확인을 수행한다. Node 자동 설치는 별도 `-InstallNode`, 빠른 타입·전체 단위 시험은 `-Verify`다. 기본 모델은 qwen3:8b(약 5.2GB, 모델 드라이브 여유 10GB 권장)이고 `-OllamaModel`로 변경한다. 설치만으로 게임 공급자를 바꾸거나 추론을 호출하지 않는다. 키는 받거나 저장하지 않는다. [새 PC 안내](NEW_PC_SETUP_PROMPT.md), [실측 비교·기본 Mock 유지 판정](LLM_COMPARISON.md)을 먼저 읽는다.
+
 ## 로컬 Ollama (038)
 
 기본 `LLM_PROVIDER=mock`과 Gemini 흐름은 유지한다. Ollama는 키가 없으며 Google RPM/TPM pacer·UTC 일일/세션 카운터를 사용하지 않는다. 설정 화면에서 **Ollama(로컬)** 선택 → 주소 확인 → **모델 목록 불러오기** → 설치된 모델 선택 → 설정 적용 → 연결 시험 1회 → **AI로 시작**. 시험하지 않고도 모델을 설정하면 시작할 수 있다. 모델 목록은 브라우저 대신 서버가 `GET /api/tags`로 조회하며 선택/저장만으로 모델 추론을 호출하지 않는다. 앱은 모델을 자동으로 내려받지 않는다.
