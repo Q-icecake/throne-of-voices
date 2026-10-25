@@ -214,6 +214,11 @@ export type AudienceRequest =
   | { type: 'share'; characterId: CharacterId; documentId: string };
 export interface TalkRequest { characterId: CharacterId; text: string }
 export interface TalkResponse {
+  /** Optional v0.2 metadata; legacy clients can ignore it. No prompt content. */
+  speakers?: { id: CharacterId; source: 'AI' | 'offline'; fallback?: boolean }[];
+  failureCode?: 'timeout' | 'rate_limited' | 'auth' | 'schema' | 'server' | 'budget' | 'aborted';
+  usage?: { inputChars: number; inputBytes: number; inputTokens: number | null; outputTokens: number | null; externalCalls: number | null };
+
   source: 'offline' | 'AI' | 'mixed';
   state: PlayerView;
   turns: TalkTurn[];
