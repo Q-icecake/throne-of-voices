@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { once } from 'node:events';
+import { createServer as createPortProbe } from 'node:net';
+import type { AddressInfo } from 'node:net';
 import { chromium } from 'playwright-core';
 import { createServer } from 'vite';
 import { createGameServer } from '../server/http.ts';
@@ -9,9 +11,14 @@ import type { PlayerView } from '../shared/contracts.ts';
 
 const outIndex = process.argv.indexOf('--out');
 const output = outIndex >= 0 ? process.argv[outIndex + 1]! : 'artifacts/m4';
-const api = createGameServer(new GameEngine(), 5280);
-api.listen(3110, '127.0.0.1'); await once(api, 'listening');
-const vite = await createServer({ logLevel: 'error', server: { port: 5280, strictPort: true, proxy: { '/api': 'http://127.0.0.1:3110' } } });
+const probe = createPortProbe(); probe.listen(0, '127.0.0.1'); await once(probe, 'listening');
+const webPort = (probe.address() as AddressInfo).port;
+await new Promise<void>(resolve => probe.close(() => resolve()));
+const base = `http://127.0.0.1:${webPort}`;
+const api = createGameServer(new GameEngine(), webPort);
+api.listen(0, '127.0.0.1'); await once(api, 'listening');
+const apiPort = (api.address() as AddressInfo).port;
+const vite = await createServer({ logLevel: 'error', server: { port: webPort, strictPort: true, proxy: { '/api': `http://127.0.0.1:${apiPort}` } } });
 await vite.listen();
 let browser;
 const checks: { size: string; check: string }[] = [];
@@ -23,7 +30,7 @@ try {
     const size = `${viewport.width}x${viewport.height}`;
     const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
     const pass = (check: string) => { checks.push({ size, check }); console.log(`${size}: ${check}`); };
-    const state = async (): Promise<PlayerView> => (await page.request.get('http://127.0.0.1:5280/api/state')).json();
+    const state = async (): Promise<PlayerView> => (await page.request.get(`${base}/api/state`)).json();
     const settle = async () => { await page.waitForSelector('#speech-submit:not([disabled]), #speech-input:placeholder-shown'); await page.waitForTimeout(400); };
     const send = async (text: string) => {
       await page.fill('#speech-input', text); await page.click('#speech-submit');
@@ -40,8 +47,8 @@ try {
         return r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight && e.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2));
       });
     }), 'input and controls must be visible and unobstructed');
-    await page.request.post('http://127.0.0.1:5280/api/test/reset', { data: {} });
-    await page.goto('http://127.0.0.1:5280'); await page.waitForSelector('#connection:has-text("서버 연결됨")');
+    await page.request.post(`${base}/api/test/reset`, { data: {} });
+    await page.goto(`${base}/?start=court`); await page.waitForSelector('#connection:has-text("서버 연결됨")');
     for (const [id, name, reason] of [['zhang-hong', '장굉', '원문'], ['zhang-zhao', '장조', '정치적'], ['zhou-yu', '주유', '전투력'], ['lu-su', '노숙', '노출']]) {
       await page.click('#tool-audience'); await page.click(`[data-invite="${id}"]`);
       await page.waitForSelector('#panel[hidden]', { state: 'attached' });
@@ -115,7 +122,7 @@ try {
     assert.match(await page.locator('.audience-person').filter({ hasText: '주유' }).innerText(), /임무 중/);
     pass('dismiss/defer, command confirmation, busy audience visibly disabled');
 
-    await page.request.post('http://127.0.0.1:5280/api/test/reset', { data: {} });
+    await page.request.post(`${base}/api/test/reset`, { data: {} });
     await page.reload(); await page.waitForSelector('#connection:has-text("서버 연결됨")');
     await page.click('#tool-audience');
     await page.click('[data-defer="zhang-zhao"]');

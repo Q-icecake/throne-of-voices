@@ -264,7 +264,7 @@ try {
   for (const size of SIZES) {
     const page = await browser.newPage({ viewport: size, deviceScaleFactor: 1 });
     const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-    await page.goto(base);
+    await page.goto(`${base}/?start=court`);
     for (const scene of wanted) {
       const step = SCENES[scene];
       if (!step) throw new Error(`Unknown scene ${scene}`);

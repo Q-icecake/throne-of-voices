@@ -226,3 +226,13 @@ export interface TalkResponse {
   outcome?: CommandOutcome;
   notice?: string;
 }
+/** Public start-screen settings. Credentials are never part of this contract. */
+export type ConnectionTestResult = 'untested' | 'ok' | 'auth' | 'model' | 'rate_limited' | 'timeout' | 'schema' | 'server' | 'budget' | 'stale';
+export interface LlmStatus {
+  keyConfigured: boolean;
+  keySource: 'screen' | 'env' | 'none';
+  model: string;
+  limit: number;
+  testResult: ConnectionTestResult;
+  mode: 'mock' | 'ai';
+}

@@ -17,6 +17,9 @@ import zhaoArt from './assets/zhang-zhao.svg';
 import yuArt from './assets/zhou-yu.svg';
 import suArt from './assets/lu-su.svg';
 import hongArt from './assets/zhang-hong.svg';
+import { enterStartScreen } from './start-screen.ts';
+
+await enterStartScreen();
 
 const stage = byId('stage');
 const speechInput = byId<HTMLTextAreaElement>('speech-input');

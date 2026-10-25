@@ -35,7 +35,7 @@ try {
     const pass = (check: string) => { checks.push({ size, check }); console.log(`${size}: ${check}`); };
     const state = async (): Promise<PlayerView> => (await page.request.get(`${base}/api/state`)).json();
     await page.request.post(`${base}/api/test/reset`, { data: {} });
-    await page.goto(base);
+    await page.goto(`${base}/?start=court`);
     await page.locator('#speech-input').fill(order); await page.locator('#speech-submit').click();
     await page.waitForSelector('.action-row');
     assert.equal(await page.locator('.action-row').count(), 3);

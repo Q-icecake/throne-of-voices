@@ -4,6 +4,8 @@ import { PAUSE_REASONS } from '../shared/contracts.ts';
 import type { CommandOutcome, CommandRequest, PauseReason, TestAction } from '../shared/contracts.ts';
 import { GameEngine } from './engine.ts';
 import { configuredProvider } from './llm/config.ts';
+import { RuntimeSettings } from './llm/runtime-settings.ts';
+import type { RuntimeOptions } from './llm/runtime-settings.ts';
 import type { InterpretationProvider } from './llm/types.ts';
 import type { ProviderErrorCode } from './llm/types.ts';
 import { PROVIDER_MESSAGES } from './llm/types.ts';
@@ -90,15 +92,25 @@ export function parseCommand(value: Record<string, unknown>): CommandRequest {
 }
 
 /** `webPort` is the local Vite port whose pages may call the API (default: the dev server). */
-export function createGameServer(engine?: GameEngine | GameEngine<InterpretationProvider | undefined>, webPort = 5173) {
+export function createGameServer(engine?: GameEngine | GameEngine<InterpretationProvider | undefined>, webPort = 5173, runtimeOptions: RuntimeOptions = {}) {
+  const runtime = new RuntimeSettings(runtimeOptions);
   if (!engine) {
     const config = configuredProvider();
     engine = new GameEngine(undefined, undefined, config.provider, config.timeoutMs, config.status, { mode: 'auto', ready: false });
   }
-  const game = engine;
+  let game = engine;
+  let generation = 0;
+  const replaceGame = () => {
+    game.reset(); // Existing engine request versions invalidate pending command/talk results.
+    generation++;
+    game = new GameEngine(undefined, undefined, runtime.provider(), 15000, undefined, { mode: 'auto', ready: false });
+    failureCode = undefined;
+  };
   let failureCode: ProviderErrorCode | undefined;
   const providerResult = async <T extends { outcome?: CommandOutcome }>(work: () => T | Promise<T>) => {
+    const started = generation;
     const { result, code } = await captureFailure(async () => await work());
+    if (started !== generation) return { state: game.view(), outcome: { kind: 'error', code: 'STALE_RESPONSE', reply: '설정이 바뀌어 이전 응답을 무시했습니다.' } };
     if (result.outcome?.kind === 'error' && result.outcome.code !== 'STALE_RESPONSE') {
       failureCode = code ?? 'schema';
       // Keep legacy outcome.code for existing clients/eval. providerCode is the neutral wire contract.
@@ -109,6 +121,8 @@ export function createGameServer(engine?: GameEngine | GameEngine<Interpretation
     return result;
   };
   const json = (response: ServerResponse, status: number, payload: unknown): void => {
+    // Include historical screen keys after clear, so late responses/exports fail closed too.
+    try { runtime.assertSafe(payload); } catch { sendJson(response, 500, { error: 'RESPONSE_REDACTED' }); return; }
     // Overlay the existing chip on command/talk responses and subsequent health/state polls.
     if (failureCode && payload && typeof payload === 'object') {
       const copy = structuredClone(payload) as Record<string, unknown>;
@@ -128,24 +142,48 @@ export function createGameServer(engine?: GameEngine | GameEngine<Interpretation
         throw new HttpError(403, 'ORIGIN_REJECTED');
       }
       const path = new URL(request.url ?? '/', 'http://127.0.0.1').pathname;
+      if (request.method === 'GET' && path === '/api/llm/status') return json(response, 200, runtime.status());
+      if (request.method === 'POST' && path.startsWith('/api/llm/')) {
+        const body = await readObject(request);
+        switch (path) {
+          case '/api/llm/settings': {
+            if (!exactKeys(body, ['model', 'key', 'limit']) || typeof body.model !== 'string' || !/^[a-zA-Z0-9._-]{1,200}$/.test(body.model) ||
+              typeof body.key !== 'string' || body.key.length > 512 || /[\s\x00-\x1f\x7f]/.test(body.key) ||
+              typeof body.limit !== 'number' || !Number.isSafeInteger(body.limit) || body.limit < 0 || body.limit > 10000) throw new HttpError(400, 'INVALID_SETTINGS');
+            try { runtime.configure(body.model, body.key, body.limit); } catch { throw new HttpError(400, 'INVALID_SETTINGS'); }
+            replaceGame(); return json(response, 200, runtime.status());
+          }
+          case '/api/llm/test':
+            if (!exactKeys(body, [])) throw new HttpError(400, 'EMPTY_OBJECT_REQUIRED');
+            return json(response, 200, { result: await runtime.test(), status: runtime.status() });
+          case '/api/llm/clear':
+            if (!exactKeys(body, [])) throw new HttpError(400, 'EMPTY_OBJECT_REQUIRED');
+            runtime.clear(); replaceGame(); return json(response, 200, runtime.status());
+          case '/api/llm/start':
+            if (!exactKeys(body, ['mode']) || (body.mode !== 'mock' && body.mode !== 'ai')) throw new HttpError(400, 'INVALID_MODE');
+            try { runtime.select(body.mode); } catch { throw new HttpError(400, 'AI_NOT_CONFIGURED'); }
+            replaceGame(); return json(response, 200, runtime.status());
+        }
+        throw new HttpError(404, 'NOT_FOUND');
+      }
       if (request.method === 'GET') {
         switch (path) {
           case '/api/health': return json(response, 200, { milestone: 'M5', mode: game.view().mode, clock: game.view().opening?.clockMode ?? 'manual-fake', interpretation: game.view().interpretation });
-          case '/api/state': return json(response, 200, engine.view());
-          case '/api/test/snapshot': return json(response, 200, engine.publicSnapshot());
-          case '/api/test/logs': return json(response, 200, engine.logs());
+          case '/api/state': return json(response, 200, game.view());
+          case '/api/test/snapshot': return json(response, 200, game.publicSnapshot());
+          case '/api/test/logs': return json(response, 200, game.logs());
         }
       }
       if (request.method === 'POST' && path === '/api/test/reset') {
         const body = await readObject(request);
         if (!exactKeys(body, [])) throw new HttpError(400, 'EMPTY_OBJECT_REQUIRED');
-        engine.reset();
+        game.reset();
         failureCode = undefined;
-        return json(response, 200, { state: engine.view() });
+        return json(response, 200, { state: game.view() });
       }
       if (request.method === 'POST' && path === '/api/test/action') {
         const action = parseAction(await readObject(request));
-        return json(response, 200, engine.dispatch(action));
+        return json(response, 200, game.dispatch(action));
       }
       if (request.method === 'POST' && path === '/api/command') {
         const command = parseCommand(await readObject(request));

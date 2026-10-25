@@ -55,7 +55,7 @@ try {
       if (!route.request().url().startsWith(`${base}/`)) throw new Error('External browser request forbidden');
       return route.continue();
     });
-    await page.goto(base);
+    await page.goto(`${base}/?start=court`);
     await page.waitForSelector('#connection:has-text("서버 연결됨")');
     assert.match(await page.locator('#interpretation-status').innerText(), /AI.*시험 응답/);
     const text = '공근더러 우리 배와 뱃사람들의 채비를 갖추도록 일러라.';

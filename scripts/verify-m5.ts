@@ -29,7 +29,7 @@ try {
     const waitState = async (predicate: (s: PlayerView) => boolean, timeout = 10000) => { const start = performance.now(); while (!predicate(await state())) { if (performance.now() - start > timeout) throw new Error('Timed out waiting for server state'); await new Promise(resolve => setTimeout(resolve, 100)); } };
     const shot = async (name: string) => { await page.waitForTimeout(300); await page.screenshot({ path: `${output}/${name}-${size}.png`, animations: 'disabled' }); };
     const pass = (name: string, evidence?: unknown) => { checks.push({ size, name, passed: true, evidence }); console.log(`${size}: PASS ${name}`); };
-    await page.request.post(`${base}/api/test/reset`, { data: {} }); await page.goto(base);
+    await page.request.post(`${base}/api/test/reset`, { data: {} }); await page.goto(`${base}/?start=court`);
     await page.waitForSelector('#connection:has-text("서버 연결됨")');
     assert.equal((await state()).opening!.clockMode, 'auto');
     assert.equal(await page.locator('#stage').getAttribute('data-panel'), 'none');

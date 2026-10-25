@@ -36,7 +36,7 @@ try {
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.request.post('http://127.0.0.1:5281/api/test/reset', { data: {} });
-    await page.goto('http://127.0.0.1:5281');
+    await page.goto('http://127.0.0.1:5281/?start=court');
     await page.waitForSelector('#connection:has-text("서버 연결됨")');
     const advanced = await page.request.post('http://127.0.0.1:5281/api/test/action', { data: { type: 'advance-clock', milliseconds: 25000 } });
     assert.ok(advanced.ok());

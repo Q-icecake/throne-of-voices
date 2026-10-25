@@ -37,7 +37,7 @@ try {
     ]) {
       try {
         await page.request.post(`${base}/api/test/reset`, { data: {} });
-        await page.goto(base);
+        await page.goto(`${base}/?start=court`);
         await page.locator('#speech-input').fill(text!); await page.locator('#speech-submit').click();
         await page.waitForSelector('.draft-card');
         await page.screenshot({ path: `${output}/${repro ? 'repro-' : ''}${check}-${size}.png`, animations: 'disabled' });

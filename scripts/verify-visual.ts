@@ -25,7 +25,7 @@ try {
     const state = async (): Promise<PlayerView> => await page.evaluate(async () => (await fetch('/api/state')).json());
     const reset = async () => {
       await page.request.post('http://127.0.0.1:5274/api/test/reset', { data: {} });
-      await page.goto('http://127.0.0.1:5274');
+      await page.goto('http://127.0.0.1:5274/?start=court');
       await page.waitForSelector('#connection:has-text("서버 연결됨")');
     };
     await reset();

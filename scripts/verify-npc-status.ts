@@ -69,7 +69,7 @@ try {
       const draft = await engine.command({ type: 'submit', text: '주유는 수군을 정비해.' });
       assert.equal(draft.outcome.kind, 'draft');
       fault = 'good';
-      await page.goto('http://127.0.0.1:5286');
+      await page.goto('http://127.0.0.1:5286/?start=court');
       await page.waitForSelector('#connection:has-text("서버 연결됨")');
       await page.waitForFunction(() => !document.querySelector<HTMLButtonElement>('#refresh')!.disabled);
       await page.locator('#hotspot-zhang-hong').click();
