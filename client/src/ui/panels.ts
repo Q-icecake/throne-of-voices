@@ -1,0 +1,186 @@
+import type { CommandDraftView, PlayerView, PublicDocument, PublicLogRecord, TaskView } from '../../../shared/contracts.ts';
+import { h, seconds } from './dom.ts';
+
+export interface PanelActions {
+  openDocument(id: string): void;
+  confirm(draft: CommandDraftView): void;
+  cancel(draft: CommandDraftView): void;
+  revise(draft: CommandDraftView, text: string): void;
+  busy: boolean;
+}
+
+export const LEDGER_DOC_ID = 'ledger';
+const POLICY_LABELS = { hold: '대기 (별도 지시 없음)', 'no-first-strike': '선제공격 금지' } as const;
+const STAGES: { id: TaskView['stage'] | 'registered'; label: string }[] = [
+  { id: 'registered', label: '등록' }, { id: 'delivering', label: '전달 중' },
+  { id: 'in-progress', label: '정비 중' }, { id: 'completed', label: '완료' },
+];
+
+/** The ledger is shown as a document so players read recorded values with their record time. */
+function ledgerDocument(state: PlayerView): PublicDocument {
+  const l = state.ledger;
+  return {
+    id: LEDGER_DOC_ID, title: '수군·군량 장부', source: l.source,
+    claim: `수군 준비도 ${l.navalReadiness} · 군량 ${l.grain} · 교전 방침 ${POLICY_LABELS[l.engagementPolicy]}. 장부에 기록된 값이며, 기록 이후의 변화는 다음 보고가 와야 반영됩니다.`,
+    observedAtMs: l.recordedAtMs, arrivedAtMs: l.recordedAtMs, evidence: '장부 기록 (시험용 수치)',
+    region: '강동 수군', provenance: 'test-reconstruction',
+  };
+}
+
+export function documentList(state: PlayerView): PublicDocument[] {
+  return [ledgerDocument(state), ...[...state.knowledge.documents].reverse()];
+}
+
+export function documentPanel(state: PlayerView, selectedId: string | null, actions: PanelActions): HTMLElement {
+  const docs = documentList(state);
+  const selected = docs.find(doc => doc.id === selectedId) ?? docs[0]!;
+  const list = h('ul', { class: 'doc-list', 'aria-label': '받은 문서' }, ...docs.map(doc => h('li', {},
+    h('button', { type: 'button', class: 'doc-item', 'aria-current': String(doc.id === selected.id), onclick: () => actions.openDocument(doc.id) },
+      h('span', { class: 'doc-item-title' }, doc.title),
+      h('span', { class: 'doc-item-meta' }, `${doc.source} · ${seconds(doc.arrivedAtMs)}`)))));
+  const task = selected.taskId ? state.tasks.find(item => item.id === selected.taskId) : undefined;
+  const meta: [string, string][] = [
+    ['출처', selected.source], ['관측 / 도착', `${seconds(selected.observedAtMs)} / ${seconds(selected.arrivedAtMs)} (시험 시계)`],
+    ['근거', selected.evidence], ['관련 지역', selected.region], ['성격', '역사 검토 전 시험용 재구성'],
+    ...(task ? [['관련 작업', `${task.id} · ${task.actionLabel}`] as [string, string]] : []),
+  ];
+  const paper = h('article', { class: 'paper', 'aria-labelledby': 'paper-title' },
+    h('h3', { id: 'paper-title', class: 'paper-title' }, selected.title),
+    h('p', { class: 'paper-body' }, selected.claim),
+    h('dl', { class: 'paper-meta' }, ...meta.flatMap(([label, value]) => [h('dt', {}, label), h('dd', {}, value)])),
+    h('span', { class: 'stamp' }, '시험 자료'));
+  return h('div', { class: 'doc-panel' }, list, paper);
+}
+
+function draftCard(draft: CommandDraftView, actions: PanelActions): HTMLElement {
+  const rows: [string, string][] = [
+    ['행동', draft.actionLabel], ['대상', draft.target], ['담당', draft.assignee.name], ['전달', `${draft.messenger.name} (전령)`],
+    ['예상 비용', `군량 ${draft.estimate.grain} · 정비 착수 시 1회`],
+    ['예상 소요', `전달 ${seconds(draft.estimate.deliveryMs)} + 정비 ${seconds(draft.estimate.workMs)} (시험 시계)`],
+    ['예상 효과', `수군 준비도 +${draft.estimate.readinessGain} (시험 규칙)`],
+  ];
+  const restrictions = draft.restrictions.length
+    ? h('ul', { class: 'restrictions' }, ...draft.restrictions.map(item => h('li', {}, item.label)))
+    : h('p', { class: 'muted' }, '제한 조건 없음');
+  const editor = h('div', { class: 'revise', hidden: true },
+    h('label', { for: `revise-${draft.id}` }, '지시를 고쳐 말하기'),
+    h('textarea', { id: `revise-${draft.id}`, rows: '2', maxlength: '2000' }));
+  const textarea = editor.querySelector('textarea')!;
+  textarea.value = draft.text;
+  const reviseButton = h('button', { type: 'button', class: 'btn', disabled: actions.busy, onclick: () => {
+    if (editor.hidden) { editor.hidden = false; reviseButton.textContent = '수정 반영'; textarea.focus(); return; }
+    if (textarea.value.trim()) actions.revise(draft, textarea.value);
+  } }, '수정');
+  return h('article', { class: 'draft-card', 'data-draft': draft.id },
+    h('header', { class: 'draft-head' },
+      h('h3', {}, `명령 초안 · ${draft.id}`), h('span', { class: 'version' }, `버전 ${draft.version}`)),
+    h('blockquote', { class: 'draft-quote' }, draft.text),
+    h('dl', { class: 'draft-rows' }, ...rows.flatMap(([label, value]) => [h('dt', {}, label), h('dd', {}, value)])),
+    h('div', { class: 'draft-restrictions' }, h('h4', {}, '제한'), restrictions),
+    draft.unresolved.length ? h('div', {}, h('h4', {}, '미해결'), h('ul', {}, ...draft.unresolved.map(item => h('li', {}, item)))) : null,
+    editor,
+    h('div', { class: 'draft-actions' },
+      h('button', { type: 'button', class: 'btn btn-primary', disabled: actions.busy, onclick: () => actions.confirm(draft) }, '확인 · 전령 보내기'),
+      reviseButton,
+      h('button', { type: 'button', class: 'btn btn-quiet', disabled: actions.busy, onclick: () => actions.cancel(draft) }, '초안 취소')),
+    h('p', { class: 'muted' }, '이 창을 닫아도 초안은 그대로 남습니다. 확인 전에는 아무것도 실행되지 않습니다.'));
+}
+
+function taskCard(task: TaskView, state: PlayerView, actions: PanelActions): HTMLElement {
+  const reached = (stage: string) => {
+    if (stage === 'registered') return true;
+    if (stage === 'delivering') return true;
+    if (stage === 'in-progress') return task.stage !== 'delivering';
+    return task.stage === 'completed';
+  };
+  const current = task.stage;
+  const reports = task.reportIds.map(id => state.knowledge.documents.find(doc => doc.id === id)).filter(Boolean) as PublicDocument[];
+  return h('article', { class: 'task-card', 'data-task': task.id },
+    h('header', { class: 'draft-head' }, h('h3', {}, `작업 · ${task.id}`), h('span', { class: 'version' }, `${task.draftId} v${task.draftVersion}`)),
+    h('ol', { class: 'stages' }, ...STAGES.map(stage => h('li', {
+      class: `step ${reached(stage.id) ? 'reached' : ''} ${stage.id === current ? 'current' : ''}`,
+      ...(stage.id === current ? { 'aria-current': 'step' } : {}),
+    }, stage.label))),
+    h('dl', { class: 'draft-rows' },
+      h('dt', {}, '담당'), h('dd', {}, task.assignee.name),
+      h('dt', {}, '제한'), h('dd', {}, task.restrictions.map(item => item.label).join(', ') || '없음'),
+      h('dt', {}, '등록'), h('dd', {}, seconds(task.registeredAtMs)),
+      h('dt', {}, '전달'), h('dd', {}, task.deliveredAtMs !== undefined ? seconds(task.deliveredAtMs) : '아직'),
+      h('dt', {}, '완료'), h('dd', {}, task.completedAtMs !== undefined ? seconds(task.completedAtMs) : '아직'),
+      h('dt', {}, '사용한 군량'), h('dd', {}, task.grainSpent ? String(task.grainSpent) : '아직 없음')),
+    reports.length ? h('div', { class: 'task-reports' }, h('h4', {}, '관련 보고'),
+      ...reports.map(report => h('button', { type: 'button', class: 'link', onclick: () => actions.openDocument(report.id) }, `${report.title} · ${seconds(report.arrivedAtMs)}`))) : null,
+    h('p', { class: 'muted' }, task.stage === 'completed'
+      ? '정비만 수행했습니다. 이 시제품에는 교전 처리가 없습니다.'
+      : '시간이 흘러야 진행됩니다. 시험 도구의 시계 버튼으로 시간을 보낼 수 있습니다.'));
+}
+
+const STATUS_LABELS = { 'awaiting-confirmation': '확인 대기', confirmed: '확정', cancelled: '취소', rejected: '반려' } as const;
+
+export function commandPanel(state: PlayerView, actions: PanelActions): HTMLElement {
+  const awaiting = state.drafts.filter(draft => draft.status === 'awaiting-confirmation');
+  const closed = state.drafts.filter(draft => draft.status === 'cancelled' || draft.status === 'rejected');
+  const tasks = [...state.tasks].reverse();
+  return h('div', { class: 'command-panel' },
+    awaiting.length ? h('section', {}, ...awaiting.map(draft => draftCard(draft, actions))) : null,
+    tasks.length ? h('section', {}, h('h3', { class: 'section-label' }, '진행 중인 일과 지난 일'), ...tasks.map(task => taskCard(task, state, actions))) : null,
+    closed.length ? h('details', { class: 'closed-drafts' }, h('summary', {}, `취소·반려된 초안 ${closed.length}건`),
+      h('ul', {}, ...closed.map(draft => h('li', {}, `${draft.id} v${draft.version} · ${STATUS_LABELS[draft.status]} · 「${draft.text}」${draft.statusNote ? ` — ${draft.statusNote}` : ''}`)))) : null,
+    !awaiting.length && !tasks.length && !closed.length
+      ? h('p', { class: 'muted' }, '아직 내린 명령이 없습니다. 아래 입력란에서 장굉에게 지시하면 초안이 이곳에 나타납니다.') : null);
+}
+
+export function recordPanel(logs: PublicLogRecord[]): HTMLElement {
+  return h('ol', { class: 'record-list', reversed: true }, ...[...logs].reverse().map(log => h('li', {},
+    h('span', { class: 'record-time' }, seconds(log.atActiveMs)),
+    h('span', { class: 'record-id' }, log.id),
+    h('span', { class: 'record-summary' }, log.summary))));
+}
+
+export function mapPanel(state: PlayerView, actions: PanelActions): HTMLElement {
+  const wrapper = h('div', { class: 'map-panel' });
+  wrapper.innerHTML = MAP_SVG; // static markup, no user text
+  const regions = [
+    { id: 'map-jiangdong', label: '강동', docs: state.knowledge.documents.filter(doc => doc.region === '강동') },
+    { id: 'map-navy', label: '강동 수군', docs: state.knowledge.documents.filter(doc => doc.region === '강동 수군') },
+  ];
+  const legend = h('ul', { class: 'map-legend' }, ...regions.map(region => h('li', {},
+    h('strong', {}, region.label), ' · ',
+    region.docs.length
+      ? h('span', {}, ...region.docs.map((doc, index) => h('span', {}, index ? ', ' : '', h('button', { type: 'button', class: 'link', onclick: () => actions.openDocument(doc.id) }, doc.title))))
+      : region.id === 'map-navy'
+        ? h('button', { type: 'button', class: 'link', onclick: () => actions.openDocument(LEDGER_DOC_ID) }, '수군·군량 장부')
+        : h('span', { class: 'muted' }, '받은 보고 없음'))));
+  for (const region of regions) {
+    const marker = wrapper.querySelector<SVGGElement>(`#${region.id}`);
+    const first = region.docs.at(-1)?.id ?? (region.id === 'map-navy' ? LEDGER_DOC_ID : null);
+    if (marker && first) {
+      marker.setAttribute('tabindex', '0');
+      marker.setAttribute('role', 'button');
+      marker.setAttribute('aria-label', `${region.label} 관련 자료 열기`);
+      marker.addEventListener('click', () => actions.openDocument(first));
+      marker.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); actions.openDocument(first); } });
+    }
+  }
+  wrapper.append(legend, h('p', { class: 'muted' }, '시험용 개념도입니다. 축척·지리 정확성이 없으며 관측된 병력은 표시하지 않습니다. 받은 보고가 있는 곳만 표시합니다.'));
+  return wrapper;
+}
+
+const MAP_SVG = `
+<svg class="silk-map" viewBox="0 0 720 400" role="img" aria-labelledby="map-title map-desc">
+  <title id="map-title">강동 주변 시험용 개념도</title>
+  <desc id="map-desc">형주와 강동, 그 사이의 장강을 표시한 개념도. 병력이나 실시간 위치 정보는 포함하지 않습니다.</desc>
+  <defs>
+    <linearGradient id="silk" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d9c79d"/><stop offset="1" stop-color="#c4ad7c"/></linearGradient>
+    <pattern id="weave" width="6" height="6" patternUnits="userSpaceOnUse"><path d="M0 3h6M3 0v6" stroke="#b39a68" stroke-width=".5" opacity=".5"/></pattern>
+  </defs>
+  <rect width="720" height="400" fill="url(#silk)"/><rect width="720" height="400" fill="url(#weave)"/>
+  <rect x="10" y="10" width="700" height="380" fill="none" stroke="#7a5a2e" stroke-width="2"/>
+  <path d="M-20 150 C100 120 160 260 280 210 S480 140 565 230 S700 260 760 220" stroke="#6f8a83" stroke-width="34" fill="none" opacity=".75"/>
+  <path d="M-20 150 C100 120 160 260 280 210 S480 140 565 230 S700 260 760 220" stroke="#a9bfb5" stroke-width="2" fill="none"/>
+  <g fill="none" stroke="#5a5040" stroke-width="2.5" opacity=".55"><path d="M60 90l25-32 25 32 23-24 24 24"/><path d="M455 100l25-32 25 32 23-24 24 24"/><path d="M170 340l25-32 25 32 23-24 24 24"/></g>
+  <g fill="#3b3328" font-family="Batang, serif"><text x="140" y="140" font-size="28">형주</text><text x="330" y="196" font-size="18" letter-spacing="8">장강</text></g>
+  <g id="map-jiangdong" class="map-marker"><circle cx="500" cy="300" r="9" fill="#9b3b2e"/><text x="516" y="308" font-size="28" fill="#3b3328" font-family="Batang, serif">강동</text></g>
+  <g id="map-navy" class="map-marker"><path d="M560 250 l12 -10 l12 10 l-12 6 z" fill="#2f4a44"/><text x="590" y="256" font-size="15" fill="#2f4a44" font-family="Batang, serif">수군 진영</text></g>
+  <text x="24" y="378" fill="#5c5244" font-size="13">시험용 개념도 · 축척 없음 · 관측된 병력 표시 없음</text>
+</svg>`;

@@ -75,14 +75,16 @@ export function parseCommand(value: Record<string, unknown>): CommandRequest {
   throw new HttpError(400, 'INVALID_COMMAND');
 }
 
-export function createGameServer(engine = new GameEngine()) {
+/** `webPort` is the local Vite port whose pages may call the API (default: the dev server). */
+export function createGameServer(engine = new GameEngine(), webPort = 5173) {
+  const allowedOrigins = [`http://127.0.0.1:${webPort}`, `http://localhost:${webPort}`];
   const server = createServer(async (request, response) => {
     try {
       // Loopback binding plus Host/Origin checks keep this local test harness local.
       const host = request.headers.host ?? '';
       if (!/^(127\.0\.0\.1|localhost):\d+$/.test(host)) throw new HttpError(403, 'LOCAL_HOST_REQUIRED');
       const origin = request.headers.origin;
-      if (origin && origin !== `http://${host}` && origin !== 'http://127.0.0.1:5173' && origin !== 'http://localhost:5173') {
+      if (origin && origin !== `http://${host}` && !allowedOrigins.includes(origin)) {
         throw new HttpError(403, 'ORIGIN_REJECTED');
       }
       const path = new URL(request.url ?? '/', 'http://127.0.0.1').pathname;
