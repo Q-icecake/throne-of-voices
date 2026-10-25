@@ -46,4 +46,4 @@ PowerShell이 스크립트 실행을 막으면 현재 창에서만 `Set-Executio
 
 ## 이 PC의 옛 작업 폴더 정리 (선택, 급하지 않음)
 
-`C:\Users\q_ice\dispatch-work\throne-*`는 이 저장소의 git worktree였다. 내용은 모두 main에 들어갔으므로 필요 없지만, 백업 태그가 있으니 지워도 복구 가능하다. 지울 때는 폴더만 삭제하지 말고 먼저 `git worktree remove <경로>`, 그다음 `git worktree prune`을 사용한다. 실행 중인 평가가 그 폴더를 쓰고 있을 수 있으니 끝난 뒤에 한다. `dispatch-work\throne-v02\artifacts\`에는 평가 결과·스크린샷이 있으니 필요한 것은 복사해 둔다.
+`%USERPROFILE%\dispatch-work\throne-*`는 이 저장소의 git worktree였다. 내용은 모두 main에 들어갔으므로 필요 없지만, 백업 태그가 있으니 지워도 복구 가능하다. 지울 때는 폴더만 삭제하지 말고 먼저 `git worktree remove <경로>`, 그다음 `git worktree prune`을 사용한다. 실행 중인 평가가 그 폴더를 쓰고 있을 수 있으니 끝난 뒤에 한다. `dispatch-work\throne-v02\artifacts\`에는 평가 결과·스크린샷이 있으니 필요한 것은 복사해 둔다.
