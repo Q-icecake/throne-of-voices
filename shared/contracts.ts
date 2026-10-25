@@ -178,7 +178,7 @@ export type CommandOutcome =
   | { kind: 'rejected'; code: RejectionCode; reply: string };
 
 export type LogKind =
-  | 'dialogue-filtered'
+  | 'llm-usage-reset' | 'dialogue-filtered'
   | 'opening-event' | 'audience' | 'talk' | 'document-shared' | 'relationship'
   | 'reset' | TestAction['type']
   | 'command-submit' | 'command-revise' | 'command-cancel' | 'command-confirm' | 'command-rejected'
@@ -227,8 +227,12 @@ export interface TalkResponse {
   notice?: string;
 }
 /** Public start-screen settings. Credentials are never part of this contract. */
-export type ConnectionTestResult = 'untested' | 'ok' | 'auth' | 'model' | 'rate_limited' | 'timeout' | 'schema' | 'server' | 'budget' | 'stale';
+export type ConnectionTestResult = 'daily_limit' | 'session_limit' | 'untested' | 'ok' | 'auth' | 'model' | 'rate_limited' | 'timeout' | 'schema' | 'server' | 'budget' | 'stale';
 export interface LlmStatus {
+  dailyCalls: number;
+  dailyLimit: number;
+  sessionCalls: number;
+  sessionLimit: number;
   keyConfigured: boolean;
   keySource: 'screen' | 'env' | 'none';
   model: string;

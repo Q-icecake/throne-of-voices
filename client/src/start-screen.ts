@@ -3,8 +3,9 @@ import background from './assets/court-background.svg';
 import type { ConnectionTestResult, LlmStatus } from '../../shared/contracts.ts';
 
 export const TEST_LABELS: Record<ConnectionTestResult, string> = {
-  untested: '시험 전', ok: '정상', auth: '키 오류', model: '모델 없음', rate_limited: '한도 초과',
-  timeout: '시간 초과', schema: '응답 형식 오류', server: '서버 오류', budget: '한도 초과 · 로컬 호출 상한', stale: '설정 변경 · 이전 시험 무시',
+  untested: '시험 전', ok: '정상', auth: '키 오류', model: '모델 없음', rate_limited: 'Google 한도 초과(429)',
+  daily_limit: '로컬 일일 상한(UTC) 도달', session_limit: '로컬 세션 상한 도달',
+  timeout: '시간 초과', schema: '응답 형식 오류', server: '서버 오류', budget: '로컬 카운터 확인 실패 · 호출 차단', stale: '설정 변경 · 이전 시험 무시',
 };
 
 /** Court initialization (including its opening clock) begins only after explicit start. */
@@ -32,6 +33,9 @@ export async function enterStartScreen(): Promise<void> {
           <p>무료 티어 입력은 제품 개선에 쓰일 수 있습니다. <strong>개인정보·다른 사람의 정보를 입력하지 마세요.</strong></p>
           <p>모델 ID는 본인의 콘솔에서 확인한 값을 입력하세요. 앱은 사용 가능한 모델이나 무료 제공을 보장하지 않습니다.</p>
           <p>키는 로컬 서버 메모리에만 보관합니다. 서버를 끄면 사라지며 켤 때마다 다시 입력합니다. 브라우저·디스크에 저장하지 않습니다.</p>
+          <p id="local-usage" class="start-field-note" role="status" aria-live="polite">로컬 사용량 확인 중…</p>
+          <button id="reset-usage" aria-describedby="reset-usage-note">오늘 로컬 카운터 초기화</button>
+          <p id="reset-usage-note" class="start-field-note">Google 쪽 실제 사용량은 바뀌지 않습니다. 서버 세션 사용량과 상한은 유지됩니다.</p>
         </div>
         <div>
           <h2>② 연결 정보</h2>
@@ -57,7 +61,7 @@ export async function enterStartScreen(): Promise<void> {
     </section><p id="start-error" class="start-error" role="alert" hidden></p>`;
   document.body.append(root);
   const el = <T extends HTMLElement = HTMLElement>(id: string) => root.querySelector<T>(`#${id}`)!;
-  let status: LlmStatus = { keyConfigured: false, keySource: 'none', model: '', limit: 30, testResult: 'untested', mode: 'mock' };
+  let status: LlmStatus = { keyConfigured: false, keySource: 'none', model: '', limit: 30, testResult: 'untested', mode: 'mock', dailyCalls: -1, dailyLimit: 30, sessionCalls: 0, sessionLimit: 30 };
   let dirty = false, busy = false;
   const model = el<HTMLInputElement>('ai-model'), key = el<HTMLInputElement>('ai-key'), limit = el<HTMLInputElement>('ai-limit');
   async function request<T>(path: string, body?: unknown): Promise<T> {
@@ -67,9 +71,12 @@ export async function enterStartScreen(): Promise<void> {
     return await response.json() as T;
   }
   function render() {
+    const testLabel = status.testResult === 'daily_limit' ? `${TEST_LABELS.daily_limit}: 오늘 ${status.dailyCalls}/${status.dailyLimit}`
+      : status.testResult === 'session_limit' ? `${TEST_LABELS.session_limit}: ${status.sessionCalls}/${status.sessionLimit}` : TEST_LABELS[status.testResult];
+    el('local-usage').textContent = `오늘(UTC) 로컬 호출 ${status.dailyCalls < 0 ? '확인 불가' : status.dailyCalls}/${status.dailyLimit} · 이번 서버 세션 ${status.sessionCalls}/${status.sessionLimit}`;
     el('home-ai-status').textContent = !status.keyConfigured ? 'AI 미연결 · Mock' : status.testResult === 'ok' ? 'AI 연결 확인됨' : status.testResult === 'untested' ? 'AI 설정됨 · 시험 전' : `AI 연결 오류 · ${TEST_LABELS[status.testResult]}`;
     el('key-source').textContent = status.keySource === 'env' ? '환경변수 키 사용 중' : status.keySource === 'screen' ? '화면 입력 키 사용 중 · 서버 메모리' : '키 미설정';
-    el('test-result').textContent = TEST_LABELS[status.testResult];
+    el('test-result').textContent = testLabel;
     el('untested-note').textContent = status.testResult === 'ok' ? '연결 시험이 정상입니다. 이후 호출에도 한도가 적용됩니다.' : status.testResult === 'untested' ? '시험하지 않았습니다. 설정만으로 연결 성공을 보장하지 않습니다. 확인 후 AI로 시작할 수 있습니다.' : `최근 시험: ${TEST_LABELS[status.testResult]}. 설정을 확인한 후 진행하세요.`;
     for (const control of root.querySelectorAll<HTMLButtonElement | HTMLInputElement>('button, input')) control.disabled = busy;
     el<HTMLButtonElement>('start-ai').disabled = busy || !(model.value.trim() && (key.value || status.keyConfigured));
@@ -108,6 +115,7 @@ export async function enterStartScreen(): Promise<void> {
   el<HTMLFormElement>('ai-settings-form').onsubmit = event => { event.preventDefault(); void run(save); };
   el('test-connection').onclick = () => void run(async () => { if (dirty) await save(); el('test-result').textContent = '연결 시험 중…'; const result = await request<{ status: LlmStatus }>('test', {}); status = result.status; });
   el('clear-key').onclick = () => void run(async () => { key.value = ''; status = await request<LlmStatus>('clear', {}); dirty = false; model.value = status.model; limit.value = String(status.limit); });
+  el('reset-usage').onclick = () => void run(async () => { status = await request<LlmStatus>('reset-usage', { confirm: true }); });
   return await new Promise<void>(resolve => {
     const start = (mode: 'mock' | 'ai') => void run(async () => {
       if (mode === 'ai' && dirty) await save();

@@ -1,3 +1,4 @@
+import './offline-runtime.ts';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { runScenarios } from './quality/scenarios.ts';
 const at = process.argv.indexOf('--out');

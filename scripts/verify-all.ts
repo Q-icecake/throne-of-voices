@@ -1,5 +1,16 @@
+import './offline-runtime.ts';
 import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { PLAY_USAGE_FILE } from '../server/llm/usage-file.ts';
+
+function playCounterHash(): string {
+  try { return createHash('sha256').update(readFileSync(PLAY_USAGE_FILE)).digest('hex'); }
+  catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return 'absent'; throw error; }
+}
+const counterBefore = playCounterHash();
+const counterChecks: { name: string; before: string; after: string; unchanged: boolean }[] = [];
 
 const output = 'artifacts/m6';
 await mkdir(output, { recursive: true });
@@ -25,6 +36,7 @@ const results: { name: string; command: string; exitCode: number | null; passed:
 for (const [name, args] of jobs) {
   console.log(`START ${name}`);
   const started = performance.now(), chunks: Buffer[] = [];
+  const before = playCounterHash();
   const child = spawn(process.execPath, args, { env, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
   child.stdout.on('data', (data: Buffer) => { chunks.push(data); process.stdout.write(data); });
   child.stderr.on('data', (data: Buffer) => { chunks.push(data); process.stderr.write(data); });
@@ -34,10 +46,16 @@ for (const [name, args] of jobs) {
     child.once('error', e => { error = e.message; resolve(null); }); child.once('close', resolve);
   });
   clearTimeout(timeout);
+  const after = playCounterHash();
+  counterChecks.push({ name, before, after, unchanged: before === after && after === counterBefore });
+  if (before !== after || after !== counterBefore) error = 'real play usage counter changed';
   await writeFile(`${output}/${name}.log`, Buffer.concat(chunks));
   results.push({ name, command: `node ${args.join(' ')}`, exitCode, passed: exitCode === 0 && !error, durationMs: Math.round(performance.now() - started), ...(error ? { error } : {}) });
   await writeFile(`${output}/verification.json`, JSON.stringify({ completedAt: new Date().toISOString(), provider: 'forced Mock; keys removed from child environment', externalCalls: 0, results }, null, 2) + '\n');
   console.log(`END ${name}: ${results.at(-1)!.passed ? 'PASS' : 'FAIL'}`);
 }
+await mkdir('artifacts/usage-counter', { recursive: true });
+await writeFile('artifacts/usage-counter/hash-verification.json', JSON.stringify({ file: PLAY_USAGE_FILE, before: counterBefore,
+  after: playCounterHash(), unchanged: counterChecks.every(check => check.unchanged), checks: counterChecks }, null, 2) + '\n');
 console.log(`${results.filter(r => r.passed).length}/${results.length} verification commands passed; ${output}/verification.json`);
 process.exitCode = results.every(r => r.passed) ? 0 : 1;

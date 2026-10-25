@@ -1,3 +1,4 @@
+import './offline-runtime.ts';
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { once } from 'node:events';
@@ -119,11 +120,10 @@ try {
     assert.match(await page.locator('.paper-meta').innerText(), /관련 작업/);
     assert.match(await page.locator('.paper-body').innerText(), /선제공격 금지|먼저 공격하지 않음/);
     await page.screenshot({ path: `${output}/report-${size}.png`, animations: 'disabled' });
-    // State polling can replace the paper while Playwright waits for element
-    // stability. Scroll the current node in one DOM task; keep the same bounds
-    // assertion below against the latest node after any subsequent render.
-    await page.locator('.paper-meta dd').last().evaluate(element => element.scrollIntoView({ block: 'center' }));
+    // State polling can replace the paper between browser tasks. Scroll and
+    // measure the same live node atomically; retain the exact bounds assertion.
     assert.ok(await page.locator('.paper-meta dd').last().evaluate(element => {
+      element.scrollIntoView({ block: 'center', behavior: 'instant' });
       const bounds = element.getBoundingClientRect();
       const panel = document.querySelector('.panel-body')!.getBoundingClientRect();
       return bounds.top >= panel.top && bounds.bottom <= panel.bottom;

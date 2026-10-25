@@ -1,3 +1,4 @@
+import './offline-runtime.ts';
 import { listenForFetch } from './test-server.ts';
 import assert from 'node:assert/strict';
 import { createServer as createPortProbe } from 'node:net';

@@ -1,3 +1,4 @@
+import './offline-runtime.ts';
 import assert from 'node:assert/strict';
 import { readFile, writeFile } from 'node:fs/promises';
 import { GameEngine } from '../server/engine.ts';

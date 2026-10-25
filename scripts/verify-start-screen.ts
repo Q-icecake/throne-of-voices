@@ -1,3 +1,4 @@
+import './offline-runtime.ts';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, rm, writeFile, readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -12,6 +13,7 @@ import { SecretGuard } from '../server/llm/secrets.ts';
 import { listenForFetch } from './test-server.ts';
 
 const output = 'artifacts/start-screen'; await mkdir(output, { recursive: true });
+const usageOutput = 'artifacts/usage-counter'; await mkdir(usageOutput, { recursive: true });
 const temp = await mkdtemp(join(tmpdir(), 'throne-start-visual-'));
 const fakeKey = 'browser-synthetic-Q7v2B9m4L6r8S3x5', guard = new SecretGuard(fakeKey);
 const probe = portProbe(); await listenForFetch(probe);
@@ -58,6 +60,8 @@ const geometry = (page: Page) => page.evaluate(() => ['#scene', '#speech', '.hud
 }));
 try {
   for (const viewport of [{ width: 1920, height: 1080 }, { width: 1366, height: 768 }]) {
+    // Synthetic pollution only: never seed or reset the real play counter.
+    await writeFile(join(temp, 'usage.json'), JSON.stringify({ day: new Date().toISOString().slice(0, 10), calls: 541 }));
     // A new server session per viewport: clear-key deliberately preserves the
     // user's model setting and is not a simulation of a first application run.
     if (evidence.length) {
@@ -94,6 +98,8 @@ try {
     assert.equal(await page.locator('#start-ai').isDisabled(), true);
     evidence.push({ size, firstRunModel: '', firstRunKeyConfigured: false });
     await measure(page, 'settings', size);
+    assert.match(await page.locator('#local-usage').innerText(), /541\/30.*0\/30/);
+    await page.screenshot({ path: `${usageOutput}/settings-${size}.png` });
     assert.equal(await page.locator('#ai-key').getAttribute('type'), 'password'); assert.equal(await page.locator('#ai-key').getAttribute('autocomplete'), 'off');
     await page.fill('#ai-model', 'offline-model'); await page.fill('#ai-key', fakeKey);
     await page.keyboard.press('Escape'); await page.click('#open-settings');
@@ -101,9 +107,18 @@ try {
     await page.locator('#ai-model').fill('offline-model'); await page.locator('#ai-key').fill(fakeKey);
     await page.locator('#ai-limit').fill('0'); await page.click('#save-settings'); await page.locator('#save-settings:not([disabled])').waitFor();
     assert.equal(await page.locator('#ai-key').inputValue(), '');
-    const before = calls; await page.click('#test-connection'); await page.locator('#test-result').filter({ hasText: '로컬 호출 상한' }).waitFor(); assert.equal(calls, before);
+    const before = calls; await page.click('#test-connection'); await page.locator('#test-result').filter({ hasText: '로컬 세션 상한' }).waitFor(); assert.equal(calls, before);
     await page.locator('#ai-limit').fill('30');
-    for (const [response, label] of [[200, '정상'], [401, '키 오류'], [404, '모델 없음'], [429, '한도 초과'], ['timeout', '시간 초과'], ['schema', '응답 형식 오류'], [500, '서버 오류']] as const) {
+    await page.click('#test-connection'); await page.locator('#test-result').filter({ hasText: '로컬 일일 상한(UTC) 도달: 오늘 541/30' }).waitFor(); assert.equal(calls, before);
+    await measure(page, 'daily-limit', size);
+    assert.match(await page.locator('#reset-usage-note').innerText(), /Google 쪽 실제 사용량은 바뀌지 않습니다/);
+    page.on('dialog', () => assert.fail('reset uses visible inline confirmation text, never a popup'));
+    await page.click('#reset-usage'); await page.locator('#reset-usage:not([disabled])').waitFor();
+    assert.equal(calls, before); assert.match(await page.locator('#local-usage').innerText(), /0\/30.*0\/30/);
+    const resetLogs = await (await page.request.get(base + '/api/test/logs')).json();
+    assert.equal(resetLogs.filter((event: { kind: string }) => event.kind === 'llm-usage-reset').length, 1);
+    await page.screenshot({ path: `${usageOutput}/reset-${size}.png` });
+    for (const [response, label] of [[200, '정상'], [401, '키 오류'], [404, '모델 없음'], [429, 'Google 한도 초과(429)'], ['timeout', '시간 초과'], ['schema', '응답 형식 오류'], [500, '서버 오류']] as const) {
       reply = response; const beforeCall = calls;
       await page.click('#test-connection'); await page.locator('#test-connection:not([disabled])').waitFor();
       assert.equal(await page.locator('#test-result').textContent(), label); assert.equal(calls, beforeCall + 1);
@@ -128,6 +143,7 @@ try {
   for (const file of await readdir('dist/assets')) guard.assertSafe(await readFile(join('dist/assets', file), 'utf8'));
   guard.assertSafe(await readFile(join(temp, 'usage.json'), 'utf8'));
   await writeFile(`${output}/verification.json`, JSON.stringify({ externalCalls: 0, fakeTransportCalls: calls, evidence }, null, 2) + '\n');
+  await writeFile(`${usageOutput}/screenshots.json`, JSON.stringify({ externalCalls: 0, fakeTransportCalls: calls, evidence }, null, 2) + '\n');
   console.log(`PASS start-screen: both sizes, 3 screens, keyboard, secret boundaries, 7 error/result categories, zero limit, clear, AI/Mock start, unchanged court; ${output}`);
 } finally {
   await browser.close(); await vite.close(); api.closeAllConnections(); await new Promise<void>(resolve => api.close(() => resolve())); await rm(temp, { recursive: true, force: true });

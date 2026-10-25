@@ -1,7 +1,7 @@
 import type { ProviderConfig } from './config.ts';
 import { CallBudget } from './budget.ts';
 import type { InterpretationProvider, ProviderInput, ProviderUsage, AttemptUsage } from './types.ts';
-import { ProviderError, PROVIDER_MESSAGES, abortError } from './types.ts';
+import { ProviderError, PROVIDER_MESSAGES, abortError, providerMessage } from './types.ts';
 import { withDeadline } from './pipeline.ts';
 import { validateProposal } from './validator.ts';
 import { SecretGuard } from './secrets.ts';
@@ -19,10 +19,11 @@ export abstract class RemoteProvider implements InterpretationProvider {
   #budget: CallBudget;
   #guard: SecretGuard;
   #usage?: ProviderUsage;
+  #failureMessage?: string;
   get lastUsage(): ProviderUsage | undefined { return this.#usage && structuredClone(this.#usage); }
   get status(): string {
     if (!this.#key) return 'AI 미연결, Mock 사용 중';
-    if (this.#usage?.errorCode) return `[${this.#usage.errorCode}] ${PROVIDER_MESSAGES[this.#usage.errorCode]} Mock으로 전환하지 않았습니다.`;
+    if (this.#usage?.errorCode) return `[${this.#usage.errorCode}] ${this.#failureMessage ?? PROVIDER_MESSAGES[this.#usage.errorCode]} Mock으로 전환하지 않았습니다.`;
     return 'AI 연결 설정됨 · 라이브 미검증';
   }
   constructor(settings: ProviderConfig, key: string, transport: typeof fetch, budget = new CallBudget(settings)) {
@@ -82,6 +83,7 @@ export abstract class RemoteProvider implements InterpretationProvider {
       }, this.#settings.timeoutMs, signal);
     } catch (caught) {
       error = signal.aborted ? abortError(signal) : caught instanceof ProviderError ? caught : new ProviderError('server');
+      this.#failureMessage = providerMessage(error);
       throw error;
     } finally {
       const attemptUsage = attempts.map(item => ({ inputTokens: item.inputTokens, outputTokens: item.outputTokens,

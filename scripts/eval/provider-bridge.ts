@@ -2,6 +2,7 @@
 import { configuredProvider, providerConfig } from '../../server/llm/config.ts';
 import type { ProviderConfig } from '../../server/llm/config.ts';
 import { CallBudget } from '../../server/llm/budget.ts';
+import { isolatedUsageFile } from '../../server/llm/usage-file.ts';
 import { ProviderError } from '../../server/llm/types.ts';
 import { SecretGuard } from '../../server/llm/secrets.ts';
 import type { InterpretationProvider } from '../../server/llm/types.ts';
@@ -90,7 +91,7 @@ export function liveSource(maxCalls: number, env: NodeJS.ProcessEnv = process.en
     config: ProviderConfig & { baseUrl: string }, transport: typeof fetch, budget: CallBudget, key: string
   ) => InterpretationProvider;
   const provider = new Adapter({ ...config, baseUrl: env.OPENAI_COMPAT_BASE_URL ?? '' }, transport,
-    new ObservedBudget(config, runtime.budgetFile),
+    new ObservedBudget(config, runtime.budgetFile ?? isolatedUsageFile()),
     (format === 'gemini' ? env.GEMINI_API_KEY : env.OPENAI_COMPAT_API_KEY) ?? '');
   const secretGuard = new SecretGuard((format === 'gemini' ? env.GEMINI_API_KEY : env.OPENAI_COMPAT_API_KEY) ?? '');
   return {

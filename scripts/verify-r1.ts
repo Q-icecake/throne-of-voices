@@ -1,3 +1,4 @@
+import './offline-runtime.ts';
 import { listenForFetch } from './test-server.ts';
 import { createServer as createPortProbe } from 'node:net';
 import type { AddressInfo } from 'node:net';

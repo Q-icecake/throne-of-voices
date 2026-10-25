@@ -1,7 +1,7 @@
 import { createServer } from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { PAUSE_REASONS } from '../shared/contracts.ts';
-import type { CommandOutcome, CommandRequest, PauseReason, TestAction } from '../shared/contracts.ts';
+import type { CommandOutcome, CommandRequest, PauseReason, TestAction, PublicLogRecord } from '../shared/contracts.ts';
 import { GameEngine } from './engine.ts';
 import { configuredProvider } from './llm/config.ts';
 import { RuntimeSettings } from './llm/runtime-settings.ts';
@@ -100,6 +100,8 @@ export function createGameServer(engine?: GameEngine | GameEngine<Interpretation
   }
   let game = engine;
   let generation = 0;
+  const usageEvents: PublicLogRecord[] = [];
+  let failureMessage: string | undefined;
   const replaceGame = () => {
     game.reset(); // Existing engine request versions invalidate pending command/talk results.
     generation++;
@@ -109,13 +111,14 @@ export function createGameServer(engine?: GameEngine | GameEngine<Interpretation
   let failureCode: ProviderErrorCode | undefined;
   const providerResult = async <T extends { outcome?: CommandOutcome }>(work: () => T | Promise<T>) => {
     const started = generation;
-    const { result, code } = await captureFailure(async () => await work());
+    const { result, code, detail } = await captureFailure(async () => await work());
     if (started !== generation) return { state: game.view(), outcome: { kind: 'error', code: 'STALE_RESPONSE', reply: '설정이 바뀌어 이전 응답을 무시했습니다.' } };
     if (result.outcome?.kind === 'error' && result.outcome.code !== 'STALE_RESPONSE') {
       failureCode = code ?? 'schema';
+      failureMessage = detail ?? PROVIDER_MESSAGES[failureCode];
       // Keep legacy outcome.code for existing clients/eval. providerCode is the neutral wire contract.
       return { ...result, outcome: { ...result.outcome, providerCode: failureCode,
-        reply: `[${failureCode}] ${PROVIDER_MESSAGES[failureCode]} 입력과 초안은 보존되었습니다. Mock으로 전환하지 않았습니다.` } };
+        reply: `[${failureCode}] ${failureMessage ?? PROVIDER_MESSAGES[failureCode]} 입력과 초안은 보존되었습니다. Mock으로 전환하지 않았습니다.` } };
     }
     if (result.outcome?.kind !== 'error') failureCode = undefined;
     return result;
@@ -127,7 +130,7 @@ export function createGameServer(engine?: GameEngine | GameEngine<Interpretation
     if (failureCode && payload && typeof payload === 'object') {
       const copy = structuredClone(payload) as Record<string, unknown>;
       const state = (copy.state ?? copy) as { interpretation?: { source: string; status: string } };
-      if (state.interpretation?.source === 'AI') state.interpretation.status = `[${failureCode}] ${PROVIDER_MESSAGES[failureCode]}`;
+      if (state.interpretation?.source === 'AI') state.interpretation.status = `[${failureCode}] ${failureMessage ?? PROVIDER_MESSAGES[failureCode]}`;
       sendJson(response, status, copy);
     } else sendJson(response, status, payload);
   };
@@ -156,6 +159,15 @@ export function createGameServer(engine?: GameEngine | GameEngine<Interpretation
           case '/api/llm/test':
             if (!exactKeys(body, [])) throw new HttpError(400, 'EMPTY_OBJECT_REQUIRED');
             return json(response, 200, { result: await runtime.test(), status: runtime.status() });
+          case '/api/llm/reset-usage': {
+            if (!exactKeys(body, ['confirm']) || body.confirm !== true) throw new HttpError(400, 'RESET_CONFIRMATION_REQUIRED');
+            let reset: ReturnType<RuntimeSettings['resetUsage']>;
+            try { reset = runtime.resetUsage(); } catch { throw new HttpError(409, 'LOCAL_COUNTER_UNAVAILABLE'); }
+            usageEvents.push({ id: `llm-usage-reset-${usageEvents.length + 1}`, atActiveMs: game.view().clock.activeMs,
+              kind: 'llm-usage-reset', summary: `로컬 일일 카운터 초기화(UTC ${reset.day}): ${reset.previousCalls} → 0. Google 쪽 실제 사용량은 바뀌지 않습니다.` });
+            failureCode = undefined;
+            return json(response, 200, runtime.status());
+          }
           case '/api/llm/clear':
             if (!exactKeys(body, [])) throw new HttpError(400, 'EMPTY_OBJECT_REQUIRED');
             runtime.clear(); replaceGame(); return json(response, 200, runtime.status());
@@ -170,8 +182,8 @@ export function createGameServer(engine?: GameEngine | GameEngine<Interpretation
         switch (path) {
           case '/api/health': return json(response, 200, { milestone: 'M5', mode: game.view().mode, clock: game.view().opening?.clockMode ?? 'manual-fake', interpretation: game.view().interpretation });
           case '/api/state': return json(response, 200, game.view());
-          case '/api/test/snapshot': return json(response, 200, game.publicSnapshot());
-          case '/api/test/logs': return json(response, 200, game.logs());
+          case '/api/test/snapshot': return json(response, 200, { ...game.publicSnapshot(), logs: [...game.logs(), ...usageEvents] });
+          case '/api/test/logs': return json(response, 200, [...game.logs(), ...usageEvents]);
         }
       }
       if (request.method === 'POST' && path === '/api/test/reset') {

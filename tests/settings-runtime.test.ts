@@ -56,7 +56,7 @@ test('start limit zero calls nothing; tests, failures, play and mode/settings ch
   let calls = 0;
   const { runtime } = await fixture(t, async () => { calls++; return good(); });
   runtime.configure('offline-model', '', 0);
-  assert.equal(await runtime.test(), 'budget'); assert.equal(calls, 0);
+  assert.equal(await runtime.test(), 'session_limit'); assert.equal(calls, 0);
   runtime.configure('offline-model', '', 1);
   assert.equal(await runtime.test(), 'ok'); assert.equal(calls, 1);
   runtime.select('mock'); runtime.select('ai');
@@ -64,7 +64,7 @@ test('start limit zero calls nothing; tests, failures, play and mode/settings ch
   await assert.rejects(() => provider.interpret({ text: '질문', knowledge: { viewer: 'player', documents: [] }, context: [], actions: [] }, new AbortController().signal));
   assert.equal(calls, 1);
   runtime.clear(); runtime.configure('another-model', fakeKey, 1);
-  assert.equal(await runtime.test(), 'budget'); assert.equal(calls, 1);
+  assert.equal(await runtime.test(), 'session_limit'); assert.equal(calls, 1);
 });
 test('start env source, screen precedence, clear suppression and fresh session memory', async t => {
   const envKey = 'env-S8r5V9k2W6a3D7n4';

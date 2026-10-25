@@ -1,3 +1,4 @@
+import './offline-runtime.ts';
 import { listenForFetch } from './test-server.ts';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { createServer as createPortProbe } from 'node:net';

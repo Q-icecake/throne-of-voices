@@ -6,20 +6,6 @@ import { ProviderError } from './types.ts';
 import { withDeadline } from './pipeline.ts';
 import type { ConnectionTestResult, LlmStatus } from '../../shared/contracts.ts';
 
-/** One session counter shared by tests and play, across all settings/mode changes. */
-class RuntimeBudget extends CallBudget {
-  #used = 0;
-  #limit = 30;
-  #file?: string;
-  constructor(file?: string) { super({ model: 'runtime', timeoutMs: 15000, retries: 0, dailyLimit: 30, sessionLimit: 30 }, file); this.#file = file; }
-  setLimit(limit: number) { this.#limit = limit; }
-  override reserve() {
-    if (this.#used >= this.#limit) throw new ProviderError('budget');
-    new CallBudget({ model: 'runtime', timeoutMs: 15000, retries: 0, dailyLimit: this.#limit, sessionLimit: this.#limit }, this.#file).reserve();
-    this.#used++;
-  }
-}
-
 export interface RuntimeOptions { env?: NodeJS.ProcessEnv; transport?: typeof fetch; budgetFile?: string; timeoutMs?: number }
 export class RuntimeSettings {
   #key: string;
@@ -33,7 +19,7 @@ export class RuntimeSettings {
   #pending?: AbortController;
   #transport: typeof fetch;
   #timeout: number;
-  #budget: RuntimeBudget;
+  #budget: CallBudget;
   constructor(options: RuntimeOptions = {}) {
     const env = options.env ?? process.env;
     this.#key = env.GEMINI_API_KEY ?? '';
@@ -43,10 +29,11 @@ export class RuntimeSettings {
     this.#model = /^[a-zA-Z0-9._-]{1,200}$/.test(model) && !this.reflects(model) ? model : '';
     this.#transport = options.transport ?? globalThis.fetch;
     this.#timeout = options.timeoutMs ?? 15000;
-    this.#budget = new RuntimeBudget(options.budgetFile);
+    this.#budget = new CallBudget({ model: 'runtime', timeoutMs: 15000, retries: 0, dailyLimit: 30, sessionLimit: 30 }, options.budgetFile);
   }
   status(): LlmStatus { return { keyConfigured: !!this.#key, keySource: this.#source, model: this.#model,
-    limit: this.#limit, testResult: this.#result, mode: this.#mode }; }
+    ...this.#budget.snapshot(), limit: this.#limit, testResult: this.#result, mode: this.#mode }; }
+  resetUsage() { this.#invalidate(); return this.#budget.resetToday(); }
   reflects(text: string) { return this.#guards.some(guard => guard.reflects(text)); }
   assertSafe(value: unknown) { for (const guard of this.#guards) guard.assertSafe(value); }
   #invalidate() { this.#version++; this.#pending?.abort(); this.#pending = undefined; this.#result = 'untested'; }
@@ -55,7 +42,7 @@ export class RuntimeSettings {
     if (this.reflects(model) || guard.reflects(model)) throw new ProviderError('schema');
     this.#invalidate();
     if (key) { this.#guards.push(guard); this.#key = key; this.#source = 'screen'; }
-    this.#model = model; this.#limit = limit; this.#budget.setLimit(limit); this.#mode = 'mock';
+    this.#model = model; this.#limit = limit; this.#budget.setLimits(limit, limit); this.#mode = 'mock';
   }
   clear() { this.#invalidate(); this.#key = ''; this.#source = 'none'; this.#mode = 'mock'; }
   select(mode: 'mock' | 'ai') {
@@ -106,7 +93,7 @@ export class RuntimeSettings {
         } finally { signal.removeEventListener('abort', cancel); cancel(); }
       }, this.#timeout, controller.signal);
     } catch (error) {
-      result = error instanceof ProviderError ? error.neutralCode === 'aborted' ? 'stale' : error.neutralCode : error instanceof SyntaxError ? 'schema' : 'server';
+      result = error instanceof ProviderError ? error.neutralCode === 'aborted' ? 'stale' : error.budgetDetail ? error.budgetDetail.scope === 'daily' ? 'daily_limit' : 'session_limit' : error.neutralCode : error instanceof SyntaxError ? 'schema' : 'server';
     }
     if (version !== this.#version) return 'stale';
     this.#pending = undefined; this.#result = result; return result;

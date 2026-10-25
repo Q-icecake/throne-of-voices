@@ -1,7 +1,7 @@
 import type { ActionPlan } from '../../shared/contracts.ts';
 import type { Interpretation } from '../mock-interpreter.ts';
 import type { Proposal, InterpretationProvider, ProviderInput } from './types.ts';
-import { ProviderError, abortError } from './types.ts';
+import { ProviderError, abortError, providerMessage } from './types.ts';
 import { validateProposal } from './validator.ts';
 import { hasUnsupportedClaim } from './claims.ts';
 import { recordFailure } from './failure-context.ts';
@@ -50,7 +50,7 @@ export async function interpret(provider: InterpretationProvider, input: Provide
         if (caught instanceof ProviderError && caught.usage) error.usage = structuredClone(caught.usage);
       }), Promise.resolve()]);
     }
-    recordFailure(error instanceof ProviderError ? error.neutralCode : 'server');
+    recordFailure(error instanceof ProviderError ? error.neutralCode : 'server', error instanceof ProviderError ? providerMessage(error) : undefined);
     throw error;
   }
 }

@@ -1,3 +1,4 @@
+import './offline-runtime.ts';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { mkdir, writeFile } from 'node:fs/promises';

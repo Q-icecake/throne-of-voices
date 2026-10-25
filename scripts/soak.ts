@@ -1,3 +1,4 @@
+import './offline-runtime.ts';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { runSoak } from './quality/soak.ts';
 const cycles = runSoak();
