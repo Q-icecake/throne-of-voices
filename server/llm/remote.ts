@@ -10,6 +10,8 @@ import { fetchWithDiagnostics } from './network.ts';
 import type { NetworkSelection } from './network-routing.ts';
 
 export interface DecodedOutput { text: string; inputTokens: unknown; outputTokens: unknown; complete: boolean; errorCode?: ProviderErrorCode }
+/** Evaluation-only observer. No response is retained when the factory omits it. */
+export type ModelRawObserver = (raw: unknown) => void;
 export const tokenCount = (value: unknown): number | null =>
   typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 && value <= 10000000 ? value : null;
 
@@ -23,18 +25,20 @@ export abstract class RemoteProvider implements InterpretationProvider {
   #guard: SecretGuard;
   #usage?: ProviderUsage;
   #failureMessage?: string;
+  #onModelRaw?: ModelRawObserver;
   get lastUsage(): ProviderUsage | undefined { return this.#usage && structuredClone(this.#usage); }
   get status(): string {
     if (!this.#key) return 'AI 미연결, Mock 사용 중';
     if (this.#usage?.errorCode) return `[${this.#usage.errorCode}] ${this.#failureMessage ?? PROVIDER_MESSAGES[this.#usage.errorCode]} Mock으로 전환하지 않았습니다.`;
     return 'AI 연결 설정됨 · 라이브 미검증';
   }
-  constructor(settings: ProviderConfig, key: string, transport: typeof fetch, budget = new CallBudget(settings)) {
+  constructor(settings: ProviderConfig, key: string, transport: typeof fetch, budget = new CallBudget(settings), onModelRaw?: ModelRawObserver) {
     if (!settings.model || ![settings.timeoutMs, settings.retries, settings.dailyLimit, settings.sessionLimit]
       .every(value => Number.isSafeInteger(value) && value >= 0) || settings.timeoutMs < 1 || settings.timeoutMs > 15000 ||
       settings.retries > 100 || settings.dailyLimit > 10000 || settings.sessionLimit > 10000) throw new ProviderError('auth');
     this.#key = key; this.#settings = { ...settings }; this.#transport = transport; this.#budget = budget;
     this.#guard = new SecretGuard(key);
+    this.#onModelRaw = onModelRaw;
     if (/[\r\n]/.test(key) || (key && this.#guard.reflects(settings.model))) throw new ProviderError('auth');
   }
   protected abstract request(input: ProviderInput, signal: AbortSignal, key: string): [string, RequestInit];
@@ -79,6 +83,8 @@ export abstract class RemoteProvider implements InterpretationProvider {
             if (decoded.errorCode) throw new ProviderError(decoded.errorCode);
             if (!decoded.complete || this.#guard.reflects(decoded.text)) throw new ProviderError('schema');
             const raw: unknown = JSON.parse(decoded.text);
+            // After credential reflection checks, before usage replacement or validation.
+            this.#onModelRaw?.(raw);
             if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new ProviderError('schema');
             const sum = (key: 'inputTokens' | 'outputTokens') => attempts.reduce((n, item) => n + (item[key] ?? 0), 0);
             return validateProposal({ ...raw, usage: { inputTokens: sum('inputTokens'), outputTokens: sum('outputTokens'),

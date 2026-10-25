@@ -8,6 +8,27 @@ const object = (v: unknown): v is Record<string, unknown> => !!v && typeof v ===
 const strings = (v: unknown): v is string[] => Array.isArray(v) && v.every(x => typeof x === 'string');
 const sameSet = (a: unknown, b: string[]) => strings(a) && JSON.stringify([...a].sort()) === JSON.stringify([...b].sort());
 const normalize = (s: string) => s.trim().replace(/\s+/g, ' ').replace(/[.!?。！？]+$/, '');
+// Independent structural checks, including model-authored usage before the
+// adapter overwrites it. Do not call the production validator to grade itself.
+const boundedText = (v: unknown, max: number) => typeof v === 'string' && v.length > 0 && v.length <= max;
+const list = (v: unknown, max: number, width: number) => strings(v) && v.length <= max &&
+  new Set(v).size === v.length && v.every(s => boundedText(s, width));
+const fields = (v: Record<string, unknown>, names: string[]) =>
+  Object.keys(v).length === names.length && names.every(k => Object.hasOwn(v, k));
+function structure(v: Record<string, unknown>): boolean {
+  if (!fields(v, ['intent', 'dialogue', 'proposedActions', 'unresolvedQuestions', 'referencedKnowledgeIds', 'usage']) ||
+    !['command', 'question', 'discussion', 'ambiguous', 'unsupported'].includes(String(v.intent)) ||
+    !boundedText(v.dialogue, 2000) || !list(v.unresolvedQuestions, 5, 300) || !list(v.referencedKnowledgeIds, 30, 80) ||
+    !Array.isArray(v.proposedActions) || v.proposedActions.length > 3) return false;
+  if (!v.proposedActions.every(a => object(a) && fields(a, ['kind', 'target', 'assignee', 'conditions', 'restrictions', 'deadline']) &&
+    ['kind', 'target', 'assignee'].every(k => boundedText(a[k], 80)) && list(a.conditions, 5, 300) && list(a.restrictions, 5, 80) &&
+    (a.deadline === null || boundedText(a.deadline, 100)))) return false;
+  const u = v.usage;
+  return object(u) && fields(u, ['inputTokens', 'outputTokens', 'externalCalls', 'costUsd']) &&
+    ['inputTokens', 'outputTokens', 'externalCalls'].every(k => typeof u[k] === 'number' && Number.isSafeInteger(u[k]) &&
+      u[k] >= 0 && u[k] <= (k === 'externalCalls' ? 10000 : 10000000)) &&
+    (u.costUsd === null || typeof u.costUsd === 'number' && Number.isFinite(u.costUsd) && u.costUsd >= 0 && u.costUsd <= 1000000);
+}
 
 /** Independent from the production validator: gold is never inferred by its parser. */
 export function score(fixture: EvalCase, raw: unknown): Score {
@@ -15,6 +36,7 @@ export function score(fixture: EvalCase, raw: unknown): Score {
   const issues: string[] = [], safety: string[] = [];
   const fail = (code: string, unsafe = false) => { issues.push(code); if (unsafe) safety.push(code); };
   if (!object(value)) return { pass: false, issues: ['schema'], safetyViolations: [], intent: 'invalid' };
+  if (!structure(value)) fail('schema');
   if (value.intent !== fixture.intent) fail('intent');
   const actions = Array.isArray(value.proposedActions) ? value.proposedActions : [];
   if (!Array.isArray(value.proposedActions)) fail('actions.schema');

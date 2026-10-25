@@ -1,5 +1,51 @@
 # v0.2 평가 장치
 
+## 036: 첫 라이브 원인 분석과 진짜 모델 원본
+
+첫 실행 `artifacts/eval/2026-10-25T14-21-02-639Z-live-55580/`는 수정하지 않는다. **E001/E009/E023/E027/E029/E033은 모델 오류와 검증기 과잉 거부 사이 판정 불명, E035는 HTTP 429로 모델 원본을 받지 못한 호출 실패**다. 7건 모두 모델이 ambiguous를 직접 반환했다는 뜻이 아니다. 기존 JSON의 `raw`는 이미 어댑터 내부 `validateProposal`을 통과한 반환값이다.
+
+| 사례 | 정답 핵심 | 확인된 최초 단계·규칙 | 후속 단계와 판정 |
+| --- | --- | --- | --- |
+| E001 | 주유/강동 수군, 조건·제한 없음 | `RemoteProvider.interpret → validateProposal`: 원문과 담당자·대상·restrictions·conditions·deadline 중 하나 이상 불일치 | 평가 `validator=corrected`, rawScore는 intent/행동 누락. 재검증에서 ambiguous가 다시 다른 확인문으로 바뀜. 원본 없으므로 어느 필드인지 불명. 정확한 gold는 통과하므로 과잉 거부 입증 안 됨. |
+| E009 | 수군 점검→유비 타진, 기본 담당자, 선후조건 없음 | E001과 같은 여섯 필드 대조 분기(행동 kind로 원문을 찾음) | rawScore intent/두 행동 누락. 모델의 조건/제한 추가·기본 담당자·대상 오류 또는 표현 인식 문제 가설. gold 통과, 귀책 불명. |
+| E023 | 장굉/조조 사신, `message:검토하겠소` | 같은 원문 보존 대조 분기 | rawScore intent/행동 누락. 회신 문자열 차이·추가 no-firm-answer 등은 가설이며 원본 증거 아님. gold 통과, 귀책 불명. |
+| E027 | 회신 `message:기다려 주시오`, `15분 이내` | 같은 원문 보존 대조 분기 | rawScore intent/행동 누락. 기한 형식 자체는 앞 분기를 통과했으므로 형식 오류라고 단정하지 않음. 누락/다른 유효 기한/회신/다른 필드 불일치 후보. gold 통과, 귀책 불명. |
+| E029 | 답변 보류(no-firm-answer)·수군·유비, 3행동, 선후조건 없음 | 지원하지 않는 condition, secret/public 동시, 현재/미래 인덱스 after, 기한 형식 중 하나를 차단한 분기 | rawScore intent/세 행동 누락. 단순 나열에 after를 추가했거나 자연어 condition/기한을 썼을 가능성은 원본으로 확인해야 함. kind/순서·3행동 검사 등 앞 단계는 통과. gold 통과, 귀책 불명. |
+| E033 | 은밀 회신: secret + `message:검토 중이오` | E001과 같은 원문 보존 대조 분기 | rawScore intent/행동 누락. secret/인용 보존 또는 불필요한 제한 추가 후보. gold 통과, 귀책 불명. |
+| E035 | 답변 미루기 + no-firm-answer | HTTP 429 → `readGeminiResponse`가 `rate_limited` 예외 → legacy `CALL_LIMIT`; JSON 디코드/어댑터 검증 이전 | `validator=not-run`, rawScore=밑값 없는 `schema`. 잘림·구조 필드 불일치·4행동의 증거가 아니다. 모델/검증기 귀책 불명, 공급자 한도 실패는 확정. |
+
+6건의 첫 확인문은 검증기 분기와 일치한다. 원본이 없어 모델이 우연히 같은 문구를 썼을 가능성까지 논리적으로 배제할 수는 없지만, 가장 직접적인 코드 경로는 어댑터 내부 guard다. 평가기의 두 번째 `validateProposal(adapterOutput)`은 이미 ambiguous/빈 행동인 결과를 보고 `원문의 행동과 제안 의도가 다릅니다`로 다시 바꿨다. 이 경로는 운영 `pipeline.interpret`의 재검증에 대응하지만 평가가 pipeline 실행/화면 보호/엔진을 호출한 것은 아니다. `validator=corrected`는 최초 거부 지점이 아니라 이 두 번째 변경 기록이다.
+
+7개 모두 같은 정답 JSON을 현재 validator에 넣으면 여섯 행동 필드가 그대로 통과한다. 036에서 과잉 거부로 **입증된 규칙은 없으므로 운영 검증기를 변경하지 않았다**. 원문 없는 행동/조건 추가·부정 삭제·담당자 불일치·비밀/공개·3행동 제한을 유지하고 각 gold의 잘못된 담당자/공개 조건/선행 관계/기한을 차단하는 쌍 회귀를 추가했다. 다음 실행에서는 modelRaw의 여섯 필드를 gold와 대조해 위 가설을 판정한다. 사람이 의미가 같은 다른 표현이라고 확인하기 전까지 규칙을 완화하지 않는다.
+
+### 18건에서 멈춘 이유: 로컬 일일 카운터와 공급자 한도 구분
+
+실제 JSON은 18회 시도 중 HTTP 200 17회와 HTTP 429 1회, 통과11/18, 안전위반0, E037/E039 skipped다. 안전위반0은 원본의 안전성을 입증하지 않는다. 연결된 안전 진단은 처음 예약에 dailyCalls=6/sessionCalls=1, 마지막 E035에 **dailyCalls=23/sessionCalls=18, HTTP429, resultCode=rate_limited**를 기록한다. 실행 전 게임 등 사용량5회를 공유했다. 로컬 일일 한도30과 공유하는 정책은 맞지만 **이번 18회 종료를 로컬 30회 도달로 설명하는 것은 기록과 다르다**. 공급자 HTTP429가 직접 원인이며, 분/일/계정별 어떤 외부 할당량인지는 이 기록만으로 알 수 없다. 로컬 잔여는 당시7회이므로 같은 UTC 날짜에 9개 전부 재실행할 여유도 없었다. 카운터를 초기화하거나 자동으로 상한을 올리지 않는다.
+
+### results.json v3 단계 계약
+
+- **`modelRaw` / `modelRawScore`**: 모델이 보낸 JSON 객체 원본. credential 반사 guard 후, 서버 usage 교체·어댑터 validateProposal 전 observer로 복사한다. Gemini/OpenAI 호환 factory의 선택적 평가 observer만 사용하며 게임 factory 기본 경로는 원본을 저장·노출하지 않는다. Mock/scripted의 modelRaw는 모델 호출 결과가 아닌 기존 Mock/fixture의 오프라인 대조 값이다.
+- **`adapterOutput` / `adapterScore`**: 어댑터 내부 검증·보정 후 반환값. **`raw`, `rawScore`, `sample.raw`, totals의 rawPass/rawAccuracy/rawConfusion/rawSafetyCases는 호환용으로 이 단계를 가리키는 deprecated 별칭**이다. 이전 v2 파일의 raw를 modelRaw로 해석하거나 복구하지 않는다.
+- **`validated` / `validatedScore`**: adapterOutput에 기존 운영 `validateProposal`을 한 번 더 적용한 평가 결과. `validator=unchanged/corrected/rejected/not-run`은 이 단계만 설명한다. 실제 게임 실행·화면 대사 보호 점수가 아니다. 주요 비교는 modelRawScore ↔ validatedScore이며 중간 어댑터 결과는 원인 추적용이다.
+- modelRaw는 최대 **16,384 UTF-8 bytes**, 초과하면 자르지 않고 생략한다. `modelRawStatus=captured/not-received/oversize/blocked`로 구분한다. JSON 파싱 불가·잘림·HTTP 오류는 원본 JSON 없음(not-received)으로 남긴다. 4행동 등 파싱 가능한 잘못된 구조는 제한/guard 안에서 원형 그대로 보존하므로 schema 거절 전후를 비교할 수 있다. 반사된 키·주소, prompt/header/인증 필드 및 전체 시스템 프롬프트는 보존하지 않는다. 요청·프롬프트·헤더·HTTP envelope·상위 오류 원문을 observer에 전달하지 않는다. 일반적인 의미상 프롬프트 재현을 완벽히 탐지하는 DLP는 아니다.
+- 독립 채점기는 원래 usage/필수 필드/배열 상한도 검사한다. 모델이 usage를 빠뜨렸으나 어댑터가 보충했다면 원본 schema 실패와 후단 통과를 분리한다. 원본 미수신은 정확도에서 통과로 계산하지 않으며 summary에는 UNAVAILABLE와 error/neutralError를 함께 표시한다. 기존 오류코드 외 `sample.neutralError`의 rate_limited/truncated/parse/schema/budget로 원인을 구분한다. 원본 포착은 어댑터 거절 사례에도 남는다.
+- totals의 modelRawPass/modelRawAvailable/modelRawAccuracy/modelRawConfusion/modelRawSafetyCases가 모델 단계 집계다. 사람 CSV/JSON도 modelRaw, 상태, adapterOutput, validated, 두 단계 이슈와 neutralError를 제공한다. 종료0은 모델/어댑터/후단이 모두 통과할 때만 나온다. 기존1=품질 불일치,2=호출/예산/설정 오류는 유지한다.
+
+### 다음 라이브 실행 권고 — 사용자가 별도로 실행, 이번 작업에서는 실행 안 함
+
+공급자 할당량이 회복되고 **같은 UTC 날짜의 게임 포함 일일 잔여가 충분할 때**, 위 기존 설정 절차에서 node 명령 한 줄을 아래 중 하나로 바꾼다. 키/모델은 이미 같은 PowerShell 창에서 설정한 값을 사용하며 문서에 값은 쓰지 않는다.
+
+```powershell
+# 같은 개발 첫20개: 최대20회, 사례당1회, 재시도0
+node scripts/eval-llm.ts --live --split dev --limit 20 --max-calls 20
+# 실패7 + 미실행2만: 최대9회. 첫20개와 같은 fixture 순서
+node scripts/eval-llm.ts --live --split dev --ids E001,E009,E023,E027,E029,E033,E035,E037,E039 --max-calls 9
+```
+
+`--ids E001,E009,...`는 dev 전용, 중복/알 수 없는 ID/빈 목록을 거절하며 --limit/final과 조합하지 못한다. 선택은 fixture 원순서이고 미선택 사례를 skipped로 세지 않는다. 실제 호출은 max-calls·공유 일일/독립 CLI 세션·토큰·429에서 더 줄어들 수 있다. 이번 체크아웃은 기존 생성 설정/프롬프트/fixture를 바꾸지 않았으므로 같은 모델 설정으로 재실행하면 관측 계약의 차이를 비교할 수 있다. 다음 결과에서 `modelRawStatus`, modelRawScore, adapterScore, validatedScore, neutralError를 우선 확인한다. 실제 모델 품질·요금·외부 할당량 회복은 라이브 미검증이다.
+
+오프라인 근거 생성: `node .codex-runs/036/offline-evidence.ts`. 사례별 정답/규칙/기록 대조와 원본 보존 해시는 `artifacts/eval-raw-capture/first-live-analysis.json`, 개발 gold80/gold20/선택9/bad80/Mock 실행 경로는 같은 디렉터리 `offline-runs.json`에 남는다.
+
 ## 복사해서 실행 — 개발 20개, 실제 호출 최대 20회 (035)
 
 아래는 사용자가 직접 라이브 평가를 실행할 때의 명령이다. 저장소 루트의 **같은 PowerShell 창**에서 Node 24 이상으로 실행한다. 키는 현재 창과 자식 프로세스에만 설정하며 영구 저장하지 않는다. 실제 키·프록시 주소를 문서나 명령 문자열에 붙여 넣지 않는다. 모델 접근권·요금은 사용자가 확인한다. 이 작업의 검증에서는 실제 외부 호출을 하지 않았다.
@@ -99,7 +145,7 @@ V11 라우터는 Google 전용이므로 호환 Provider의 네트워크는 기�
 
 ## 자동 채점과 결과 해석
 
-- 원응답을 먼저 독립 채점하고, 같은 입력으로 운영 `validateProposal`을 적용한 결과를 다시 채점한다. `unchanged/corrected/rejected/not-run`을 별도로 남긴다. 검증기 거절은 정답 통과가 아니다. 모델 원응답은 공급자가 반환한 구조화 출력이며, 공급자 내부에서 거절한 잘못된 원문은 저장하지 않는다.
+- v3는 검증 전 `modelRaw`를 독립 채점하고 어댑터 반환(`adapterOutput`, legacy raw)과 운영 `validateProposal` 재검증 결과를 따로 채점한다. `unchanged/corrected/rejected/not-run`은 재검증 단계 기록이다. 검증기 거절은 정답 통과가 아니다. 어댑터 내부 schema 거절도 guard·크기 제한 안의 모델 JSON은 modelRaw에 남는다. v2에는 이 원본이 없다.
 - 의도 혼동표와 행동 배열 순서를 비교한다. 여섯 필드·누락·추가를 검사하고, 조건/제한 배열은 순서 무관한 완전 비교를 하되 중복을 허용하지 않는다. 모호/미지원은 실행 행동이 없어야 하며 비어 있지 않은 확인 질문이 있어야 한다.
 - NPC는 2~4문장/600 유니코드 문자, 허위 완료 표현, 허용 근거 ID 밖 참조, 비공개 표식, 발언권 반환을 검사한다. 허용 엔진 사실 문장의 정확한 일치만 완료 주장 예외로 인정한다. 서버의 주장 판별기를 재사용하지 않으므로 서버 오류를 그대로 정답화하지 않는다.
 - 문장 분리와 한국어 완료 표현은 유한한 휴리스틱이다. 우회·오탐, 인물다운 어조, 반어·이중부정, 인용의 충실성, 미래·속마음에 대한 의미적 환각은 자동 통과만으로 판정할 수 없다. 허용 ID를 붙였다는 이유만으로 내용까지 사실이 되는 것은 아니다.

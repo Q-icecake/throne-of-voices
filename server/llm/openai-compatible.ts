@@ -5,7 +5,7 @@ import type { ProviderInput } from './types.ts';
 import { ProviderError } from './types.ts';
 import { OUTPUT_SCHEMA } from './validator.ts';
 import { RemoteProvider } from './remote.ts';
-import type { DecodedOutput } from './remote.ts';
+import type { DecodedOutput, ModelRawObserver } from './remote.ts';
 import { SecretGuard } from './secrets.ts';
 
 export interface OpenAICompatibleConfig extends ProviderConfig { baseUrl: string }
@@ -22,8 +22,8 @@ export class OpenAICompatibleProvider extends RemoteProvider {
   #endpoint: string;
   #model: string;
   constructor(config: OpenAICompatibleConfig, transport: typeof fetch = globalThis.fetch, budget?: CallBudget,
-    key = process.env.OPENAI_COMPAT_API_KEY ?? '') {
-    super(config, key, transport, budget);
+    key = process.env.OPENAI_COMPAT_API_KEY ?? '', onModelRaw?: ModelRawObserver) {
+    super(config, key, transport, budget, onModelRaw);
     let url: URL;
     try { url = new URL(config.baseUrl); } catch { throw new ProviderError('auth'); }
     if ((url.protocol !== 'https:' && !(url.protocol === 'http:' && ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname))) ||

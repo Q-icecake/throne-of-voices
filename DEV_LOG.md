@@ -1,5 +1,13 @@
 # Development Log
 
+## 2026-10-25 — 036 V13 / 첫 라이브 분석·검증 전 모델 JSON
+
+- 기준 `088ca2a`, 단독 작업. 첫 라이브7실패를 기록/fixture/실제 분기로 대조: 6건은 어댑터 원문/지원조건 검증에서 ambiguous가 된 정황이나 원본 소실로 모델/과잉 거부 판정 불명. 7 gold 모두 통과하므로 안전 검증 규칙 변경0. E035는 HTTP429(rate_limited), rawScore.schema는 출력 미수신의 점수다. 진단 dailyCalls6→23/session1→18로 로컬30 도달이라는 설명을 정정했다. 게임 등 기존5회 사용을 공유하며 공급자 한도 종류는 불명.
+- 선택적 평가 observer만으로 key guard 뒤·usage 교체/검증 전 modelRaw를 최대16KiB UTF-8 저장. v3 모델/어댑터/재검증 점수·정확도·혼동표·사람 시트 분리, legacy raw는 어댑터 별칭, neutralError/UNAVAILABLE/캡처 상태 명시. 프롬프트/헤더/인증/반사/초과 원본은 생략, 게임 원본 저장0. dev `--ids` 선택과 같은20개/실패7+skipped2 최대9회 재실행 절차 추가.
+- 신규35개, 기존1052개 유지: 최종 전체 **1087/1087**, 타입·Vite build·diff 검사 통과. `node scripts/verify-all.ts` **20/20 종료0**, Edge 두 해상도 전체 UI/게임/NPC/비교/실제시작 통과. 종합 시험 단계 이후 마지막3개 경계 회귀 추가 후 전체1087/타입/빌드를 재확인했다. 기존 시험·fixture·holdout·UI·엔진·프롬프트·운영 안전 규칙·의존성 수정0.
+- 오프라인 model→adapter→validated: gold80/80→80/80→80/80, gold20/20, 선택9/9 종료0; bad72/80 각 단계 종료1(8종 코드 유지), Mock47/80→47/80→51/80 종료1, 후단 안전위반 bad2/Mock1 유지. 실제 외부 모델 호출0·키/프록시 값 출력0·선택/확인 팝업0. 실제 라이브 품질/비용/할당량은 미검증.
+- 첫 라이브4파일·실제 일일/진단6파일 SHA-256 baseline 및 종합20단계 전후 불변. 분석/실행/검증 증거 `artifacts/eval-raw-capture/`, 상세 `.codex-runs/036/report.md`. 원 Git 메타데이터는 쓰기범위 밖이라 workspace-local 독립 commit/bundle/patch로 제출하며 원 브랜치 불변·bundle import/fsck·patch tree 일치를 검사한다. 확정 ID/파일해시 `submission.json`, 원 브랜치 반영은 리드 환경에서 필요. push/계정/전역설정 변경0.
+
 ## 2026-10-25 — 035 V12 / 라이브 평가 네트워크·상한·보고
 
 - 기준 `v0.2/real-ai@fc2d983`, 단독 작업. 평가의 어댑터 재구성이 V11 라우터/생성 설정을 잃고 평가 전체가 임시 일일 파일을 사용하던 불일치를 수정했다. 중립 factory에 선택적 budget/network 주입을 추가하고 같은 NetworkRouter를 사용한다. `--network auto|proxy|direct`, 선택적 `--proxy`, 입력→환경→Windows→직접, 사례당 최대1회/재시도0. 주소/키는 결과·진단·콘솔에서 보호한다.

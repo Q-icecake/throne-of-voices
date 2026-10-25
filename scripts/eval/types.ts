@@ -19,7 +19,13 @@ export interface Attempt {
   error?: string; status?: number;
 }
 export interface EvalNetwork { networkMode: NetworkMode; route: NetworkRoute; pacUnsupported: boolean }
-export interface Sample { raw?: unknown; error?: string; attempts: Attempt[]; reservations: number; network?: EvalNetwork }
+export type CaptureStatus = 'captured' | 'not-received' | 'oversize' | 'blocked';
+export interface Sample {
+  /** Legacy name: adapter output, already guarded. Never the model original. */
+  raw?: unknown;
+  modelRaw?: unknown; modelRawStatus?: CaptureStatus; neutralError?: string;
+  error?: string; attempts: Attempt[]; reservations: number; network?: EvalNetwork;
+}
 export interface Source {
   model: string; timeoutMs: number;
   /** Private credential guard shared with evaluation/export boundaries. */

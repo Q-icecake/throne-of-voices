@@ -9,6 +9,8 @@ import type { SystemProxyReader } from '../../server/llm/network-routing.ts';
 import { GAME_MAX_TOKENS } from '../../server/llm/gemini-response.ts';
 import type { NetworkMode } from '../../shared/contracts.ts';
 import type { Attempt, EvalNetwork, Source } from './types.ts';
+import { captureModelRaw } from './capture.ts';
+import type { Sample } from './types.ts';
 
 export interface LiveRuntime {
   transport?: typeof fetch; budgetFile?: string; networkMode?: NetworkMode; proxy?: string;
@@ -133,7 +135,9 @@ export function liveSource(maxCalls: number, env: NodeJS.ProcessEnv = process.en
   }
   const transport = observedTransport(runtime.transport ?? globalThis.fetch, attempts, maxCalls, guard, format);
   const budgetFile = runtime.budgetFile ?? (isolated ? isolatedUsageFile() : env.LLM_USAGE_FILE || PLAY_USAGE_FILE);
-  const selected = configuredProvider(settings, transport, { budget: new ObservedBudget(config, budgetFile), network: router });
+  let capture: Pick<Sample, 'modelRaw' | 'modelRawStatus'> = { modelRawStatus: 'not-received' };
+  const selected = configuredProvider(settings, transport, { budget: new ObservedBudget(config, budgetFile), network: router,
+    onModelRaw: raw => { capture = captureModelRaw(raw, secretGuard); } });
   if (!selected.provider) return undefined;
   const provider = selected.provider;
   return {
@@ -145,12 +149,14 @@ export function liveSource(maxCalls: number, env: NodeJS.ProcessEnv = process.en
     async sample(_fixture, input) {
       const first = attempts.length, reserved = reservations;
       network = undefined;
-      let raw: unknown, error: string | undefined;
+      capture = { modelRawStatus: 'not-received' };
+      let raw: unknown, error: string | undefined, neutralError: string | undefined;
       try { raw = await provider.interpret(input, AbortSignal.timeout(config.timeoutMs)); secretGuard.assertSafe(raw); }
-      catch (e) { raw = undefined; error = budgetStop ?? errorCode(e); }
+      catch (e) { raw = undefined; error = budgetStop ?? errorCode(e); neutralError = e instanceof ProviderError ? e.neutralCode : 'server'; }
+      if (capture.modelRawStatus === 'blocked') { raw = undefined; error = 'MODEL_RAW_BLOCKED'; }
       const observed = attempts.slice(first);
       if (error && observed.length && !observed.at(-1)!.error) observed.at(-1)!.error = error;
-      return { raw, error, attempts: structuredClone(observed), reservations: reservations - reserved, network };
+      return { raw, ...capture, error, neutralError, attempts: structuredClone(observed), reservations: reservations - reserved, network };
     },
   };
 }
