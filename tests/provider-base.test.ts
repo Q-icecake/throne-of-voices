@@ -118,7 +118,7 @@ for (const kind of ['gemini', 'openai-compatible'] as const) {
       ['HTTP 403', async () => new Response(key, { status: 403 }), 'auth'],
       ['HTTP 503', async () => new Response(key, { status: 503 }), kind === 'gemini' ? 'google_server' : 'server'],
       ['HTTP 429', async () => new Response(key, { status: 429 }), 'rate_limited'],
-      ['transport exception', async () => { throw new Error(key); }, 'server'],
+      ['transport exception', async () => { throw new Error(key); }, 'network'],
       ['oversized envelope', async () => new Response('x'.repeat(65537)), kind === 'gemini' ? 'parse' : 'schema'],
     ];
     for (const [name, transport, code] of cases) await t.test(name, async () => {
@@ -266,7 +266,7 @@ for (const kind of ['gemini', 'openai-compatible'] as const) test(`${kind}: HTTP
   const errors: [ProviderErrorCode, () => Promise<Response>][] = [
     ['auth', async () => new Response(key, { status: 401 })],
     ['schema', async () => envelope(kind, { ...proposal, dialogue: `보고 ${key.slice(-12)}` })],
-    ['server', async () => { throw new Error(key); }],
+    ['network', async () => { throw new Error(key); }],
     ['timeout', async () => new Promise(() => {})],
     ['rate_limited', async () => new Response(key, { status: 429 })],
     ['aborted', async () => { throw new ProviderError('aborted'); }],

@@ -6,6 +6,7 @@ import { withDeadline } from './pipeline.ts';
 import { validateProposal } from './validator.ts';
 import { SecretGuard } from './secrets.ts';
 import type { DiagnosticAttempt } from './gemini-response.ts';
+import { fetchWithDiagnostics } from './network.ts';
 
 export interface DecodedOutput { text: string; inputTokens: unknown; outputTokens: unknown; complete: boolean; errorCode?: ProviderErrorCode }
 export const tokenCount = (value: unknown): number | null =>
@@ -65,7 +66,7 @@ export abstract class RemoteProvider implements InterpretationProvider {
           try {
             // Current input.text is transmitted verbatim. Past-context filtering does not redact it.
             const [url, init] = this.request(input, bounded, this.#key);
-            const response = await this.#transport(url, init);
+            const response = await fetchWithDiagnostics(this.#transport, url, init, attempt.diagnostic);
             bounded.throwIfAborted();
             const envelope = await this.readResponse(response, bounded, this.#guard, attempt.diagnostic);
             bounded.throwIfAborted();
@@ -83,7 +84,7 @@ export abstract class RemoteProvider implements InterpretationProvider {
             const safe = bounded.aborted ? abortError(bounded) :
               caught instanceof ProviderError ? caught : new ProviderError(caught instanceof SyntaxError ? this.parseErrorCode : 'server');
             attempt.errorCode = safe.neutralCode;
-            if (!['server', 'google_server'].includes(safe.neutralCode) || index >= this.#settings.retries) throw safe;
+            if (!['server', 'google_server', 'network'].includes(safe.neutralCode) || index >= this.#settings.retries) throw safe;
           } finally {
             attempt.latencyMs = Math.round(performance.now() - attempt.started); attempt.finished = true;
             attempt.diagnostic?.finish(attempt.errorCode ?? 'ok');

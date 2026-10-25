@@ -17,7 +17,16 @@ try {
         & $nodeExecutable $bundledPnpm install --frozen-lockfile --store-dir node_modules/.pnpm-store --node-linker=hoisted --package-import-method=copy
       } else { throw 'pnpm 11.25.0을 설치하거나, Codex의 Node.js 환경에서 실행해 주세요.' }
     }
-    'dev' { & $nodeExecutable scripts/dev.ts }
+    'dev' {
+      # Native child inheritance preserves HTTP(S)_PROXY/NO_PROXY verbatim. Never print their values.
+      $nodeHelp = & $nodeExecutable --help
+      if ($nodeHelp -match '--use-env-proxy') {
+        & $nodeExecutable --use-env-proxy scripts/dev.ts
+      } else {
+        Write-Warning '이 Node는 --use-env-proxy를 지원하지 않습니다. 환경 프록시를 쓰려면 Node 24.5 이상으로 업데이트해 주세요.'
+        & $nodeExecutable scripts/dev.ts
+      }
+    }
     'test' { & $nodeExecutable --test tests/*.test.ts }
     'typecheck' { & $nodeExecutable node_modules/typescript/bin/tsc --noEmit }
     'build' {

@@ -4,7 +4,8 @@ import { defaultUsageFile } from './usage-file.ts';
 import { ProviderError } from './types.ts';
 import type { ProviderErrorCode } from './types.ts';
 import { SecretGuard } from './secrets.ts';
-import type { LlmDiagnostic } from '../../shared/contracts.ts';
+import type { LlmDiagnostic, NetworkError } from '../../shared/contracts.ts';
+import { safeNetworkError } from './network.ts';
 
 export const CONNECTION_MAX_TOKENS = 256;
 export const GAME_MAX_TOKENS = 2048;
@@ -32,6 +33,7 @@ const finishes = new Set(['STOP', 'MAX_TOKENS', 'SAFETY', 'RECITATION', 'OTHER',
   'SPII', 'MALFORMED_FUNCTION_CALL', 'UNEXPECTED_TOOL_CALL', 'FINISH_REASON_UNSPECIFIED']);
 export type GeminiDiagnostic = LlmDiagnostic;
 export interface DiagnosticAttempt {
+  network(error: NetworkError): void;
   observe(httpStatus: number, value: unknown): void;
   finish(resultCode: string): void;
 }
@@ -48,30 +50,41 @@ function safeMessage(value: unknown, guard: Pick<SecretGuard, 'reflects'>): stri
 export class GeminiDiagnostics {
   #file: string;
   #last: LlmDiagnostic | null = null;
-  constructor(file = join(dirname(defaultUsageFile()), 'llm-diagnostics.jsonl')) { this.#file = file; }
+  #source: LlmDiagnostic['source'];
+  constructor(file = join(dirname(defaultUsageFile()), 'llm-diagnostics.jsonl'),
+    source: LlmDiagnostic['source'] = process.env.NODE_TEST_CONTEXT || process.env.LLM_DIAGNOSTIC_SOURCE === 'test' ? 'test' : 'live') {
+    this.#file = file; this.#source = source;
+  }
   latest(guard: Pick<SecretGuard, 'reflects'>): LlmDiagnostic | null {
     return this.#last && !guard.reflects(JSON.stringify(this.#last)) ? structuredClone(this.#last) : null;
   }
   begin(context: DiagnosticContext, guard: Pick<SecretGuard, 'reflects'>): DiagnosticAttempt {
     const started = performance.now(), timestamp = new Date().toISOString();
     let httpStatus: number | null = null, value: unknown, done = false;
+    let networkError: NetworkError | null = null;
     return {
+      network: error => { if (!done && httpStatus === null) networkError = safeNetworkError(error, guard); },
       observe: (status, envelope) => { if (!done) { httpStatus = status; value = envelope; } },
       finish: resultCode => {
         if (done) return; done = true;
-        this.write(httpStatus, value, guard, { ...context, timestamp, resultCode, latencyMs: Math.round(performance.now() - started) });
+        // The deadline can win even when a transport ignores cancellation entirely.
+        if (httpStatus === null && !networkError && ['timeout', 'aborted', 'stale'].includes(resultCode))
+          networkError = safeNetworkError({ name: resultCode === 'timeout' ? 'TimeoutError' : 'AbortError', code: null }, guard);
+        this.write(httpStatus, value, guard, { ...context, timestamp, resultCode, latencyMs: Math.round(performance.now() - started) }, networkError);
         value = undefined;
       },
     };
   }
   write(httpStatus: number | null, value: unknown, guard: Pick<SecretGuard, 'reflects'>,
-    context?: DiagnosticContext & Pick<LlmDiagnostic, 'timestamp' | 'resultCode' | 'latencyMs'>) {
+    context?: DiagnosticContext & Pick<LlmDiagnostic, 'timestamp' | 'resultCode' | 'latencyMs'>, networkError: NetworkError | null = null) {
     const envelope = record(value), error = record(envelope.error), usage = record(envelope.usageMetadata);
     const candidate = record(Array.isArray(envelope.candidates) ? envelope.candidates[0] : null);
     const safeEnum = (item: unknown, allowed: Set<string>) =>
       typeof item === 'string' && allowed.has(item) && !guard.reflects(item) ? item : null;
     const details = Array.isArray(error.details) ? error.details : [];
-    const diagnostic: GeminiDiagnostic = { timestamp: context?.timestamp ?? new Date().toISOString(),
+    const diagnostic: GeminiDiagnostic = { source: this.#source,
+      networkError: httpStatus === null && networkError ? safeNetworkError(networkError, guard) : null,
+      timestamp: context?.timestamp ?? new Date().toISOString(),
       callKind: context?.callKind ?? 'connection_test', provider: 'gemini',
       model: context?.model && /^[a-zA-Z0-9._-]{1,200}$/.test(context.model) && !guard.reflects(context.model) ? context.model : null,
       latencyMs: context?.latencyMs ?? 0, retries: context?.retries ?? 0,

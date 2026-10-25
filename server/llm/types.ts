@@ -43,7 +43,7 @@ export interface InterpretationProvider {
   readonly lastUsage?: ProviderUsage;
 }
 export type ProviderErrorCode = 'timeout' | 'rate_limited' | 'auth' | 'schema' | 'server' | 'budget' | 'aborted' |
-  'truncated' | 'empty' | 'request' | 'model' | 'google_server' | 'parse';
+  'truncated' | 'empty' | 'request' | 'model' | 'google_server' | 'parse' | 'network' | 'tls';
 export interface AttemptUsage {
   inputTokens: number | null;
   outputTokens: number | null;
@@ -59,6 +59,8 @@ export interface ProviderUsage extends AttemptUsage {
   attemptUsage: AttemptUsage[];
 }
 export const PROVIDER_MESSAGES: Record<ProviderErrorCode, string> = {
+  network: '공급자 서버에 연결하지 못함(네트워크·DNS·방화벽·프록시 확인).',
+  tls: 'TLS/인증서 문제. 네트워크와 인증서 설정을 확인해 주세요.',
   timeout: 'AI 응답 시간이 초과되었습니다.', rate_limited: 'AI 공급자 한도 초과(429). 추가 호출을 중단했습니다.',
   auth: 'AI 인증 또는 연결 설정을 확인해 주세요.', schema: 'AI 제안의 형식이나 허용 범위가 맞지 않습니다.',
   server: 'AI 연결에 실패했습니다.', budget: '로컬 카운터를 확인할 수 없거나 호출 상한에 도달했습니다. 추가 호출을 차단했습니다.',
@@ -73,7 +75,7 @@ export const PROVIDER_MESSAGES: Record<ProviderErrorCode, string> = {
 const legacy = { timeout: 'PROVIDER_TIMEOUT', rate_limited: 'CALL_LIMIT', auth: 'PROVIDER_ERROR', schema: 'INVALID_PROPOSAL',
   server: 'PROVIDER_ERROR', budget: 'CALL_LIMIT', aborted: 'PROVIDER_TIMEOUT',
   truncated: 'INVALID_PROPOSAL', empty: 'INVALID_PROPOSAL', request: 'PROVIDER_ERROR', model: 'PROVIDER_ERROR',
-  google_server: 'PROVIDER_ERROR', parse: 'INVALID_PROPOSAL' } as const;
+  google_server: 'PROVIDER_ERROR', parse: 'INVALID_PROPOSAL', network: 'PROVIDER_ERROR', tls: 'PROVIDER_ERROR' } as const;
 const neutral = { PROVIDER_ERROR: 'server', PROVIDER_TIMEOUT: 'timeout', CALL_LIMIT: 'budget', INVALID_PROPOSAL: 'schema' } as const;
 export class ProviderError extends Error {
   readonly code: 'PROVIDER_ERROR' | 'PROVIDER_TIMEOUT' | 'CALL_LIMIT' | 'INVALID_PROPOSAL';

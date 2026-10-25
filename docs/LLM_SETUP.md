@@ -1,5 +1,29 @@
 # LLM 연결 설정 (v0.2)
 
+## HTTP 상태 없이 실패할 때 (033)
+
+`httpStatus: null`은 Google HTTP 응답을 받지 못했다는 뜻이다. 약 10초 뒤 `fetch failed`라면 DNS·방화벽·VPN/프록시·TLS·연결 제한시간을 먼저 살펴본다. Google에 도달했는지, 과금되었는지는 이 기록만으로 확정할 수 없다. 브라우저의 AI Studio 요청 수는 이 앱의 서버 호출 성공 증거가 아니다.
+
+1. 이 PC에서 **브라우저를 거치지 않는** 연결을 확인한다. PowerShell의 `Test-NetConnection generativelanguage.googleapis.com -Port 443`으로 DNS/TCP 접근부터 확인할 수 있다(키 불필요). 이 검사는 TLS·API 인증·모델 성공을 보장하지 않으며, 프록시 전용 망에서는 직접 연결 실패가 예상될 수 있다.
+2. VPN·프록시를 사용하는 환경이면 해당 프로그램에서 확인한 HTTP 프록시 주소를 같은 PowerShell 창의 `HTTPS_PROXY`에 설정하고 `run.ps1 dev`를 실행한다. 브라우저만 사용하는 프록시나 SOCKS 주소를 그대로 넣지 않는다. 아래 주소는 형식 예시이며 실제 주소는 로컬에서만 입력한다.
+
+   ```powershell
+   $env:HTTPS_PROXY = 'http://127.0.0.1:실제포트'
+   $env:NO_PROXY = '127.0.0.1,localhost'
+   .\run.ps1 dev
+   ```
+
+   기존 `NO_PROXY`가 있으면 위 로컬 주소를 기존 목록에 추가한다. `HTTPS_PROXY`/`HTTP_PROXY`/`NO_PROXY`는 자식 Node 서버에 그대로 상속되며 시작 스크립트는 값을 출력·변경하지 않는다. 소문자 변수도 Node가 지원하므로 대소문자가 다른 설정이 함께 있으면 사용자가 일치시킨다. Node 내장 프록시는 운영체제/브라우저 설정을 자동으로 가져오지 않는다.
+3. 서버 재시작 후 설정 화면에서 `프록시 환경변수 감지됨/없음`과 남은 로컬 상한을 확인하고 **연결 시험을 한 번** 누른다. 감지 표시는 변수 존재만 뜻하며 프록시 작동이나 Google 도달 성공을 뜻하지 않는다. **프록시 주소·인증정보·키는 채팅에 보내지 않아도 된다.**
+
+본 작업에서 설치된 **Node v26.12.1**의 `node --help`에서 `--use-env-proxy`를 직접 확인했다. `run.ps1 dev`는 지원 여부를 확인한 뒤 이 옵션으로 서버를 시작한다. 미지원 Node에서는 고정 안내를 출력하고 기존 개발 서버를 실행하므로 환경 프록시 적용을 주장하지 않는다. 프록시가 필요하면 Node 24.5 이상을 사용한다. 직접 실행할 때는 `node --use-env-proxy scripts/dev.ts` 또는 실행 전에 `$env:NODE_USE_ENV_PROXY = '1'`을 사용할 수 있다. 공식 문서상 환경변수의 fetch 지원은 Node 24.0+, CLI 옵션은 24.5+다. 새 npm 의존성이나 TLS 검증 해제는 필요 없다. [Node CLI 문서](https://nodejs.org/api/cli.html#--use-env-proxy), [Node 네트워크 설정 문서](https://nodejs.org/en/learn/http/enterprise-network-configuration).
+
+설정 결과는 연결 실패(`network`: 네트워크·DNS·방화벽·프록시 확인), 연결 시간 초과(`timeout`, HTTP 없음), TLS/인증서 문제(`tls`)를 구별한다. HTTP 응답 후 읽기 시간 초과는 기존 응답 시간 초과로 유지한다. 게임도 같은 중립 오류 코드와 기존 칩/오류칸을 사용한다. 연결 시험은 계속 재시도 0회이며 실패도 로컬 카운터 1회를 사용한다.
+
+새 JSONL/상태 요약의 `networkError`는 허용된 오류 `name`과 `code`만 담는다. 예: `{"name":"TypeError","code":"ENOTFOUND"}`. `error.cause.code`와 제한된 중첩 원인/집합 오류를 검사한다. 알려지지 않은 값은 `null`이고, TLS 계열의 미지 코드는 `tls`로 분류하되 원문은 내보내지 않는다. 모든 허용 값에도 키 guard를 적용한다. 원문 메시지·stack·URL·쿼리·헤더는 보관하지 않는다. 응답을 받은 HTTP 오류는 `networkError: null`이다.
+
+새 기록에는 `source: "live"`가 붙고 Node 테스트/오프라인 검증은 `source: "test"`로 표시된다. `live`는 실제 실행 경로라는 뜻이며 Google 도달/성공을 보장하지 않는다. 과거에 섞인 시험 줄은 자동으로 판별·삭제하지 않는다. 이번 변경은 삭제 버튼 대신 출처 표식을 선택해 기존 자료와 UI를 보존한다. 과거 행에는 표식이 없으며 기존 500줄/1 MiB 회전 정책은 유지된다. 테스트 컨텍스트·명시적 예산 파일 옆 진단 경로·검증의 임시 파일 격리를 유지하고 전체 검증 전후 실제 파일 해시를 비교한다.
+
 ## 연결 시험 오류와 사고 토큰 (031)
 
 Gemini의 `maxOutputTokens`는 **사고 + 보이는 출력의 합계**다. 사고 중 한도에 닿으면 `MAX_TOKENS`와 빈 텍스트가 올 수 있다. 연결 시험은 기존 8에서 **256토큰**으로 올렸으며 고정 문장만 전송한다(JSON MIME/스키마 없음). 명령 해석·NPC 대화는 JSON 스키마를 유지하고 합계 기본 **2048토큰**을 사용한다. 이는 성공 보장이 아니라 비용·출력 상한이며 큰 응답은 여전히 잘릴 수 있다.

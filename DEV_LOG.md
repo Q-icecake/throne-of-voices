@@ -1,5 +1,14 @@
 # Development Log
 
+## 2026-10-25 — 033 V10 / 네트워크 실패 진단·내장 프록시
+
+- 기준 `v0.2/real-ai@6816d50`. HTTP 응답 없는 fetch 예외를 network/timeout/tls로 구분하고 원인 name/code만 allowlist+키 guard 후 JSONL/최근 요약에 기록한다. 원문 메시지·stack·URL·쿼리·헤더는 기록하지 않는다. HTTP 오류/본문 시간 초과·명시적 ProviderError/취소 의미·예산 예약·재시도 상한은 유지한다.
+- 설치 Node v26.12.1의 `node --help`와 공식 문서로 내장 프록시 지원 확인. `run.ps1 dev`가 지원되는 `--use-env-proxy`를 사용하고 기존 환경변수를 그대로 상속한다. 설정 기존 요약은 프록시 감지 여부만 표시하며 network/연결 timeout/TLS 문구를 구분한다. CSS/그림/새 화면/의존성 변경 0. `docs/LLM_SETUP.md`에 HTTP 없는 실패의 확인 순서·로컬 우회·같은 PowerShell 시작·시험 1회 절차 추가.
+- 삭제 버튼 대신 새 로그 source live/test 표식 선택. 기존 오염 줄은 수정/삭제하지 않았다. 기본 테스트/주입 budget/오프라인 검증 격리 재점검, Node 테스트 문맥 없는 평가 자식은 시험 출처를 명시하고 6행 단언 추가. 실제 로그/카운터는 baseline 및 verify-all 19단계 전후 SHA-256 동일(`b4147b0b…8c1`, `a263494d…447a`).
+- 신규 57개 시험, 관련 104/104, 최종 전체 970/970, 타입·Vite build 통과. 최초 전체 963/970의 7 실패는 오래된 transport server 기대값을 network로 수정해 해결했고 최초 로그 보존. exact-field 단언은 새 필드를 포함하도록 확장, 기존 보안/엔진/카운터 단언 유지. 최초 TalkResponse 코드 합집합 타입 누락도 수정했다.
+- `verify-all` 19/19 종료0: screenshots all·verify-visual·게임/자동진행/NPC/비교/실제 시작 포함. Edge 두 해상도 설정21시나리오·프록시 존재 표시·비밀 차단/경계 통과, 네트워크/timeout/TLS PNG 직접 확인. 본기기 가짜 HTTP/HTTPS CONNECT 프록시+NO_PROXY 및 run.ps1 환경 상속 확인. 평가 출처 단언 보강 후 타입/970개 전체 시험을 재실행해 통과했다.
+- 실제 외부 모델 호출0·실제 키/환경값 열람/출력0·사용자 확인 팝업0. 실제 프록시/Google/계정 성공은 라이브 미검증. `.codex-runs/033/report.md`, `artifacts/network-033/`에 결과·해시·제출 증거. 원 Git 메타데이터는 쓰기 범위 밖이므로 독립 commit/bundle/patch로 제출하고 리드 환경에서 원 브랜치 반영 필요; 원격/다른 worktree/전역 Git 설정 변경0.
+
 ## 2026-10-25 — 032 V9b / 안전한 진단 로그·마지막 요약
 
 - 기준 `v0.2/real-ai`, HEAD `b685fff`. 실제 Gemini 시도마다 시작 UTC·호출 종류·요청 모델·HTTP/Google 분류/안전 message·finishReason·입력/출력/사고 토큰·지연·재시도 번호·최종 분류·예약 시점 오늘/세션 카운터를 한 줄로 기록한다. 명령/NPC/회의 구분, 최종 제안 검증 이후 기록, 늦은 응답 중복 방지. 기존 필드 보존.

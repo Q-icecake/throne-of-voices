@@ -19,15 +19,27 @@ const temp = await mkdtemp(join(tmpdir(), 'throne-start-visual-'));
 const fakeKey = 'browser-synthetic-Q7v2B9m4L6r8S3x5', guard = new SecretGuard(fakeKey);
 const probe = portProbe(); await listenForFetch(probe);
 const webPort = (probe.address() as AddressInfo).port; await new Promise<void>(resolve => probe.close(() => resolve()));
-let calls = 0, reply: number | 'timeout' | 'schema' | 'truncated' | 'thinking' = 200;
+const networkCases = [
+  ['ENOTFOUND', 'Google 서버에 연결하지 못함(네트워크·DNS·방화벽·프록시 확인)'],
+  ['ECONNREFUSED', 'Google 서버에 연결하지 못함(네트워크·DNS·방화벽·프록시 확인)'],
+  ['ECONNRESET', 'Google 서버에 연결하지 못함(네트워크·DNS·방화벽·프록시 확인)'],
+  ['UND_ERR_SOCKET', 'Google 서버에 연결하지 못함(네트워크·DNS·방화벽·프록시 확인)'],
+  ['ETIMEDOUT', '연결 시간 초과'], ['UND_ERR_CONNECT_TIMEOUT', '연결 시간 초과'],
+  ['CERT_HAS_EXPIRED', 'TLS/인증서 문제'], ['ERR_TLS_CERT_ALTNAME_INVALID', 'TLS/인증서 문제'],
+  ['AbortError', '연결 시간 초과'], ['TimeoutError', '연결 시간 초과'],
+] as const;
+let calls = 0, reply: number | 'timeout' | 'schema' | 'truncated' | 'thinking' | typeof networkCases[number][0] = 200;
+let proxyEnv: NodeJS.ProcessEnv = {};
 const privateMarker = 'PRIVATE_PLAYER_PROMPT_032';
 const usageMetadata = { promptTokenCount: 12, candidatesTokenCount: 4, thoughtsTokenCount: 32 };
-function freshApi() { return createGameServer(undefined, webPort, { env: {}, budgetFile: join(temp, 'usage.json'), timeoutMs: 80, transport: async (_url, init) => {
+function freshApi() { return createGameServer(undefined, webPort, { env: proxyEnv, budgetFile: join(temp, 'usage.json'), timeoutMs: 80, transport: async (_url, init) => {
   calls++; assert.equal(new Headers(init?.headers).get('x-goog-api-key'), fakeKey);
   if (reply === 'timeout') return await new Promise<Response>(() => {});
   if (reply === 'schema') return new Response('invalid');
   if (reply === 'truncated') return Response.json({ candidates: [{ finishReason: 'MAX_TOKENS', content: { parts: [] } }], usageMetadata });
   if (reply === 'thinking') return Response.json({ candidates: [{ finishReason: 'STOP', content: { parts: [{ thought: true, text: 'OK' }] } }] });
+  if (reply === 'AbortError' || reply === 'TimeoutError') throw new DOMException('PRIVATE_NETWORK ' + fakeKey, reply);
+  if (typeof reply === 'string') throw new TypeError('https://private.invalid/?key=' + fakeKey + ' Authorization: PRIVATE_NETWORK', { cause: { code: reply } });
   return reply === 200 ? Response.json({ candidates: [{ finishReason: 'STOP', content: { parts: [{ text: 'OK' }] } }], usageMetadata })
     : Response.json({ error: { message: reply === 400 ? `Invalid JSON payload received. Unknown name "${privateMarker}". Cannot find field.` : fakeKey } }, { status: reply });
 } }); }
@@ -71,6 +83,7 @@ try {
     // A new server session per viewport: clear-key deliberately preserves the
     // user's model setting and is not a simulation of a first application run.
     if (evidence.length) {
+      proxyEnv = { HTTPS_PROXY: 'http://PRIVATE_PROXY:PRIVATE_PASSWORD@proxy.invalid:1234' };
       await vite.close();
       api.closeAllConnections(); await new Promise<void>(resolve => api.close(() => resolve()));
       api = freshApi(); await listenForFetch(api); apiPort = (api.address() as AddressInfo).port;
@@ -104,6 +117,7 @@ try {
     assert.equal(await page.locator('#start-ai').isDisabled(), true);
     evidence.push({ size, firstRunModel: '', firstRunKeyConfigured: false });
     await measure(page, 'settings', size);
+    assert.match(await page.locator('#last-diagnostic').innerText(), proxyEnv.HTTPS_PROXY ? /프록시 환경변수 감지됨/ : /프록시 환경변수 없음/);
     assert.match(await page.locator('#local-usage').innerText(), /541\/30.*0\/30/);
     await page.screenshot({ path: `${usageOutput}/settings-${size}.png` });
     assert.equal(await page.locator('#ai-key').getAttribute('type'), 'password'); assert.equal(await page.locator('#ai-key').getAttribute('autocomplete'), 'off');
@@ -125,9 +139,9 @@ try {
     assert.equal(resetLogs.filter((event: { kind: string }) => event.kind === 'llm-usage-reset').length, 1);
     await page.screenshot({ path: `${usageOutput}/reset-${size}.png` });
     assert.match(await page.locator('.start-field-note').allTextContents().then(values => values.join(' ')), /사고·출력 합계 최대 256토큰/);
-    for (const [response, label] of [[200, '정상'], [401, '키 오류'], [404, '모델 없음(404)'], [429, 'Google 한도 초과(429)'], ['timeout', '시간 초과'], ['schema', '응답 파싱 실패'],
+    for (const [response, label] of [[200, '정상'], [401, '키 오류'], [404, '모델 없음(404)'], [429, 'Google 한도 초과(429)'], ['timeout', '연결 시간 초과'], ['schema', '응답 파싱 실패'],
       [400, '요청 형식 거부(400)·모델 설정 불일치'], [500, 'Google 서버 오류(5xx)'], [503, 'Google 서버 오류(5xx)'],
-      ['truncated', '응답이 잘림(출력 한도·사고 토큰)'], ['thinking', '응답 없음(사고만 반환 또는 빈 응답)']] as const) {
+      ['truncated', '응답이 잘림(출력 한도·사고 토큰)'], ['thinking', '응답 없음(사고만 반환 또는 빈 응답)'], ...networkCases] as const) {
       reply = response; const beforeCall = calls;
       await page.click('#test-connection'); await page.locator('#test-connection:not([disabled])').waitFor();
       assert.equal(await page.locator('#test-result').textContent(), label); assert.equal(calls, beforeCall + 1);
@@ -139,12 +153,19 @@ try {
       assert.equal(diagnostic.retries, 0); assert.equal(diagnostic.resultCode, status.testResult);
       assert.match(summary, new RegExp(diagnostic.resultCode)); assert.ok(summary.includes(`${diagnostic.latencyMs}ms`));
       assert.ok(summary.includes('offline-model')); assert.ok(summary.includes(diagnostic.finishReason ?? '—'));
-      assert.equal(diagnostic.httpStatus, typeof response === 'number' ? response : response === 'timeout' ? null : 200);
+      const network = networkCases.some(([code]) => code === response);
+      assert.equal(diagnostic.httpStatus, typeof response === 'number' ? response : response === 'timeout' || network ? null : 200);
+      assert.equal(diagnostic.source, 'test');
+      if (network) {
+        assert.ok(summary.includes(diagnostic.networkError.code ?? diagnostic.networkError.name));
+        await measure(page, `network-${response}`, size);
+      }
       assert.match(await page.locator('#diagnostic-location').innerText(), /<프로젝트>\\artifacts\\llm-diagnostics\.jsonl의 마지막 줄/);
       const log = await readFile(join(temp, 'llm-diagnostics.jsonl'), 'utf8');
       assert.deepEqual(JSON.parse(log.trim().split('\n').at(-1)!), diagnostic);
       const published = log + JSON.stringify(status) + await page.content(); guard.assertSafe(published);
       assert.ok(!published.includes(privateMarker)); assert.ok(!published.includes('Reply with exactly OK.'));
+      for (const secret of ['private.invalid', 'PRIVATE_NETWORK', 'Authorization:', 'PRIVATE_PROXY', 'PRIVATE_PASSWORD', 'proxy.invalid']) assert.ok(!published.includes(secret));
       if (response === 400) assert.ok(summary.includes('Invalid JSON payload received.'));
       if (response === 200 || response === 'truncated') assert.ok(summary.includes('12/4/32'));
       evidence.push({ size, injected: response, displayed: label, calls: 1 });
@@ -178,7 +199,7 @@ try {
   await writeFile(`${output}/verification.json`, JSON.stringify({ externalCalls: 0, fakeTransportCalls: calls, evidence }, null, 2) + '\n');
   await writeFile(`${usageOutput}/screenshots.json`, JSON.stringify({ externalCalls: 0, fakeTransportCalls: calls, evidence }, null, 2) + '\n');
   await writeFile(`${diagnosticOutput}/screenshots.json`, JSON.stringify({ externalCalls: 0, fakeTransportCalls: calls, evidence }, null, 2) + '\n');
-  console.log(`PASS start-screen: both sizes, 3 screens, keyboard, secret boundaries, 11 response scenarios, zero limit, clear, AI/Mock start, unchanged court; ${output}`);
+  console.log(`PASS start-screen: both sizes, 3 screens, keyboard, secret boundaries, 21 response scenarios, proxy presence, zero limit, clear, AI/Mock start, unchanged court; ${output}`);
 } finally {
   await browser.close(); await vite.close(); api.closeAllConnections(); await new Promise<void>(resolve => api.close(() => resolve())); await rm(temp, { recursive: true, force: true });
 }

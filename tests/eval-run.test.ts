@@ -140,12 +140,13 @@ test('eval actual provider bridge accounts for retries, failed tokens, and budge
     const diagnostics=readFileSync(join(dir,'llm-diagnostics.jsonl'),'utf8').trim().split('\\n').map(line=>JSON.parse(line));
     assert.equal(diagnostics.length,6);
     assert.ok(diagnostics.every(row=>row.model==='eval-model' && row.httpStatus===500));
+    assert.ok(diagnostics.every(row=>row.source==='test'));
     rmSync(dir,{recursive:true,force:true});
   `;
   const child = spawnSync(process.execPath, ['--input-type=module', '-e', code], {
     encoding: 'utf8', env: { SystemRoot: process.env.SystemRoot, TEMP: process.env.TEMP, TMP: process.env.TMP,
       // Keep the synthetic model distinct from the fake key's protected fragments.
-      LLM_PROVIDER: 'gemini', GEMINI_API_KEY: 'fake-test-only', GEMINI_MODEL_ID: 'eval-model', LLM_RETRIES: '1', LLM_DAILY_CALL_LIMIT: '10', LLM_SESSION_CALL_LIMIT: '10' },
+      LLM_DIAGNOSTIC_SOURCE: 'test', LLM_PROVIDER: 'gemini', GEMINI_API_KEY: 'fake-test-only', GEMINI_MODEL_ID: 'eval-model', LLM_RETRIES: '1', LLM_DAILY_CALL_LIMIT: '10', LLM_SESSION_CALL_LIMIT: '10' },
   });
   assert.equal(child.status, 0, child.stderr);
 });

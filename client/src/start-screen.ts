@@ -3,6 +3,7 @@ import background from './assets/court-background.svg';
 import type { ConnectionTestResult, LlmStatus } from '../../shared/contracts.ts';
 
 export const TEST_LABELS: Record<ConnectionTestResult, string> = {
+  network: 'Google 서버에 연결하지 못함(네트워크·DNS·방화벽·프록시 확인)', tls: 'TLS/인증서 문제',
   untested: '시험 전', ok: '정상', auth: '키 오류', model: '모델 없음(404)', rate_limited: 'Google 한도 초과(429)',
   daily_limit: '로컬 일일 상한(UTC) 도달', session_limit: '로컬 세션 상한 도달',
   timeout: '시간 초과', schema: '응답 형식 오류', server: '연결·내부 오류', budget: '로컬 카운터 확인 실패 · 호출 차단', stale: '설정 변경 · 이전 시험 무시',
@@ -63,7 +64,7 @@ export async function enterStartScreen(): Promise<void> {
     </section><p id="start-error" class="start-error" role="alert" hidden></p>`;
   document.body.append(root);
   const el = <T extends HTMLElement = HTMLElement>(id: string) => root.querySelector<T>(`#${id}`)!;
-  let status: LlmStatus = { keyConfigured: false, keySource: 'none', model: '', limit: 30, testResult: 'untested', mode: 'mock', dailyCalls: -1, dailyLimit: 30, sessionCalls: 0, sessionLimit: 30 };
+  let status: LlmStatus = { proxyDetected: false, keyConfigured: false, keySource: 'none', model: '', limit: 30, testResult: 'untested', mode: 'mock', dailyCalls: -1, dailyLimit: 30, sessionCalls: 0, sessionLimit: 30 };
   let dirty = false, busy = false;
   const model = el<HTMLInputElement>('ai-model'), key = el<HTMLInputElement>('ai-key'), limit = el<HTMLInputElement>('ai-limit');
   async function request<T>(path: string, body?: unknown): Promise<T> {
@@ -78,13 +79,14 @@ export async function enterStartScreen(): Promise<void> {
     el('local-usage').textContent = `오늘(UTC) 로컬 호출 ${status.dailyCalls < 0 ? '확인 불가' : status.dailyCalls}/${status.dailyLimit} · 이번 서버 세션 ${status.sessionCalls}/${status.sessionLimit}`;
     el('home-ai-status').textContent = !status.keyConfigured ? 'AI 미연결 · Mock' : status.testResult === 'ok' ? 'AI 연결 확인됨' : status.testResult === 'untested' ? 'AI 설정됨 · 시험 전' : `AI 연결 오류 · ${TEST_LABELS[status.testResult]}`;
     el('key-source').textContent = status.keySource === 'env' ? '환경변수 키 사용 중' : status.keySource === 'screen' ? '화면 입력 키 사용 중 · 서버 메모리' : '키 미설정';
-    el('test-result').textContent = testLabel;
+    el('test-result').textContent = status.testResult === 'timeout' && status.lastDiagnostic?.networkError ? '연결 시간 초과' : testLabel;
     const diagnostic = status.lastDiagnostic;
     const diagnosticModel = diagnostic?.model ?? '—';
     el('last-diagnostic').title = diagnosticModel;
     el('last-diagnostic').textContent = diagnostic
-      ? `최근 진단: HTTP ${diagnostic.httpStatus ?? '—'} · ${diagnostic.resultCode} · ${diagnostic.finishReason ?? '—'} · 토큰(입력/출력/사고) ${diagnostic.inputTokens ?? '—'}/${diagnostic.outputTokens ?? '—'}/${diagnostic.thinkingTokens ?? '—'} · ${diagnostic.latencyMs}ms · 모델 ${diagnosticModel.length > 48 ? diagnosticModel.slice(0, 48) + '…' : diagnosticModel}${diagnostic.googleMessage ? ` · ${diagnostic.googleMessage.slice(0, 80)}` : ''}`
+      ? `최근 진단: HTTP ${diagnostic.httpStatus ?? '—'} · ${diagnostic.resultCode} · ${diagnostic.networkError ? [diagnostic.networkError.name, diagnostic.networkError.code].filter(Boolean).join('/') : diagnostic.finishReason ?? '—'} · 토큰(입력/출력/사고) ${diagnostic.inputTokens ?? '—'}/${diagnostic.outputTokens ?? '—'}/${diagnostic.thinkingTokens ?? '—'} · ${diagnostic.latencyMs}ms · 모델 ${diagnosticModel.length > 48 ? diagnosticModel.slice(0, 48) + '…' : diagnosticModel}${diagnostic.googleMessage ? ` · ${diagnostic.googleMessage.slice(0, 80)}` : ''}`
       : '최근 진단 없음 · 이번 서버 세션';
+    el('last-diagnostic').textContent += ` · 프록시 환경변수 ${status.proxyDetected ? '감지됨' : '없음'}`;
     el('untested-note').textContent = status.testResult === 'untested' ? '현재 설정은 시험하지 않았습니다. ' : '';
     for (const control of root.querySelectorAll<HTMLButtonElement | HTMLInputElement>('button, input')) control.disabled = busy;
     el<HTMLButtonElement>('start-ai').disabled = busy || !(model.value.trim() && (key.value || status.keyConfigured));

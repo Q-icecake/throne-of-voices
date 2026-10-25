@@ -9,6 +9,7 @@ import { withDeadline } from './pipeline.ts';
 import type { ConnectionTestResult, LlmStatus } from '../../shared/contracts.ts';
 import { dirname, join } from 'node:path';
 import type { DiagnosticAttempt } from './gemini-response.ts';
+import { fetchWithDiagnostics, proxyDetected } from './network.ts';
 
 export interface RuntimeOptions { env?: NodeJS.ProcessEnv; transport?: typeof fetch; budgetFile?: string; timeoutMs?: number; diagnosticsFile?: string }
 export class RuntimeSettings {
@@ -26,8 +27,10 @@ export class RuntimeSettings {
   #budget: CallBudget;
   #diagnostics: GeminiDiagnostics;
   #generation: ReturnType<typeof geminiGenerationSettings>;
+  #proxyDetected: boolean;
   constructor(options: RuntimeOptions = {}) {
     const env = options.env ?? process.env;
+    this.#proxyDetected = proxyDetected(env);
     this.#generation = geminiGenerationSettings(env);
     this.#diagnostics = new GeminiDiagnostics(options.diagnosticsFile ?? (options.budgetFile ? join(dirname(options.budgetFile), 'llm-diagnostics.jsonl') : undefined));
     this.#key = env.GEMINI_API_KEY ?? '';
@@ -39,7 +42,7 @@ export class RuntimeSettings {
     this.#timeout = options.timeoutMs ?? 15000;
     this.#budget = new CallBudget({ model: 'runtime', timeoutMs: 15000, retries: 0, dailyLimit: 30, sessionLimit: 30 }, options.budgetFile);
   }
-  status(): LlmStatus { return { keyConfigured: !!this.#key, keySource: this.#source, model: this.#model,
+  status(): LlmStatus { return { keyConfigured: !!this.#key, keySource: this.#source, model: this.#model, proxyDetected: this.#proxyDetected,
     lastDiagnostic: this.#diagnostics.latest({ reflects: text => this.reflects(text) }),
     ...this.#budget.snapshot(), limit: this.#limit, testResult: this.#result, mode: this.#mode }; }
   resetUsage() { this.#invalidate(); return this.#budget.resetToday(); }
@@ -78,11 +81,11 @@ export class RuntimeSettings {
       this.#budget.reserve();
       diagnostic = this.#diagnostics.begin({ model, callKind: 'connection_test', retries: 0, ...this.#budget.snapshot() }, { reflects: text => this.reflects(text) });
       result = await withDeadline(async signal => {
-        const response = await this.#transport('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', {
+        const response = await fetchWithDiagnostics(this.#transport, 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', {
           method: 'POST', redirect: 'error', signal, headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
           body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'Reply with exactly OK.' }] }],
             generationConfig: { maxOutputTokens: CONNECTION_MAX_TOKENS, temperature: 0, ...thinkingConfig(model, this.#generation?.thinkingMode) } }),
-        });
+        }, diagnostic);
         signal.throwIfAborted();
         const value = await readGeminiResponse(response, signal, { reflects: text => this.reflects(text) }, diagnostic);
         const decoded = decodeGemini(value);

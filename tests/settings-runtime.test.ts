@@ -40,7 +40,7 @@ for (const [code, expected] of [[200, 'ok'], [401, 'auth'], [403, 'auth'], [404,
 }
 for (const [name, transport, expected] of [
   ['timeout ignoring abort', async () => new Promise<Response>(() => {}), 'timeout'],
-  ['thrown credential', async () => { throw new Error(fakeKey); }, 'server'],
+  ['thrown credential', async () => { throw new Error(fakeKey); }, 'network'],
   ['invalid JSON', async () => new Response('{'), 'parse'],
   ['truncated', async () => Response.json({ candidates: [{ finishReason: 'MAX_TOKENS', content: { parts: [{ text: 'OK' }] } }] }), 'truncated'],
   ['oversized', async () => new Response('x'.repeat(65537)), 'parse'],
