@@ -119,7 +119,10 @@ try {
     assert.match(await page.locator('.paper-meta').innerText(), /관련 작업/);
     assert.match(await page.locator('.paper-body').innerText(), /선제공격 금지|먼저 공격하지 않음/);
     await page.screenshot({ path: `${output}/report-${size}.png`, animations: 'disabled' });
-    await page.locator('.paper-meta dd').last().scrollIntoViewIfNeeded();
+    // State polling can replace the paper while Playwright waits for element
+    // stability. Scroll the current node in one DOM task; keep the same bounds
+    // assertion below against the latest node after any subsequent render.
+    await page.locator('.paper-meta dd').last().evaluate(element => element.scrollIntoView({ block: 'center' }));
     assert.ok(await page.locator('.paper-meta dd').last().evaluate(element => {
       const bounds = element.getBoundingClientRect();
       const panel = document.querySelector('.panel-body')!.getBoundingClientRect();

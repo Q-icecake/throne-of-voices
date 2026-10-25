@@ -15,6 +15,7 @@ const jobs: [string, string[]][] = [
   ['guide', ['scripts/verify-guide.ts']],
   ['scenes', ['scripts/screenshots.ts', 'all', '--out', `${output}/scenes`]],
   ...['visual', 'r1', 'm3', 'm4', 'llm-ui', 'm5'].map(name => [name, [`scripts/verify-${name}.ts`, '--out', `${output}/${name}`]] as [string, string[]]),
+  ['r3', ['scripts/verify-r3.ts']],
   ['comparison', ['scripts/compare-visual.ts']],
   ['launch', ['scripts/verify-launch.ts']],
 ];

@@ -24,7 +24,7 @@
 
 현재 worktree에 `node_modules`가 없다. 허용된 쓰기 범위는 `content/`와 새 `docs/OPENING_*.md`뿐이고 인터넷도 금지되어 있으므로 의존성을 설치하거나 다른 작업 트리의 의존성을 연결하지 않았다. 기존 93/93 기록을 이번 결과로 재사용하지 않는다. 로딩 실패 때문에 파일 내부 시험 수가 집계되지 않아 현재 합계 92이며, ‘기존 테스트 한 개를 삭제했다’는 뜻이 아니다. 리드는 의존성이 준비된 통합 작업 트리에서 타입 검사·전체 테스트·빌드를 다시 실행해야 한다.
 
-Git 상태 확인 첫 시도는 `detected dubious ownership`으로 실패했다. 이후 읽기 명령에만 `git -c safe.directory=C:/Users/q_ice/dispatch-work/throne-content ...`를 써서 브랜치·기준·변경 범위를 확인했다. 전역 Git 설정은 변경하지 않았다.
+Git 상태 확인 첫 시도는 `detected dubious ownership`으로 실패했다. 이후 읽기 명령에만 `git -c safe.directory=<프로젝트 루트> ...`를 써서 브랜치·기준·변경 범위를 확인했다. 전역 Git 설정은 변경하지 않았다.
 
 ## 미검증·해당 없음
 

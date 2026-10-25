@@ -16,6 +16,7 @@ export interface FocusState {
 
 export type FocusEvent =
   | { type: 'open'; panel: Exclude<Panel, 'none'>; documentId?: string }
+  | { type: 'select-document'; documentId: string }
   | { type: 'close' }
   | { type: 'toggle-dev' }
   | { type: 'address'; speaker: CharacterId | null; meeting?: boolean };
@@ -24,6 +25,8 @@ export const INITIAL_FOCUS: FocusState = { panel: 'none', speaker: null, documen
 
 export function reduceFocus(state: FocusState, event: FocusEvent): FocusState {
   switch (event.type) {
+    case 'select-document':
+      return { ...state, panel: 'document', documentId: event.documentId };
     case 'open':
       if (state.panel === event.panel && (event.documentId ?? state.documentId) === state.documentId) {
         return { ...state, panel: 'none' };

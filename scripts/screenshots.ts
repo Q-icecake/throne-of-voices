@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { once } from 'node:events';
 import { fileURLToPath } from 'node:url';
+import { relative } from 'node:path';
 import { chromium } from 'playwright-core';
 import type { Browser, Page } from 'playwright-core';
 import { createServer } from 'vite';
@@ -295,5 +296,5 @@ for (const m of results) {
   if (problems.length) failed = true;
   console.log(`${m.scene.padEnd(4)} ${m.size.padEnd(10)} HUD ${m.hudCoverage}% / panel ${m.panelCoverage}% / screen ${m.screenCoverage}%  ${problems.length ? '✖ ' + problems.join(' / ') : '✔'}`);
 }
-console.log(`스크린샷: ${fileURLToPath(outDir)}`);
+console.log(`스크린샷: ${relative(process.cwd(), fileURLToPath(outDir)).replaceAll('\\', '/')}`);
 process.exitCode = failed ? 1 : 0;

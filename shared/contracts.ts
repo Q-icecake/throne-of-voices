@@ -178,6 +178,7 @@ export type CommandOutcome =
   | { kind: 'rejected'; code: RejectionCode; reply: string };
 
 export type LogKind =
+  | 'dialogue-filtered'
   | 'opening-event' | 'audience' | 'talk' | 'document-shared' | 'relationship'
   | 'reset' | TestAction['type']
   | 'command-submit' | 'command-revise' | 'command-cancel' | 'command-confirm' | 'command-rejected'

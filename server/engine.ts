@@ -10,6 +10,7 @@ import type { CommandInterpreter, Interpretation } from './mock-interpreter.ts';
 import type { InterpretationProvider, ProviderInput } from './llm/types.ts';
 import { ProviderError } from './llm/types.ts';
 import { interpret, toReading } from './llm/pipeline.ts';
+import { hasUnsupportedClaim } from './llm/claims.ts';
 import { actionVocabulary, validateProposal } from './llm/validator.ts';
 import { MockLLMProvider } from './provider.ts';
 import type { LLMProvider } from './provider.ts';
@@ -233,7 +234,7 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
       try {
         const proposal = await interpret(this.#interpretationProvider, input, this.#timeoutMs);
         if (version !== this.#requestVersion) return respond([], { kind: 'error', code: 'STALE_RESPONSE', input: request.text, reply: '접견이나 입력이 바뀌어 이전 응답을 무시했습니다.' });
-        reading = toReading(proposal);
+        reading = toReading(proposal, text => this.#guardReply(text, input));
         if (reading.intent !== 'command') {
           const sentences = reading.reply.split(/[.!?。！？]+/).filter(s => s.trim());
           if (reading.reply.length > 600 || sentences.length > 4) throw new ProviderError('INVALID_PROPOSAL');
@@ -260,10 +261,11 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
         { providerExcluded: localEvidence || !mayTransmit(this.#world, {}, request.text) });
     };
     add('player', request.text);
-    add(request.characterId, answer);
+    add(request.characterId, source === 'AI' ? answer : this.#guardReply(answer, localEvidence ? localInput : input, true));
     const second = ids.find(id => id !== request.characterId);
     if (second && !unknowable(request.text) && !/문서|보고|서신|장부|기억|아까|이전/.test(request.text)) {
-      add(second, offlineReply(characterInput(this.#world, second, request.text, ids), true));
+      const secondInput = characterInput(this.#world, second, request.text, ids);
+      add(second, this.#guardReply(offlineReply(secondInput, true), secondInput, true));
       if (source === 'AI') source = 'mixed';
     }
     if (this.#opening) this.#opening.discussed = true;
@@ -290,7 +292,7 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
       }
       const proposal = await interpret(this.#interpretationProvider!, input, this.#timeoutMs);
       if (version !== this.#requestVersion) return stale();
-      const reading = toReading(proposal);
+      const reading = toReading(proposal, text => this.#guardReply(text, input));
       const outcome = request.type === 'submit' ? this.#submit(request, reading) : this.#revise(request, reading);
       if (mayTransmit(this.#world, {}, request.text))
         this.#context.push({ role: 'player', text: request.text }, { role: 'assistant', text: outcome.reply });
@@ -306,6 +308,39 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
       return { state: this.view(), outcome: { kind: 'error', code, input: request.text,
         reply: `${messages[code]} 입력과 초안은 보존되었습니다. 문장을 고쳐 쓰거나 다시 시도해 주세요. Mock으로 전환하지 않았습니다.` } };
     }
+  }
+
+  #guardReply(text: string, input: ProviderInput, allowQuotations = false): string {
+    // Build proof from current engine records, not Provider IDs, dialogue history,
+    // user-authored messages or keyword overlap. A real task is not an alliance.
+    const facts: string[] = [];
+    for (const task of this.#world.tasks) {
+      if (!input.knowledge.documents.some(doc => doc.taskId === task.id && task.reportIds.includes(doc.id))) continue;
+      const recorded = (stage: TaskRecord['stage']) => this.#events.some(event => event.cause?.type === 'task-progress'
+        && event.cause.taskId === task.id && event.cause.stage === stage);
+      if (task.action === 'naval-drill' && task.stage === 'completed' && task.completedAtMs !== undefined && recorded('completed')) {
+        facts.push('주유가 수군 정비를 완료했습니다.', '수군 정비를 마쳤습니다.');
+      }
+      if (task.action === 'sound-out' && task.departedAtMs !== undefined && recorded('travelling'))
+        facts.push('노숙의 사절이 출발했습니다.');
+      if (task.action === 'sound-out' && task.receivedAtMs !== undefined && recorded('awaiting-reply'))
+        facts.push('유비 측에 전언을 전달했습니다.');
+      if (task.action === 'sound-out' && task.stage === 'completed' && recorded('completed'))
+        facts.push('유비 측 회신이 도착했습니다.');
+      if (task.action === 'hold-reply' && task.stage === 'completed' && recorded('completed'))
+        facts.push('장굉이 조조 사신에게 회신을 전달했습니다.');
+    }
+    const quotations = allowQuotations ? [...input.knowledge.documents.map(doc => doc.claim), ...(input.character?.memories.map(memory => memory.fact) ?? [])] : [];
+    if (!hasUnsupportedClaim(text, { facts, quotations })) return text;
+    // Never persist the rejected content: it can contain invented or private facts.
+    this.#record('dialogue-filtered', '확인된 기록 없는 행동·결과 주장 또는 비공개 표식: 응답 대체', null);
+    const replies: Record<CharacterId, string> = {
+      'zhang-hong': '주군, 확인된 기록이 없어 말씀드릴 수 없습니다. 원문부터 살피겠습니다.',
+      'zhang-zhao': '확인된 기록이 없어 단정할 수 없습니다. 강동의 일을 신중히 살펴야 합니다.',
+      'zhou-yu': '확인된 기록이 없어 성과를 말씀드릴 수 없습니다. 준비와 실제 결과를 구분하겠습니다.',
+      'lu-su': '확인된 기록이 없어 말씀드릴 수 없습니다. 접촉과 약속의 성립은 구분해야 합니다.',
+    };
+    return replies[input.character?.id ?? 'zhang-hong'];
   }
 
   #readMock(text: string): Interpretation {
