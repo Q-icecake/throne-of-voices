@@ -54,7 +54,7 @@ export async function enterStartScreen(): Promise<void> {
           <button id="test-connection">연결 시험</button><p id="test-result" role="status" aria-live="polite">시험 전</p>
         </div>
       </div>
-      <footer class="start-settings-footer"><div><p id="untested-note">시험하지 않았습니다. 설정만으로 연결 성공을 보장하지 않습니다. 확인 후 AI로 시작할 수 있습니다.</p><div class="start-actions"><button id="start-ai" class="start-primary" disabled>AI로 시작</button><button id="settings-mock">Mock으로 시작</button><button id="clear-key">키 지우기</button></div></div></footer>
+      <footer class="start-settings-footer"><div><p class="start-address"><span id="diagnostic-location">자세한 진단: &lt;프로젝트&gt;\u005cartifacts\u005cllm-diagnostics.jsonl의 마지막 줄</span><br><span id="untested-note">현재 설정은 시험하지 않았습니다. </span><span id="last-diagnostic" role="status" aria-live="polite">최근 진단 없음 · 이번 서버 세션</span></p><div class="start-actions"><button id="start-ai" class="start-primary" disabled>AI로 시작</button><button id="settings-mock">Mock으로 시작</button><button id="clear-key">키 지우기</button></div></div></footer>
     </section>
     <section class="start-card start-guide" data-start-page="guide" aria-labelledby="guide-title" hidden>
       <header class="start-head"><div><p class="start-eyebrow">손권의 자리에서</p><h1 id="guide-title" tabindex="-1">플레이 안내</h1></div><button data-home>첫 화면</button></header>
@@ -79,7 +79,13 @@ export async function enterStartScreen(): Promise<void> {
     el('home-ai-status').textContent = !status.keyConfigured ? 'AI 미연결 · Mock' : status.testResult === 'ok' ? 'AI 연결 확인됨' : status.testResult === 'untested' ? 'AI 설정됨 · 시험 전' : `AI 연결 오류 · ${TEST_LABELS[status.testResult]}`;
     el('key-source').textContent = status.keySource === 'env' ? '환경변수 키 사용 중' : status.keySource === 'screen' ? '화면 입력 키 사용 중 · 서버 메모리' : '키 미설정';
     el('test-result').textContent = testLabel;
-    el('untested-note').textContent = status.testResult === 'ok' ? '연결 시험이 정상입니다. 이후 호출에도 한도가 적용됩니다.' : status.testResult === 'untested' ? '시험하지 않았습니다. 설정만으로 연결 성공을 보장하지 않습니다. 확인 후 AI로 시작할 수 있습니다.' : `최근 시험: ${TEST_LABELS[status.testResult]}. 설정을 확인한 후 진행하세요.`;
+    const diagnostic = status.lastDiagnostic;
+    const diagnosticModel = diagnostic?.model ?? '—';
+    el('last-diagnostic').title = diagnosticModel;
+    el('last-diagnostic').textContent = diagnostic
+      ? `최근 진단: HTTP ${diagnostic.httpStatus ?? '—'} · ${diagnostic.resultCode} · ${diagnostic.finishReason ?? '—'} · 토큰(입력/출력/사고) ${diagnostic.inputTokens ?? '—'}/${diagnostic.outputTokens ?? '—'}/${diagnostic.thinkingTokens ?? '—'} · ${diagnostic.latencyMs}ms · 모델 ${diagnosticModel.length > 48 ? diagnosticModel.slice(0, 48) + '…' : diagnosticModel}${diagnostic.googleMessage ? ` · ${diagnostic.googleMessage.slice(0, 80)}` : ''}`
+      : '최근 진단 없음 · 이번 서버 세션';
+    el('untested-note').textContent = status.testResult === 'untested' ? '현재 설정은 시험하지 않았습니다. ' : '';
     for (const control of root.querySelectorAll<HTMLButtonElement | HTMLInputElement>('button, input')) control.disabled = busy;
     el<HTMLButtonElement>('start-ai').disabled = busy || !(model.value.trim() && (key.value || status.keyConfigured));
   }

@@ -4,6 +4,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { PLAY_USAGE_FILE } from '../server/llm/usage-file.ts';
+import { dirname, join } from 'node:path';
 
 function playCounterHash(): string {
   try { return createHash('sha256').update(readFileSync(PLAY_USAGE_FILE)).digest('hex'); }
@@ -11,6 +12,13 @@ function playCounterHash(): string {
 }
 const counterBefore = playCounterHash();
 const counterChecks: { name: string; before: string; after: string; unchanged: boolean }[] = [];
+const diagnosticFile = join(dirname(PLAY_USAGE_FILE), 'llm-diagnostics.jsonl');
+function diagnosticHash() {
+  try { return createHash('sha256').update(readFileSync(diagnosticFile)).digest('hex'); }
+  catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return 'absent'; throw error; }
+}
+const diagnosticBefore = diagnosticHash();
+const diagnosticChecks: { name: string; before: string; after: string; unchanged: boolean }[] = [];
 
 const output = 'artifacts/m6';
 await mkdir(output, { recursive: true });
@@ -37,6 +45,7 @@ for (const [name, args] of jobs) {
   console.log(`START ${name}`);
   const started = performance.now(), chunks: Buffer[] = [];
   const before = playCounterHash();
+  const logBefore = diagnosticHash();
   const child = spawn(process.execPath, args, { env, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
   child.stdout.on('data', (data: Buffer) => { chunks.push(data); process.stdout.write(data); });
   child.stderr.on('data', (data: Buffer) => { chunks.push(data); process.stderr.write(data); });
@@ -47,8 +56,11 @@ for (const [name, args] of jobs) {
   });
   clearTimeout(timeout);
   const after = playCounterHash();
+  const logAfter = diagnosticHash();
+  diagnosticChecks.push({ name, before: logBefore, after: logAfter, unchanged: logBefore === logAfter && logAfter === diagnosticBefore });
   counterChecks.push({ name, before, after, unchanged: before === after && after === counterBefore });
   if (before !== after || after !== counterBefore) error = 'real play usage counter changed';
+  if (logBefore !== logAfter || logAfter !== diagnosticBefore) error = 'real diagnostic file changed';
   await writeFile(`${output}/${name}.log`, Buffer.concat(chunks));
   results.push({ name, command: `node ${args.join(' ')}`, exitCode, passed: exitCode === 0 && !error, durationMs: Math.round(performance.now() - started), ...(error ? { error } : {}) });
   await writeFile(`${output}/verification.json`, JSON.stringify({ completedAt: new Date().toISOString(), provider: 'forced Mock; keys removed from child environment', externalCalls: 0, results }, null, 2) + '\n');
@@ -58,4 +70,7 @@ await mkdir('artifacts/usage-counter', { recursive: true });
 await writeFile('artifacts/usage-counter/hash-verification.json', JSON.stringify({ file: PLAY_USAGE_FILE, before: counterBefore,
   after: playCounterHash(), unchanged: counterChecks.every(check => check.unchanged), checks: counterChecks }, null, 2) + '\n');
 console.log(`${results.filter(r => r.passed).length}/${results.length} verification commands passed; ${output}/verification.json`);
+await mkdir('artifacts/diagnostic-log', { recursive: true });
+await writeFile('artifacts/diagnostic-log/hash-verification.json', JSON.stringify({ file: diagnosticFile, before: diagnosticBefore,
+  after: diagnosticHash(), unchanged: diagnosticChecks.every(check => check.unchanged), checks: diagnosticChecks }, null, 2) + '\n');
 process.exitCode = results.every(r => r.passed) ? 0 : 1;

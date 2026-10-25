@@ -31,10 +31,11 @@ export class OpenAICompatibleProvider extends RemoteProvider {
     this.#endpoint = `${url.href.replace(/\/$/, '')}/chat/completions`; this.#model = config.model;
   }
   protected request(input: ProviderInput, signal: AbortSignal, key: string): [string, RequestInit] {
+    const { diagnosticKind: _localKind, ...payload } = input;
     return [this.#endpoint, { method: 'POST', redirect: 'error', signal,
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
       body: JSON.stringify({ model: this.#model, messages: [{ role: 'system', content: systemPrompt },
-        { role: 'user', content: JSON.stringify(input) }], response_format: {
+        { role: 'user', content: JSON.stringify(payload) }], response_format: {
           type: 'json_schema', json_schema: { name: 'interpretation', strict: true, schema: wireSchema },
         } }),
     }];

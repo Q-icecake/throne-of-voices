@@ -19,7 +19,30 @@ Gemini의 `maxOutputTokens`는 **사고 + 보이는 출력의 합계**다. 사�
 | 응답 형식 오류 | JSON 제안의 스키마/허용 범위 불일치 또는 키 반사 방어로 차단했다. |
 | 연결·내부 오류 | HTTP 응답 전 전송 예외 등. 로컬 연결 상태를 확인한다. Google 5xx와 구별한다. |
 
-서버 콘솔과 `artifacts/llm-diagnostics.jsonl`에는 HTTP 상태, 허용 목록의 Google status/reason·finishReason, 입력/출력/사고 토큰 숫자만 기록한다. 미제공·알 수 없는 값은 `null`이다. 키 반사 guard를 적용하며 키·헤더·프롬프트·응답 원문·오류 message는 기록하지 않는다. 파일 쓰기 실패는 요청 결과를 바꾸지 않는다. 이 파일은 로컬 진단용이며 브라우저 API로 내보내지 않는다. 카운터 경로를 바꾸면 진단 기본 경로도 같은 폴더로 이동하며 테스트·검증은 임시 폴더에 격리한다.
+진단 기록은 아래 032 규칙을 따른다. 키·헤더·플레이어 문장·프롬프트·모델 응답 본문은 기록하지 않는다.
+
+## 진단 로그 읽기 (032)
+
+기본 위치는 `<프로젝트>\artifacts\llm-diagnostics.jsonl`이다. **마지막 줄이 가장 최근에 완료된 외부 요청 시도**다. 연결 시험/게임 모두 Gemini 경로를 사용하며 한 실제 요청 시도당 JSON 한 줄을 기록한다. 재시도는 별도 줄이며 `retries=0`이 최초, `1`이 첫 재시도다. 키 없음·로컬 상한 등으로 전송 전 차단되면 새 줄을 만들지 않는다. HTTP 응답 전 실패도 기록하며 `httpStatus=null`이다. 타임아웃 뒤 늦은 응답은 중복 기록하지 않는다.
+
+| 필드 | 읽는 법 |
+| --- | --- |
+| `timestamp`, `latencyMs` | 요청 시도 시작 UTC 시각, 완료/실패까지 경과 밀리초. 실제 공급자 지연은 라이브 미검증. |
+| `callKind`, `provider`, `model` | `connection_test`/`command`/`npc`/`meeting`, `gemini`, **그 시도에서 요청한 모델 ID**. 설정 변경 후에도 과거 기록은 당시 모델이다. |
+| `httpStatus`, `googleStatus`, `googleReason` | HTTP 숫자 및 허용 목록의 Google 오류 분류. 미제공/미허용 값은 `null`. |
+| `googleMessage` | 오류 message에서 인식한 안전한 진단 구절만 최대 240자. 예: `Invalid JSON payload received. Unknown name Cannot find field`. 인용된 값·임의 문구는 제외한다. 키/인코딩/부분 반사 검사는 **자르기 전 원문 전체**에 적용하며 반사되거나 알려지지 않은 문구만 있으면 `null`. 임의 원문을 보존하는 필드가 아니다. |
+| `finishReason` | `MAX_TOKENS`는 출력/사고 상한, `STOP`은 공급자 종료 사유. STOP이라도 제안 검증 실패일 수 있다. |
+| `inputTokens`, `outputTokens`, `thinkingTokens` | 공급자가 보고한 입력·출력·사고 토큰. 알 수 없는 값은 `null`이며 0으로 추정하지 않는다. |
+| `resultCode` | 응답 파싱·제안 스키마 검증을 마친 분류: `ok`, `truncated`, `request`, `model`, `google_server`, `parse`, `schema`, `timeout` 등. |
+| `retries`, `dailyCalls`, `sessionCalls` | 해당 시도의 재시도 번호와 예약 직후 로컬 오늘(UTC)/서버 세션 사용 횟수. Google 콘솔 통계가 아니다. |
+
+예: HTTP 200 + `MAX_TOKENS` + `truncated` + 사고 토큰이 크면 토큰 상한을 살펴본다. 400 + `request`면 message의 안전 구절과 요청 모델을 확인한다. 404 + `model`은 모델/접근 권한, 5xx + `google_server`는 공급자 서버 오류다. HTTP 200 + `schema`는 연결은 되었지만 앱이 제안을 거절한 경우다. `null`은 성공을 뜻하지 않는다.
+
+파일은 최근 **500줄 또는 1 MiB 이하**만 남기는 슬라이딩 회전 방식이다. 임시 파일에 쓴 뒤 교체하며 오래된 줄은 제거한다(무제한 백업 없음). 기존 파일이 1 MiB를 넘으면 다음 쓰기에서 최신 한 줄로 교체해 메모리/디스크 증가를 제한한다. 단일 로컬 서버 사용을 전제로 한다. 파일 쓰기 실패는 게임 결과를 바꾸지 않으며 콘솔과 이번 세션의 메모리 요약은 계속 제공한다.
+
+설정 화면의 기존 결과 아래 안내/요약에서 상태·분류·finishReason·입력/출력/사고 토큰·지연·모델·오류 메시지 앞부분(80자)을 확인할 수 있다. 긴 모델 ID는 48자 뒤 생략하며 마우스를 올리면 전체 ID를 볼 수 있고 API/로그에는 전체가 있다. `GET /api/llm/status`의 `lastDiagnostic`은 **이번 서버 세션에서 마지막으로 완료된 시도**의 위 안전 필드만 반환한다. 재시작 전 파일을 API로 다시 읽지 않으며 새 세션은 `null`이다. 설정을 바꾸거나 다음 호출이 상한으로 차단되어도 이전 호출 요약은 유지하므로 현재 시험 결과와 구별한다. 키 변경 후 새 키와 겹치는 과거 요약은 내보내지 않는다.
+
+카운터 경로를 별도로 지정하면 진단 기본 경로도 같은 폴더로 이동한다. `RuntimeOptions.diagnosticsFile`로 진단 경로를 명시할 수도 있다. 이때 화면의 `<프로젝트>` 안내는 기본 경로이므로 운영자가 지정한 경로를 사용한다. 테스트/검증은 임시 폴더에 격리하며 `node scripts/verify-all.ts`가 매 작업 전후 **실제 진단 파일과 실제 카운터 SHA-256**을 비교한다. 증거는 `artifacts/diagnostic-log/hash-verification.json`, `artifacts/usage-counter/hash-verification.json`이다. 실제 키·환경값 열람이나 실제 외부 호출 없이 가짜 transport로 검증한다.
 
 다시 시험: 업데이트한 서버를 재시작 → `AI 연결 설정`에서 모델·키·남은 일일/세션 상한 확인 → `연결 시험` **한 번** 클릭 → 구체 결과 확인. 이미 오늘/세션 1/1이면 다시 누르기 전에 사용자가 상한을 결정해야 하며, 업데이트는 실제 카운터를 초기화하지 않는다. 이번 검증은 가짜 transport만 사용했고 실제 모델 요청은 0회다.
 

@@ -1,5 +1,14 @@
 # Development Log
 
+## 2026-10-25 — 032 V9b / 안전한 진단 로그·마지막 요약
+
+- 기준 `v0.2/real-ai`, HEAD `b685fff`. 실제 Gemini 시도마다 시작 UTC·호출 종류·요청 모델·HTTP/Google 분류/안전 message·finishReason·입력/출력/사고 토큰·지연·재시도 번호·최종 분류·예약 시점 오늘/세션 카운터를 한 줄로 기록한다. 명령/NPC/회의 구분, 최종 제안 검증 이후 기록, 늦은 응답 중복 방지. 기존 필드 보존.
+- 최근 500줄/1 MiB 슬라이딩 회전, 파일 실패가 게임 결과를 바꾸지 않음. message는 전체 키 반사 guard 후 인식된 진단 구절만 최대240자; 인용 값·미지 문구는 제외. 키/헤더/플레이어/프롬프트/응답 본문 없음. `/api/llm/status.lastDiagnostic`과 기존 설정 카드 하단에 안전 요약/파일 안내. 768px에서 간격만 축소, 폰트/버튼/그림/의존성 유지. 긴 모델은 화면48자+전체 title, message 앞80자; API/로그는 전체 안전 값.
+- 신규 자동 시험13개, 기존 V9 exact-key 단언은 확장 필드 전체로 갱신하고 보안 단언 유지. 평가 자식 프로세스 회귀에는 진단 임시 경로/6행 검증 추가. 관련 회귀58/58, 전체913/913. `node scripts/verify-all.ts` 최종19/19(타입·전체시험·Vite build·screenshots all·verify-visual·설정/게임/NPC/자동진행 포함). 두 해상도 설정 화면 및 긴 모델 경계 검사, 1366의400/긴 모델·1920의MAX_TOKENS PNG 직접 확인.
+- 초기 종합1/19는 실패로 보존: V9 평가 자식이 임시 카운터와 달리 실제 진단 파일에 가짜 6행을 추가하여 새 해시 gate가 실패했고, 설정400 message의768px 높이도 실패했다. 공급자 진단 기본 경로를 주입한 budget 파일 옆으로 수정하고 기존 footer/좁은 화면 간격을 조정. 원래 파일 prefix의 SHA-256 일치 확인 후 합성6행만 제거해 원본을 바이트 단위 복원했다. `verification-initial.json`, `hash-verification-initial.json`, `restoration.json`에 사실/증거 보존; 처음부터 불변이었다고 주장하지 않는다.
+- 최종19작업 전후 실제 진단 SHA-256 `897d9ce0…8846` 및 실제 카운터 `a263494d…447a` 동일. 실제 모델 호출0, 실제 키/환경값 열람·출력0, 확인 팝업0. 라이브 모델/비용/품질 미검증. 단일 로컬 서버 전제, 과거 파일을 API로 다시 읽지 않고 이번 세션 마지막 요약만 제공.
+- `.codex-runs/032/report.md`, `artifacts/diagnostic-log/`에 결과/스크린샷/해시/제출 증거. 원 Git 메타데이터가 허용 범위 밖이므로 독립 커밋·검증된 bundle·patch로 제출; 원 브랜치/다른 worktree/전역 설정/원격 미변경. ID와 검증은 `submission.json`; 리드 환경에서 반영 필요.
+
 ## 2026-10-25 — 031 V9 / 연결 시험 오류 분류·사고 예산
 
 - 기준 `v0.2/real-ai`, HEAD `f59ec89`. 수정 전 가짜 transport: MAX_TOKENS 빈 응답/사고만/400은 schema, 404는 model, 500/503은 server였다. 사용자 1회 “서버 오류”의 실제 원인은 당시 HTTP 증거가 없어 미확정; 8토큰 위험과 진단 부재는 확인했다. `.codex-runs/031/baseline.json`, `diagnosis.md`에 요청·분류·공식 문서 근거를 기록했다.

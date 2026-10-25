@@ -8,6 +8,7 @@ import { ProviderError } from './types.ts';
 import { withDeadline } from './pipeline.ts';
 import type { ConnectionTestResult, LlmStatus } from '../../shared/contracts.ts';
 import { dirname, join } from 'node:path';
+import type { DiagnosticAttempt } from './gemini-response.ts';
 
 export interface RuntimeOptions { env?: NodeJS.ProcessEnv; transport?: typeof fetch; budgetFile?: string; timeoutMs?: number; diagnosticsFile?: string }
 export class RuntimeSettings {
@@ -39,6 +40,7 @@ export class RuntimeSettings {
     this.#budget = new CallBudget({ model: 'runtime', timeoutMs: 15000, retries: 0, dailyLimit: 30, sessionLimit: 30 }, options.budgetFile);
   }
   status(): LlmStatus { return { keyConfigured: !!this.#key, keySource: this.#source, model: this.#model,
+    lastDiagnostic: this.#diagnostics.latest({ reflects: text => this.reflects(text) }),
     ...this.#budget.snapshot(), limit: this.#limit, testResult: this.#result, mode: this.#mode }; }
   resetUsage() { this.#invalidate(); return this.#budget.resetToday(); }
   reflects(text: string) { return this.#guards.some(guard => guard.reflects(text)); }
@@ -69,10 +71,12 @@ export class RuntimeSettings {
     const version = ++this.#version, controller = new AbortController(); this.#pending = controller;
     const key = this.#key, model = this.#model;
     let result: ConnectionTestResult;
+    let diagnostic: DiagnosticAttempt | undefined;
     try {
       if (!key || !model) throw new ProviderError('auth');
       if (!this.#generation) throw new ProviderError('request');
       this.#budget.reserve();
+      diagnostic = this.#diagnostics.begin({ model, callKind: 'connection_test', retries: 0, ...this.#budget.snapshot() }, { reflects: text => this.reflects(text) });
       result = await withDeadline(async signal => {
         const response = await this.#transport('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', {
           method: 'POST', redirect: 'error', signal, headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
@@ -80,7 +84,7 @@ export class RuntimeSettings {
             generationConfig: { maxOutputTokens: CONNECTION_MAX_TOKENS, temperature: 0, ...thinkingConfig(model, this.#generation?.thinkingMode) } }),
         });
         signal.throwIfAborted();
-        const value = await readGeminiResponse(response, signal, { reflects: text => this.reflects(text) }, this.#diagnostics);
+        const value = await readGeminiResponse(response, signal, { reflects: text => this.reflects(text) }, diagnostic);
         const decoded = decodeGemini(value);
         if (decoded.errorCode) throw new ProviderError(decoded.errorCode);
         return decoded.complete && decoded.text.trim() === 'OK' ? 'ok' : 'schema';
@@ -88,6 +92,7 @@ export class RuntimeSettings {
     } catch (error) {
       result = error instanceof ProviderError ? error.neutralCode === 'aborted' ? 'stale' : error.budgetDetail ? error.budgetDetail.scope === 'daily' ? 'daily_limit' : 'session_limit' : error.neutralCode : error instanceof SyntaxError ? 'schema' : 'server';
     }
+    diagnostic?.finish(result);
     if (version !== this.#version) return 'stale';
     this.#pending = undefined; this.#result = result; return result;
   }

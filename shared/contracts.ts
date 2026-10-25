@@ -231,6 +231,7 @@ export interface TalkResponse {
 export type ConnectionTestResult = 'daily_limit' | 'session_limit' | 'untested' | 'ok' | 'auth' | 'model' | 'rate_limited' | 'timeout' | 'schema' | 'server' | 'budget' | 'stale' |
   'truncated' | 'empty' | 'request' | 'google_server' | 'parse';
 export interface LlmStatus {
+  lastDiagnostic?: LlmDiagnostic | null;
   dailyCalls: number;
   dailyLimit: number;
   sessionCalls: number;
@@ -241,4 +242,24 @@ export interface LlmStatus {
   limit: number;
   testResult: ConnectionTestResult;
   mode: 'mock' | 'ai';
+}
+/** Only sanitized metadata; never request/response text or credentials. */
+export interface LlmDiagnostic {
+  timestamp: string;
+  callKind: 'connection_test' | 'command' | 'npc' | 'meeting';
+  provider: 'gemini';
+  model: string | null;
+  httpStatus: number | null;
+  googleStatus: string | null;
+  googleReason: string | null;
+  googleMessage: string | null;
+  finishReason: string | null;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  thinkingTokens: number | null;
+  latencyMs: number;
+  retries: number;
+  resultCode: string;
+  dailyCalls: number;
+  sessionCalls: number;
 }

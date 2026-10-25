@@ -67,7 +67,13 @@ for (const [name, status, body, expected] of scenarios) test(`031 HTTP connectio
   assert.equal(lines.length, 1); assert.deepEqual(lines, consoleLines);
   const diagnostic = JSON.parse(lines[0]!);
   assert.equal(diagnostic.httpStatus, status);
-  assert.deepEqual(Object.keys(diagnostic).sort(), ['httpStatus', 'googleStatus', 'googleReason', 'finishReason', 'inputTokens', 'outputTokens', 'thinkingTokens'].sort());
+  assert.deepEqual(Object.keys(diagnostic).sort(), ['timestamp', 'callKind', 'provider', 'model', 'httpStatus', 'googleStatus', 'googleReason', 'googleMessage', 'finishReason', 'inputTokens', 'outputTokens', 'thinkingTokens', 'latencyMs', 'retries', 'resultCode', 'dailyCalls', 'sessionCalls'].sort());
+  assert.equal(diagnostic.resultCode, expected); assert.equal(diagnostic.callKind, 'connection_test');
+  assert.equal(diagnostic.model, config.model); assert.equal(diagnostic.provider, 'gemini');
+  assert.equal(diagnostic.dailyCalls, 1); assert.equal(diagnostic.sessionCalls, 1); assert.equal(diagnostic.retries, 0);
+  assert.ok(Number.isSafeInteger(diagnostic.latencyMs) && diagnostic.latencyMs >= 0);
+  assert.equal(new Date(diagnostic.timestamp).toISOString(), diagnostic.timestamp);
+  assert.deepEqual((await (await fetch(base + '/api/llm/status')).json()).lastDiagnostic, diagnostic);
   if (status === 200 && expected !== 'parse') {
     assert.equal(diagnostic.inputTokens, 12); assert.equal(diagnostic.outputTokens, 0); assert.equal(diagnostic.thinkingTokens, 256);
   }
@@ -133,7 +139,10 @@ for (const [name, value] of [['plain', key], ['base64', Buffer.from(key).toStrin
   runtime.configure(config.model, key, 1); assert.equal(await runtime.test(), 'request');
   const file = readFileSync(paths.diagnosticsFile, 'utf8');
   assert.equal(file, lines.join('\n') + '\n'); new SecretGuard(key).assertSafe(file); assert.ok(!file.includes(value));
-  assert.deepEqual(JSON.parse(file), { httpStatus: 400, googleStatus: null, googleReason: null, finishReason: null,
+  const diagnostic = JSON.parse(file);
+  assert.deepEqual(diagnostic, { timestamp: diagnostic.timestamp, callKind: 'connection_test', provider: 'gemini', model: config.model,
+    latencyMs: diagnostic.latencyMs, retries: 0, resultCode: 'request', dailyCalls: 1, sessionCalls: 1,
+    httpStatus: 400, googleStatus: null, googleReason: null, googleMessage: null, finishReason: null,
     inputTokens: null, outputTokens: null, thinkingTokens: null });
 });
 

@@ -118,6 +118,7 @@ export function offlineReply(input: ProviderInput, rebuttal = false): string {
  * contributes no private mind. Outer references stay empty; validate nested refs per speaker. */
 export function meetingInput(inputs: ProviderInput[]): ProviderInput {
   const first = structuredClone(inputs[0]!);
+  first.diagnosticKind = 'meeting';
   first.context.push({ role: 'assistant', text: JSON.stringify({ protocol: 'npc-meeting-v1',
     instruction: '현재 질문은 text이다. 명령이면 기존 명령 형식을 유지한다. 논의이면 intent=discussion, proposedActions=[], referencedKnowledgeIds=[]로 답한다. dialogue 문자열 안에 JSON {"speeches":[{"id":"인물 id","text":"한국어 발언","referencedKnowledgeIds":[]}]}를 넣는다. 정확히 아래 두 인물만 각 2~4문장, 첫 발언 600자 이하, 반론 240자 이하. 각자의 identity/stance/expertise/concerns를 따르고 존댓말로 의견과 확인된 사실을 구분한다. 각 인물은 자기 projection의 근거 id만 인용한다. 작업 완료를 꾸미거나 다른 인물의 근거를 빌리지 않는다.',
     projections: inputs.map(input => ({ character: input.character, knowledge: input.knowledge, context: input.context })) }) });

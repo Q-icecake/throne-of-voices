@@ -14,18 +14,22 @@ import { listenForFetch } from './test-server.ts';
 
 const output = 'artifacts/start-screen'; await mkdir(output, { recursive: true });
 const usageOutput = 'artifacts/usage-counter'; await mkdir(usageOutput, { recursive: true });
+const diagnosticOutput = 'artifacts/diagnostic-log'; await mkdir(diagnosticOutput, { recursive: true });
 const temp = await mkdtemp(join(tmpdir(), 'throne-start-visual-'));
 const fakeKey = 'browser-synthetic-Q7v2B9m4L6r8S3x5', guard = new SecretGuard(fakeKey);
 const probe = portProbe(); await listenForFetch(probe);
 const webPort = (probe.address() as AddressInfo).port; await new Promise<void>(resolve => probe.close(() => resolve()));
 let calls = 0, reply: number | 'timeout' | 'schema' | 'truncated' | 'thinking' = 200;
+const privateMarker = 'PRIVATE_PLAYER_PROMPT_032';
+const usageMetadata = { promptTokenCount: 12, candidatesTokenCount: 4, thoughtsTokenCount: 32 };
 function freshApi() { return createGameServer(undefined, webPort, { env: {}, budgetFile: join(temp, 'usage.json'), timeoutMs: 80, transport: async (_url, init) => {
   calls++; assert.equal(new Headers(init?.headers).get('x-goog-api-key'), fakeKey);
   if (reply === 'timeout') return await new Promise<Response>(() => {});
   if (reply === 'schema') return new Response('invalid');
-  if (reply === 'truncated') return Response.json({ candidates: [{ finishReason: 'MAX_TOKENS', content: { parts: [] } }] });
+  if (reply === 'truncated') return Response.json({ candidates: [{ finishReason: 'MAX_TOKENS', content: { parts: [] } }], usageMetadata });
   if (reply === 'thinking') return Response.json({ candidates: [{ finishReason: 'STOP', content: { parts: [{ thought: true, text: 'OK' }] } }] });
-  return reply === 200 ? Response.json({ candidates: [{ finishReason: 'STOP', content: { parts: [{ text: 'OK' }] } }] }) : new Response(fakeKey, { status: reply });
+  return reply === 200 ? Response.json({ candidates: [{ finishReason: 'STOP', content: { parts: [{ text: 'OK' }] } }], usageMetadata })
+    : Response.json({ error: { message: reply === 400 ? `Invalid JSON payload received. Unknown name "${privateMarker}". Cannot find field.` : fakeKey } }, { status: reply });
 } }); }
 let api = freshApi();
 await listenForFetch(api);
@@ -128,9 +132,32 @@ try {
       await page.click('#test-connection'); await page.locator('#test-connection:not([disabled])').waitFor();
       assert.equal(await page.locator('#test-result').textContent(), label); assert.equal(calls, beforeCall + 1);
       guard.assertSafe(await page.content()); guard.assertSafe(await page.evaluate(() => JSON.stringify(localStorage)));
+      const status = await (await page.request.get(base + '/api/llm/status')).json();
+      const diagnostic = status.lastDiagnostic;
+      const summary = await page.locator('#last-diagnostic').innerText();
+      assert.equal(diagnostic.model, 'offline-model'); assert.equal(diagnostic.callKind, 'connection_test');
+      assert.equal(diagnostic.retries, 0); assert.equal(diagnostic.resultCode, status.testResult);
+      assert.match(summary, new RegExp(diagnostic.resultCode)); assert.ok(summary.includes(`${diagnostic.latencyMs}ms`));
+      assert.ok(summary.includes('offline-model')); assert.ok(summary.includes(diagnostic.finishReason ?? '—'));
+      assert.equal(diagnostic.httpStatus, typeof response === 'number' ? response : response === 'timeout' ? null : 200);
+      assert.match(await page.locator('#diagnostic-location').innerText(), /<프로젝트>\\artifacts\\llm-diagnostics\.jsonl의 마지막 줄/);
+      const log = await readFile(join(temp, 'llm-diagnostics.jsonl'), 'utf8');
+      assert.deepEqual(JSON.parse(log.trim().split('\n').at(-1)!), diagnostic);
+      const published = log + JSON.stringify(status) + await page.content(); guard.assertSafe(published);
+      assert.ok(!published.includes(privateMarker)); assert.ok(!published.includes('Reply with exactly OK.'));
+      if (response === 400) assert.ok(summary.includes('Invalid JSON payload received.'));
+      if (response === 200 || response === 'truncated') assert.ok(summary.includes('12/4/32'));
       evidence.push({ size, injected: response, displayed: label, calls: 1 });
       if ([400, 404, 500, 'schema', 'truncated', 'thinking'].includes(response)) await measure(page, `error-${response}`, size);
+      if ([200, 400, 404, 500, 'truncated'].includes(response)) await page.screenshot({ path: `${diagnosticOutput}/settings-${response}-${size}.png` });
     }
+    const longModel = 'offline-model-' + 'x'.repeat(186);
+    await page.fill('#ai-model', longModel); reply = 400;
+    await page.click('#test-connection'); await page.locator('#test-connection:not([disabled])').waitFor();
+    assert.equal(await page.locator('#last-diagnostic').getAttribute('title'), longModel);
+    assert.equal((await (await page.request.get(base + '/api/llm/status')).json()).lastDiagnostic.model, longModel);
+    await measure(page, 'long-diagnostic', size);
+    await page.screenshot({ path: `${diagnosticOutput}/settings-long-${size}.png` });
     await page.click('#clear-key'); await page.locator('#clear-key:not([disabled])').waitFor(); assert.equal(await page.locator('#start-ai').isDisabled(), true);
     const beforeClearTest = calls; await page.click('#test-connection'); await page.locator('#test-connection:not([disabled])').waitFor(); assert.equal(calls, beforeClearTest);
     await page.keyboard.press('Escape'); await page.click('#open-guide'); await measure(page, 'guide', size);
@@ -150,6 +177,7 @@ try {
   guard.assertSafe(await readFile(join(temp, 'usage.json'), 'utf8'));
   await writeFile(`${output}/verification.json`, JSON.stringify({ externalCalls: 0, fakeTransportCalls: calls, evidence }, null, 2) + '\n');
   await writeFile(`${usageOutput}/screenshots.json`, JSON.stringify({ externalCalls: 0, fakeTransportCalls: calls, evidence }, null, 2) + '\n');
+  await writeFile(`${diagnosticOutput}/screenshots.json`, JSON.stringify({ externalCalls: 0, fakeTransportCalls: calls, evidence }, null, 2) + '\n');
   console.log(`PASS start-screen: both sizes, 3 screens, keyboard, secret boundaries, 11 response scenarios, zero limit, clear, AI/Mock start, unchanged court; ${output}`);
 } finally {
   await browser.close(); await vite.close(); api.closeAllConnections(); await new Promise<void>(resolve => api.close(() => resolve())); await rm(temp, { recursive: true, force: true });

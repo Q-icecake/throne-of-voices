@@ -5,6 +5,7 @@ import { ProviderError, PROVIDER_MESSAGES, abortError, providerMessage } from '.
 import { withDeadline } from './pipeline.ts';
 import { validateProposal } from './validator.ts';
 import { SecretGuard } from './secrets.ts';
+import type { DiagnosticAttempt } from './gemini-response.ts';
 
 export interface DecodedOutput { text: string; inputTokens: unknown; outputTokens: unknown; complete: boolean; errorCode?: ProviderErrorCode }
 export const tokenCount = (value: unknown): number | null =>
@@ -37,7 +38,8 @@ export abstract class RemoteProvider implements InterpretationProvider {
   protected abstract request(input: ProviderInput, signal: AbortSignal, key: string): [string, RequestInit];
   protected abstract decode(envelope: unknown): DecodedOutput;
   protected parseErrorCode: ProviderErrorCode = 'schema';
-  protected async readResponse(response: Response, signal: AbortSignal, _guard: SecretGuard): Promise<unknown> {
+  protected beginDiagnostic(_input: ProviderInput, _retries: number, _budget: ReturnType<CallBudget['snapshot']>, _guard: SecretGuard): DiagnosticAttempt | undefined { return undefined; }
+  protected async readResponse(response: Response, signal: AbortSignal, _guard: SecretGuard, _diagnostic?: DiagnosticAttempt): Promise<unknown> {
     if (!response.ok) {
       void response.body?.cancel().catch(() => {});
       if (response.status === 429) throw new ProviderError('rate_limited');
@@ -48,7 +50,7 @@ export abstract class RemoteProvider implements InterpretationProvider {
   }
   async interpret(input: ProviderInput, signal: AbortSignal): Promise<unknown> {
     const started = performance.now();
-    const attempts: (AttemptUsage & { started: number; finished?: boolean })[] = [];
+    const attempts: (AttemptUsage & { started: number; finished?: boolean; diagnostic?: DiagnosticAttempt })[] = [];
     let reservations = 0, error: ProviderError | undefined;
     try {
       if (!this.#key) throw new ProviderError('auth');
@@ -59,12 +61,13 @@ export abstract class RemoteProvider implements InterpretationProvider {
           const attempt = { inputTokens: null, outputTokens: null, latencyMs: 0, errorCode: null,
             started: performance.now() } as typeof attempts[number];
           attempts.push(attempt);
+          attempt.diagnostic = this.beginDiagnostic(input, index, this.#budget.snapshot(), this.#guard);
           try {
             // Current input.text is transmitted verbatim. Past-context filtering does not redact it.
             const [url, init] = this.request(input, bounded, this.#key);
             const response = await this.#transport(url, init);
             bounded.throwIfAborted();
-            const envelope = await this.readResponse(response, bounded, this.#guard);
+            const envelope = await this.readResponse(response, bounded, this.#guard, attempt.diagnostic);
             bounded.throwIfAborted();
             let decoded: DecodedOutput;
             try { decoded = this.decode(envelope); } catch { throw new ProviderError(this.parseErrorCode); }
@@ -81,7 +84,10 @@ export abstract class RemoteProvider implements InterpretationProvider {
               caught instanceof ProviderError ? caught : new ProviderError(caught instanceof SyntaxError ? this.parseErrorCode : 'server');
             attempt.errorCode = safe.neutralCode;
             if (!['server', 'google_server'].includes(safe.neutralCode) || index >= this.#settings.retries) throw safe;
-          } finally { attempt.latencyMs = Math.round(performance.now() - attempt.started); attempt.finished = true; }
+          } finally {
+            attempt.latencyMs = Math.round(performance.now() - attempt.started); attempt.finished = true;
+            attempt.diagnostic?.finish(attempt.errorCode ?? 'ok');
+          }
         }
         throw new ProviderError('server');
       }, this.#settings.timeoutMs, signal);
@@ -90,6 +96,8 @@ export abstract class RemoteProvider implements InterpretationProvider {
       this.#failureMessage = providerMessage(error);
       throw error;
     } finally {
+      // Finalize even when transport ignores cancellation; late completion cannot log twice.
+      for (const attempt of attempts) attempt.diagnostic?.finish(attempt.finished ? attempt.errorCode ?? 'ok' : error?.neutralCode ?? 'server');
       const attemptUsage = attempts.map(item => ({ inputTokens: item.inputTokens, outputTokens: item.outputTokens,
         latencyMs: item.finished ? item.latencyMs : Math.round(performance.now() - item.started),
         errorCode: item.finished ? item.errorCode : error?.neutralCode ?? null }));

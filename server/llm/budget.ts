@@ -13,6 +13,8 @@ export class CallBudget {
   constructor(config: ProviderConfig, file = defaultUsageFile(), now = () => new Date()) {
     this.#config = { ...config }; this.#file = file; this.#now = now;
   }
+  /** Internal storage location, never part of the public status snapshot. */
+  get storageFile(): string { return this.#file; }
   setLimits(dailyLimit: number, sessionLimit: number): void {
     this.#config = { ...this.#config, dailyLimit, sessionLimit };
   }

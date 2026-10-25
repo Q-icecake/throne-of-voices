@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import type { ProviderConfig } from './config.ts';
 import type { CallBudget } from './budget.ts';
 import type { ProviderInput } from './types.ts';
@@ -8,6 +9,7 @@ import type { DecodedOutput } from './remote.ts';
 import { decodeGemini, GeminiDiagnostics, readGeminiResponse, thinkingConfig, GAME_MAX_TOKENS } from './gemini-response.ts';
 import type { SecretGuard } from './secrets.ts';
 import { ProviderError } from './types.ts';
+import type { DiagnosticAttempt } from './gemini-response.ts';
 // Keep the evaluation worktree's old import paths valid while configuration moves out.
 export { geminiConfig, configuredProvider } from './config.ts';
 export { CallBudget } from './budget.ts';
@@ -19,7 +21,7 @@ export class GeminiProvider extends RemoteProvider {
   #diagnostics: GeminiDiagnostics;
   protected override parseErrorCode = 'parse' as const;
   constructor(config: GeminiConfig, transport: typeof fetch = globalThis.fetch, budget?: CallBudget,
-    key = process.env.GEMINI_API_KEY ?? '', diagnostics = new GeminiDiagnostics()) {
+    key = process.env.GEMINI_API_KEY ?? '', diagnostics = new GeminiDiagnostics(budget ? join(dirname(budget.storageFile), 'llm-diagnostics.jsonl') : undefined)) {
     super(config, key, transport, budget); this.#model = config.model; this.#diagnostics = diagnostics;
     const maxOutputTokens = config.maxOutputTokens ?? GAME_MAX_TOKENS;
     if (!Number.isSafeInteger(maxOutputTokens) || maxOutputTokens < 256 || maxOutputTokens > 32768 ||
@@ -27,17 +29,22 @@ export class GeminiProvider extends RemoteProvider {
     this.#generation = { maxOutputTokens, ...thinkingConfig(config.model, config.thinkingMode) };
   }
   protected request(input: ProviderInput, signal: AbortSignal, key: string): [string, RequestInit] {
+    const { diagnosticKind: _localKind, ...payload } = input;
     return ['https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(this.#model) + ':generateContent', {
       method: 'POST', redirect: 'error', signal, headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
       body: JSON.stringify({ systemInstruction: { parts: [{ text: systemPrompt }] },
-        contents: [{ role: 'user', parts: [{ text: JSON.stringify(input) }] }],
+        contents: [{ role: 'user', parts: [{ text: JSON.stringify(payload) }] }],
         generationConfig: { ...this.#generation, responseMimeType: 'application/json', responseJsonSchema: OUTPUT_SCHEMA } }),
     }];
   }
   protected decode(value: unknown): DecodedOutput {
     return decodeGemini(value);
   }
-  protected override readResponse(response: Response, signal: AbortSignal, guard: SecretGuard) {
-    return readGeminiResponse(response, signal, guard, this.#diagnostics);
+  protected override beginDiagnostic(input: ProviderInput, retries: number, budget: ReturnType<CallBudget['snapshot']>, guard: SecretGuard) {
+    return this.#diagnostics.begin({ model: this.#model, callKind: input.diagnosticKind ?? (input.character ? 'npc' : 'command'),
+      retries, dailyCalls: budget.dailyCalls, sessionCalls: budget.sessionCalls }, guard);
+  }
+  protected override readResponse(response: Response, signal: AbortSignal, guard: SecretGuard, diagnostic?: DiagnosticAttempt) {
+    return readGeminiResponse(response, signal, guard, diagnostic);
   }
 }

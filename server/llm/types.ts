@@ -9,6 +9,8 @@ export interface ActionVocabulary {
   restrictions: RestrictionId[];
 }
 export interface ProviderInput {
+  /** Server-only telemetry hint, excluded from the Gemini request body. */
+  diagnosticKind?: 'meeting';
   character?: {
     id: import('../../shared/contracts.ts').CharacterId;
     identity: string; stance: string; expertise: string; concerns: string;

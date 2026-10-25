@@ -112,7 +112,7 @@ test('eval CLI no mode and absent-key live execute zero calls; invalid flags fai
 test('eval actual provider bridge accounts for retries, failed tokens, and budget stops using fake transport only', () => {
   const code = `
     import assert from 'node:assert/strict';
-    import { mkdtempSync } from 'node:fs';
+    import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
     import { tmpdir } from 'node:os';
     import { join } from 'node:path';
     import { liveSource } from './scripts/eval/provider-bridge.ts';
@@ -136,6 +136,11 @@ test('eval actual provider bridge accounts for retries, failed tokens, and budge
       assert.equal(result.attempts[0].inputTokens,scenario==='unknown'?null:12);
       assert.equal(result.error,({retry:'PROVIDER_ERROR',call:'CALL_LIMIT',tokens:'TOKEN_BUDGET',cost:'COST_BUDGET',unknown:'USAGE_UNKNOWN'})[scenario]);
     }
+    // Child has no NODE_TEST_CONTEXT or LLM_USAGE_FILE: explicit budget must also isolate diagnostics.
+    const diagnostics=readFileSync(join(dir,'llm-diagnostics.jsonl'),'utf8').trim().split('\\n').map(line=>JSON.parse(line));
+    assert.equal(diagnostics.length,6);
+    assert.ok(diagnostics.every(row=>row.model==='eval-model' && row.httpStatus===500));
+    rmSync(dir,{recursive:true,force:true});
   `;
   const child = spawnSync(process.execPath, ['--input-type=module', '-e', code], {
     encoding: 'utf8', env: { SystemRoot: process.env.SystemRoot, TEMP: process.env.TEMP, TMP: process.env.TMP,
