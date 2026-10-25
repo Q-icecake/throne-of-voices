@@ -1,0 +1,252 @@
+{
+  "version": 1,
+  "status": "서버 지식 계약이 아닌 콘텐츠 참조 목록",
+  "rules": [
+    "eligibleReaders는 허용 상한이며 자동 지식 부여가 아니다.",
+    "초기 보유 또는 서버가 기록한 수신·공유 이력이 있어야 대사의 모든 requiredKnowledgeIds가 충족된다.",
+    "플레이어 열람·접견·회의 참가만으로 다른 인물에게 공유하지 않는다.",
+    "비밀 작업 보고는 이 정적 목록에 넣지 않는다. 후속 보고의 지식은 권한이 확인된 엔진 기록으로만 만든다."
+  ],
+  "knowledge": [
+    {
+      "id": "K-office",
+      "summary": "정무청에서는 자료 확인과 접견을 요청할 수 있으며 결정은 손권이 내린다.",
+      "initialHolders": [
+        "player",
+        "zhang-hong",
+        "zhang-zhao",
+        "zhou-yu",
+        "lu-su"
+      ],
+      "eligibleReaders": [
+        "player",
+        "zhang-hong",
+        "zhang-zhao",
+        "zhou-yu",
+        "lu-su"
+      ],
+      "acquisition": "개시 때 부여하는 절차 지식",
+      "sourceDocumentIds": [],
+      "historicalNoteIds": [
+        "C04"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true
+    },
+    {
+      "id": "K-zhanghong-role",
+      "summary": "장굉은 확인한 자료를 정리하고 판단을 대신하지 않는 보좌 역할이다.",
+      "initialHolders": [
+        "zhang-hong"
+      ],
+      "eligibleReaders": [
+        "zhang-hong"
+      ],
+      "acquisition": "인물 설정",
+      "sourceDocumentIds": [],
+      "historicalNoteIds": [
+        "C04"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true
+    },
+    {
+      "id": "K-zhangzhao-risk",
+      "summary": "장조는 전쟁의 지속 비용과 패전 후 교섭·관할 손실을 우려한다.",
+      "initialHolders": [
+        "zhang-zhao"
+      ],
+      "eligibleReaders": [
+        "zhang-zhao"
+      ],
+      "acquisition": "자기 견해이며 타인의 내면 정보가 아님",
+      "sourceDocumentIds": [],
+      "historicalNoteIds": [
+        "C04"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true
+    },
+    {
+      "id": "K-zhouyu-conditions",
+      "summary": "주유는 병력 전언과 실제 수상 전투력을 구분하며 정비·보급 조건을 중시한다.",
+      "initialHolders": [
+        "zhou-yu"
+      ],
+      "eligibleReaders": [
+        "zhou-yu"
+      ],
+      "acquisition": "자기 판단이며 승패의 예지 정보가 아님",
+      "sourceDocumentIds": [],
+      "historicalNoteIds": [
+        "C04"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true
+    },
+    {
+      "id": "K-lusu-contact",
+      "summary": "노숙은 유비 측 의중을 알아볼 가치를 제안할 수 있으나 답변은 모른다.",
+      "initialHolders": [
+        "lu-su"
+      ],
+      "eligibleReaders": [
+        "lu-su"
+      ],
+      "acquisition": "접촉 가능성에 대한 자기 제안이며 접촉 완료를 뜻하지 않음",
+      "sourceDocumentIds": [],
+      "historicalNoteIds": [
+        "C04"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true
+    },
+    {
+      "id": "K-lusu-option",
+      "summary": "노숙에게 외교 의견을 요청할 수 있다.",
+      "initialHolders": [
+        "zhang-hong",
+        "lu-su"
+      ],
+      "eligibleReaders": [
+        "player",
+        "zhang-hong",
+        "zhang-zhao",
+        "zhou-yu",
+        "lu-su"
+      ],
+      "acquisition": "인물의 존재와 역할만 공개; 노숙의 비공개 제안은 포함하지 않음",
+      "sourceDocumentIds": [],
+      "historicalNoteIds": [
+        "C04"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true
+    },
+    {
+      "id": "K-jingzhou",
+      "summary": "형주 방면 전령이 불확실한 남하·이동 소식을 전했다.",
+      "initialHolders": [],
+      "eligibleReaders": [
+        "player",
+        "zhang-hong",
+        "zhang-zhao",
+        "zhou-yu",
+        "lu-su"
+      ],
+      "acquisition": "T02에서 손권·장굉 수신; 장조는 T04의 별도 전달본 수신; 나머지는 권한 검사 후 명시적 공유",
+      "sourceDocumentIds": [
+        "D-jingzhou"
+      ],
+      "historicalNoteIds": [
+        "A02",
+        "B01",
+        "B03",
+        "C02"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true
+    },
+    {
+      "id": "K-cao-request",
+      "summary": "조조 측이 회답을 요구한 서신이 도착했다.",
+      "initialHolders": [],
+      "eligibleReaders": [
+        "player",
+        "zhang-hong",
+        "zhang-zhao",
+        "zhou-yu",
+        "lu-su"
+      ],
+      "acquisition": "T03에서 손권·장굉 수신; 다른 인물에게는 별도 공유 필요",
+      "sourceDocumentIds": [
+        "D-cao-letter"
+      ],
+      "historicalNoteIds": [
+        "B02",
+        "C03"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true
+    },
+    {
+      "id": "K-zhangzhao-note",
+      "summary": "장조 건의문의 교섭 여지와 전쟁 비용에 대한 논거.",
+      "initialHolders": [],
+      "eligibleReaders": [
+        "player",
+        "zhang-hong",
+        "zhang-zhao"
+      ],
+      "acquisition": "장조는 작성 완료 때, 손권·장굉은 T04 수신 때 부여",
+      "sourceDocumentIds": [
+        "D-zhangzhao"
+      ],
+      "historicalNoteIds": [
+        "C04"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true
+    },
+    {
+      "id": "K-zhouyu-report",
+      "summary": "주유가 직접 살핀 제한된 점검 범위와 준비 조건.",
+      "initialHolders": [
+        "zhou-yu"
+      ],
+      "eligibleReaders": [
+        "player",
+        "zhang-hong",
+        "zhou-yu"
+      ],
+      "acquisition": "작성자인 주유는 처음부터 보유; 손권·장굉은 T06 수신 때 부여",
+      "sourceDocumentIds": [
+        "D-zhouyu"
+      ],
+      "historicalNoteIds": [
+        "C04"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true
+    },
+    {
+      "id": "K-supply",
+      "summary": "창고 장부 대조 요청의 내용.",
+      "initialHolders": [],
+      "eligibleReaders": [
+        "player",
+        "zhang-hong",
+        "zhang-zhao"
+      ],
+      "acquisition": "T01에서 손권·장굉 수신; 장조에게는 명시적 공유 필요",
+      "sourceDocumentIds": [
+        "D-supply"
+      ],
+      "historicalNoteIds": [
+        "C03",
+        "C05"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true
+    },
+    {
+      "id": "K-courier",
+      "summary": "전령의 접수 순서와 현지 발생 순서는 다를 수 있다는 절차 안내.",
+      "initialHolders": [],
+      "eligibleReaders": [
+        "player",
+        "zhang-hong"
+      ],
+      "acquisition": "T01에서 손권·장굉 수신",
+      "sourceDocumentIds": [
+        "D-courier"
+      ],
+      "historicalNoteIds": [
+        "C02",
+        "C03"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true
+    }
+  ]
+}

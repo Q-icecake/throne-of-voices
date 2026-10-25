@@ -1,0 +1,225 @@
+{
+  "version": 1,
+  "status": "데이터 모양 초안 · 엔진 미연결",
+  "documents": [
+    {
+      "id": "D-jingzhou",
+      "title": "형주 방면 전령의 급보",
+      "body": "형주 방면에서 돌아온 전령이 조조 측의 세력이 남쪽으로 뻗고 있다고 전했습니다. 길에서 만난 이들의 말이 서로 달라, 어느 부대가 어디까지 이르렀는지는 확인하지 못했습니다. 유비 측도 이동 중이라는 소식이 있으나 현재 머무는 곳은 알 수 없습니다. 이 보고는 전령이 들은 내용을 먼저 올린 것이니, 병력과 진로를 확정한 자료로 쓰지 말아 주십시오.",
+      "source": {
+        "author": "형주 방면 전령의 구술을 정무청에서 기록",
+        "sourceUnverified": true,
+        "note": "실물 사료를 옮긴 글이 아닌 게임용 초안"
+      },
+      "observedAt": {
+        "label": "게임 시작 전 전령의 이동 중 · 정확한 시각 미상",
+        "activeMs": null
+      },
+      "proposedArrivalActiveMs": 25000,
+      "readers": [
+        "player",
+        "zhang-hong",
+        "zhang-zhao",
+        "zhou-yu",
+        "lu-su"
+      ],
+      "evidence": {
+        "claim": "남하와 이동에 관한 간접 소식",
+        "uncertainty": "작성자의 보고 범위를 넘는 수량·위치·의도는 확인되지 않음",
+        "confirmedScope": "전령이 그러한 말을 전달했다는 범위",
+        "meaning": "출처의 주장과 확인 범위이며 정답 확률이 아님"
+      },
+      "regions": [
+        "형주",
+        "장강 일대"
+      ],
+      "classification": "게임 재구성",
+      "historicalNoteIds": [
+        "A02",
+        "B01",
+        "B03",
+        "C02"
+      ]
+    },
+    {
+      "id": "D-cao-letter",
+      "title": "조조 측 사신이 전한 서신 초안",
+      "body": "조조 측 사신은 형주의 여러 세력이 이미 뜻을 모으고 있다며, 강동도 형세를 살펴 답을 보내라고 전했습니다. 서신에는 상대의 기세를 크게 말하는 대목이 있으나 병력과 주둔지를 대조할 자료는 붙어 있지 않습니다. 사신은 회답을 기다리겠다고 했습니다. 이 글은 사신이 전달한 주장만 기록한 것이며, 받아들이거나 거절하는 뜻은 아직 전하지 않았습니다.",
+      "source": {
+        "author": "조조 측 사신의 전언을 정무청에서 옮김",
+        "sourceUnverified": true,
+        "note": "실물 사료를 옮긴 글이 아닌 게임용 초안"
+      },
+      "observedAt": {
+        "label": "사신이 서신을 받아 출발한 때 · 날짜 미상",
+        "activeMs": null
+      },
+      "proposedArrivalActiveMs": 40000,
+      "readers": [
+        "player",
+        "zhang-hong",
+        "zhang-zhao",
+        "zhou-yu",
+        "lu-su"
+      ],
+      "evidence": {
+        "claim": "조조 측이 제시한 형세와 회답 요구",
+        "uncertainty": "작성자의 보고 범위를 넘는 수량·위치·의도는 확인되지 않음",
+        "confirmedScope": "서신 수령과 회답 요청 존재만 확인",
+        "meaning": "출처의 주장과 확인 범위이며 정답 확률이 아님"
+      },
+      "regions": [
+        "형주",
+        "강동"
+      ],
+      "classification": "게임 재구성",
+      "historicalNoteIds": [
+        "A02",
+        "B01",
+        "B02",
+        "C03"
+      ]
+    },
+    {
+      "id": "D-zhangzhao",
+      "title": "장조의 시국 건의",
+      "body": "형주에서 온 보고만으로 승패를 가릴 수는 없습니다. 다만 전쟁이 길어지면 농사와 운송이 흔들리고, 패한 뒤에는 지금 지키는 관할과 협의할 여지마저 줄어들 수 있습니다. 상대의 요구를 더 알아보며 교섭할 길을 남겨 두자는 뜻입니다. 이는 곧바로 모든 요구를 받아들이자는 말이 아닙니다. 군사 준비와 감당할 손실을 함께 살펴 결정해 주십시오.",
+      "source": {
+        "author": "장조",
+        "sourceUnverified": true,
+        "note": "실물 사료를 옮긴 글이 아닌 게임용 초안"
+      },
+      "observedAt": {
+        "label": "형주 급보의 별도 전달본을 받은 뒤 작성",
+        "activeMs": 35000
+      },
+      "proposedArrivalActiveMs": 45000,
+      "readers": [
+        "player",
+        "zhang-hong",
+        "zhang-zhao"
+      ],
+      "evidence": {
+        "claim": "장기전·패전의 부담을 중시하는 건의",
+        "uncertainty": "작성자의 보고 범위를 넘는 수량·위치·의도는 확인되지 않음",
+        "confirmedScope": "전망은 장조의 판단이며 결과 보장이 아님",
+        "meaning": "출처의 주장과 확인 범위이며 정답 확률이 아님"
+      },
+      "regions": [
+        "강동",
+        "형주"
+      ],
+      "classification": "게임 재구성",
+      "historicalNoteIds": [
+        "A03",
+        "B04",
+        "C01",
+        "C04"
+      ]
+    },
+    {
+      "id": "D-zhouyu",
+      "title": "주유의 수군 준비 보고",
+      "body": "현재 살펴본 배와 인원만으로 전체 수군의 준비를 다 안다고 할 수는 없습니다. 선박의 손볼 곳과 운송에 필요한 물자는 담당자에게 다시 확인하도록 하겠습니다. 적의 숫자가 많다는 전언과 강 위에서 움직일 수 있는 힘은 나누어 보아야 합니다. 우리 쪽도 정비와 보급이 맞아야 대응할 여지가 생깁니다. 이 보고는 점검 범위와 필요한 준비를 밝힌 것이며, 승리를 약속하는 글은 아닙니다.",
+      "source": {
+        "author": "주유",
+        "sourceUnverified": true,
+        "note": "실물 사료를 옮긴 글이 아닌 게임용 초안"
+      },
+      "observedAt": {
+        "label": "게임 시작 무렵의 제한된 점검",
+        "activeMs": 0
+      },
+      "proposedArrivalActiveMs": 60000,
+      "readers": [
+        "player",
+        "zhang-hong",
+        "zhou-yu"
+      ],
+      "evidence": {
+        "claim": "주유가 점검한 범위의 준비 조건",
+        "uncertainty": "작성자의 보고 범위를 넘는 수량·위치·의도는 확인되지 않음",
+        "confirmedScope": "미점검 부대와 적군 상태는 확인하지 못함",
+        "meaning": "출처의 주장과 확인 범위이며 정답 확률이 아님"
+      },
+      "regions": [
+        "강동",
+        "장강 일대"
+      ],
+      "classification": "게임 재구성",
+      "historicalNoteIds": [
+        "A03",
+        "B01",
+        "C01",
+        "C04"
+      ]
+    },
+    {
+      "id": "D-supply",
+      "title": "창고와 운송 장부의 대조 요청",
+      "body": "창고 담당자가 지난 운송 기록과 오늘 받을 물목을 맞추고 있습니다. 아직 도착하지 않은 수레의 짐은 장부에 더하지 않았고, 젖거나 상한 물자는 따로 확인할 예정입니다. 이번 문서는 대조 절차를 알리는 평상 업무 보고입니다. 장부에 적힌 양과 지금 바로 내어 줄 수 있는 양이 같다고 보아서는 안 됩니다. 급한 사용 지시가 있으면 먼저 해당 창고의 기록을 확인해 주십시오.",
+      "source": {
+        "author": "정무청 창고 담당 서리",
+        "sourceUnverified": true,
+        "note": "실물 사료를 옮긴 글이 아닌 게임용 초안"
+      },
+      "observedAt": {
+        "label": "개시 시점의 장부 접수",
+        "activeMs": 0
+      },
+      "proposedArrivalActiveMs": 0,
+      "readers": [
+        "player",
+        "zhang-hong",
+        "zhang-zhao"
+      ],
+      "evidence": {
+        "claim": "장부 대조 절차 안내",
+        "uncertainty": "작성자의 보고 범위를 넘는 수량·위치·의도는 확인되지 않음",
+        "confirmedScope": "실제 가용량이나 군량 총계를 확정하지 않음",
+        "meaning": "출처의 주장과 확인 범위이며 정답 확률이 아님"
+      },
+      "regions": [
+        "강동"
+      ],
+      "classification": "게임 재구성",
+      "historicalNoteIds": [
+        "C03",
+        "C05"
+      ]
+    },
+    {
+      "id": "D-courier",
+      "title": "전령 통행과 문서 접수 기록",
+      "body": "오늘 들어온 문서는 접수 순서대로 묶어 두었습니다. 먼 곳에서 온 보고는 길에서 지체될 수 있어, 도착한 순서가 현지에서 일이 일어난 순서와 같지는 않습니다. 발신 시각이 없는 글에는 시각 미상이라고 적었습니다. 전령을 다시 보내라는 지시가 있으면 목적지와 전할 내용을 따로 받아 적겠습니다. 이 기록을 읽는 것만으로 새 전령이 출발하지는 않습니다.",
+      "source": {
+        "author": "정무청 문서 담당 서리",
+        "sourceUnverified": true,
+        "note": "실물 사료를 옮긴 글이 아닌 게임용 초안"
+      },
+      "observedAt": {
+        "label": "개시 시점의 접수 기록",
+        "activeMs": 0
+      },
+      "proposedArrivalActiveMs": 0,
+      "readers": [
+        "player",
+        "zhang-hong"
+      ],
+      "evidence": {
+        "claim": "문서 접수와 시각 표기 절차",
+        "uncertainty": "작성자의 보고 범위를 넘는 수량·위치·의도는 확인되지 않음",
+        "confirmedScope": "문서 도착을 사건 발생 시각으로 간주하지 않음",
+        "meaning": "출처의 주장과 확인 범위이며 정답 확률이 아님"
+      },
+      "regions": [
+        "강동"
+      ],
+      "classification": "게임 재구성",
+      "historicalNoteIds": [
+        "C02",
+        "C03"
+      ]
+    }
+  ]
+}
