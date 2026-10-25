@@ -1,12 +1,13 @@
-import type { CommandIntent, RestrictionId } from '../shared/contracts.ts';
+import { parseCompound } from './compound.ts';
+import type { ActionPlan, CommandIntent, RestrictionId } from '../shared/contracts.ts';
 
 /**
- * Explicit M1 Mock interpreter. It recognises a handful of fixed test patterns only; it is not
+ * Explicit offline Mock interpreter (M1 naval samples plus M3 compound fixtures). It recognises a handful of fixed test patterns only; it is not
  * a Korean language model and must never be reported as one. No SDK, network, or world access.
  * Anything it cannot place is returned as unsupported with the reason, never coerced into a drill.
  */
 export type Interpretation =
-  | { intent: 'command'; action: 'naval-drill'; restrictions: RestrictionId[]; unresolved: string[]; reply: string }
+  | { intent: 'command'; action: ActionPlan['kind']; actions?: ActionPlan[]; restrictions: RestrictionId[]; unresolved: string[]; reply: string }
   | { intent: Exclude<CommandIntent, 'command'>; reason: string; reply: string };
 
 export interface CommandInterpreter {
@@ -35,6 +36,11 @@ export class MockCommandInterpreter implements CommandInterpreter {
       return { intent: 'question', reason: '질문으로 판단했습니다. 실행하지 않습니다.',
         reply: '[Mock] 질문으로 들었습니다. 답변은 실제 AI 연결(M2) 이후에 가능하며, 지금은 아무것도 실행하지 않습니다.' };
     }
+    if (/조조.*(?:답|시간|회신)|유비.*(?:연락|접촉|타진|알아|의중|조건)|정찰|암살|재분배|개혁|그 사람|다른 사람/.test(text)) {
+      const { actions, unresolved } = parseCompound(text);
+      if (actions.length) return { intent: 'command', action: actions[0]!.kind, actions,
+        restrictions: actions[0]!.restrictions, unresolved, reply: '[Mock] 이해한 행동과 미해결 부분을 초안에서 확인해 주세요. 아직 실행하지 않았습니다.' };
+    }
     const naval = NAVAL.test(text) && DRILL.test(text);
     const noFirstStrike = NO_FIRST_STRIKE.test(text);
     // Strip the negated clause before looking for a real attack request.
@@ -50,7 +56,7 @@ export class MockCommandInterpreter implements CommandInterpreter {
     if (naval) {
       const restrictions: RestrictionId[] = noFirstStrike ? ['no-first-strike'] : [];
       return {
-        intent: 'command', action: 'naval-drill', restrictions, unresolved: [],
+        intent: 'command', action: 'naval-drill', actions: parseCompound(text).actions, restrictions, unresolved: parseCompound(text).unresolved,
         reply: noFirstStrike
           ? '[Mock] 주유 장군께 수군 정비를 전하되, 먼저 공격하지 말라는 조건을 붙이겠습니다. 확인하시면 전령을 보내겠습니다.'
           : '[Mock] 주유 장군께 수군 정비를 전하겠습니다. 교전 방침에 대한 지시는 없습니다. 확인하시면 전령을 보내겠습니다.',

@@ -7,6 +7,7 @@ export interface PanelActions {
   confirm(draft: CommandDraftView): void;
   cancel(draft: CommandDraftView): void;
   revise(draft: CommandDraftView, text: string): void;
+  recall(task: TaskView): void;
   busy: boolean;
 }
 
@@ -53,6 +54,17 @@ export function documentPanel(state: PlayerView, selectedId: string | null, acti
   return h('div', { class: 'doc-panel' }, list, paper);
 }
 
+function conditionLabel(value: string): string {
+  if (value === 'secret') return '비밀';
+  if (value === 'public') return '공개';
+  if (value.startsWith('after:')) return `${Number(value.slice(6)) + 1}번 행동 완료 후`;
+  if (value.startsWith('message:')) return `회신: ${value.slice(8)}`;
+  return value;
+}
+function stageLabel(stage: TaskView['stage']): string {
+  return { delivering: '명 전달 중', 'in-progress': '수행 중', completed: '완료', preparing: '출발 준비', travelling: '사절 전달 중', 'awaiting-reply': '회신 대기', waiting: '선행 작업 대기', stopped: '중단' }[stage];
+}
+
 function draftCard(draft: CommandDraftView, actions: PanelActions): HTMLElement {
   const rows: [string, string][] = [
     ['행동', draft.actionLabel], ['대상', draft.target], ['담당', draft.assignee.name], ['전달', `${draft.messenger.name} (전령)`],
@@ -72,16 +84,20 @@ function draftCard(draft: CommandDraftView, actions: PanelActions): HTMLElement 
     if (editor.hidden) { editor.hidden = false; reviseButton.textContent = '수정 반영'; textarea.focus(); return; }
     if (textarea.value.trim()) actions.revise(draft, textarea.value);
   } }, '수정');
-  return h('article', { class: 'draft-card', 'data-draft': draft.id },
+  return h('article', { class: `draft-card ${draft.actions.length > 1 || draft.action !== 'naval-drill' || draft.unresolved.length ? 'compound' : ''}`, 'data-draft': draft.id },
     h('header', { class: 'draft-head' },
       h('h3', {}, `명령 초안 · ${draft.id}`), h('span', { class: 'version' }, `버전 ${draft.version}`)),
-    h('blockquote', { class: 'draft-quote' }, draft.text),
+    h('div', { class: 'draft-content' }, h('blockquote', { class: 'draft-quote' }, draft.text),
+    draft.actions.length > 1 || draft.action !== 'naval-drill' ? h('div', { class: 'action-list' }, ...draft.actions.map((a, i) => h('section', { class: 'action-row' },
+      h('h4', {}, `${i + 1}. ${a.actionLabel} · ${a.assignee.name}`),
+      h('ul', { class: 'restrictions' }, ...[...a.restrictions.map(r => r.label), ...a.conditions.map(conditionLabel), ...(a.deadline ? [a.deadline] : [])].map(c => h('li', {}, c))),
+      h('p', { class: 'muted' }, `군량 ${a.estimate.grain} · 전달 ${seconds(a.estimate.deliveryMs)} + 수행 ${seconds(a.estimate.workMs)}`)))) : h('div', {},
     h('dl', { class: 'draft-rows' }, ...rows.flatMap(([label, value]) => [h('dt', {}, label), h('dd', {}, value)])),
-    h('div', { class: 'draft-restrictions' }, h('h4', {}, '제한'), restrictions),
+    h('div', { class: 'draft-restrictions' }, h('h4', {}, '제한'), restrictions)),
     draft.unresolved.length ? h('div', {}, h('h4', {}, '미해결'), h('ul', {}, ...draft.unresolved.map(item => h('li', {}, item)))) : null,
-    editor,
+    editor),
     h('div', { class: 'draft-actions' },
-      h('button', { type: 'button', class: 'btn btn-primary', disabled: actions.busy, onclick: () => actions.confirm(draft) }, '확인 · 전령 보내기'),
+      h('button', { type: 'button', class: 'btn btn-primary', disabled: actions.busy, onclick: () => actions.confirm(draft) }, draft.unresolved.length ? '표시된 행동만 확인 · 미해결 제외' : '확인 · 전령 보내기'),
       reviseButton,
       h('button', { type: 'button', class: 'btn btn-quiet', disabled: actions.busy, onclick: () => actions.cancel(draft) }, '초안 취소')),
     h('p', { class: 'muted' }, '이 창을 닫아도 초안은 그대로 남습니다. 확인 전에는 아무것도 실행되지 않습니다.'));
@@ -97,22 +113,25 @@ function taskCard(task: TaskView, state: PlayerView, actions: PanelActions): HTM
   const current = task.stage;
   const reports = task.reportIds.map(id => state.knowledge.documents.find(doc => doc.id === id)).filter(Boolean) as PublicDocument[];
   return h('article', { class: 'task-card', 'data-task': task.id },
-    h('header', { class: 'draft-head' }, h('h3', {}, `작업 · ${task.id}`), h('span', { class: 'version' }, `${task.draftId} v${task.draftVersion}`)),
-    h('ol', { class: 'stages' }, ...STAGES.map(stage => h('li', {
+    h('header', { class: 'draft-head' }, h('h3', {}, `${task.actionLabel} · ${task.id}`), h('span', { class: 'version' }, `${task.draftId} v${task.draftVersion}`)),
+    task.action !== 'naval-drill' || task.stage === 'stopped' || task.stage === 'waiting' ? h('p', { class: 'task-stage' }, stageLabel(task.stage)) : h('ol', { class: 'stages' }, ...STAGES.map(stage => h('li', {
       class: `step ${reached(stage.id) ? 'reached' : ''} ${stage.id === current ? 'current' : ''}`,
       ...(stage.id === current ? { 'aria-current': 'step' } : {}),
     }, stage.label))),
     h('dl', { class: 'draft-rows' },
       h('dt', {}, '담당'), h('dd', {}, task.assignee.name),
       h('dt', {}, '제한'), h('dd', {}, task.restrictions.map(item => item.label).join(', ') || '없음'),
+      h('dt', {}, '조건'), h('dd', {}, task.conditions.map(conditionLabel).join(' · ') || '별도 지정 없음'),
+      h('dt', {}, '기한'), h('dd', {}, task.deadlineAtMs !== undefined ? seconds(task.deadlineAtMs) : '없음'),
       h('dt', {}, '등록'), h('dd', {}, seconds(task.registeredAtMs)),
       h('dt', {}, '전달'), h('dd', {}, task.deliveredAtMs !== undefined ? seconds(task.deliveredAtMs) : '아직'),
       h('dt', {}, '완료'), h('dd', {}, task.completedAtMs !== undefined ? seconds(task.completedAtMs) : '아직'),
       h('dt', {}, '사용한 군량'), h('dd', {}, task.grainSpent ? String(task.grainSpent) : '아직 없음')),
+    task.recall ? h('p', { class: 'muted' }, task.recall.status === 'stopped' ? '회수: 중단됨 (기존 소모·공개 유지)' : '회수 요청 기록 · 출발 이후 회수 미지원') : task.stage !== 'completed' && task.stage !== 'stopped' ? h('button', { type: 'button', class: 'btn', disabled: actions.busy, onclick: () => actions.recall(task) }, '회수 요청') : null,
     reports.length ? h('div', { class: 'task-reports' }, h('h4', {}, '관련 보고'),
       ...reports.map(report => h('button', { type: 'button', class: 'link', onclick: () => actions.openDocument(report.id) }, `${report.title} · ${seconds(report.arrivedAtMs)}`))) : null,
     h('p', { class: 'muted' }, task.stage === 'completed'
-      ? '정비만 수행했습니다. 이 시제품에는 교전 처리가 없습니다.'
+      ? '등록된 작업을 완료했습니다. 교전·동맹·조약의 자동 성립은 없습니다.'
       : '시간이 흘러야 진행됩니다. 시험 도구의 시계 버튼으로 시간을 보낼 수 있습니다.'));
 }
 

@@ -1,9 +1,41 @@
 [
   {
     "kind": "naval-drill",
-    "description": "주유가 강동 수군을 정비한다. 대상 jiangdong-navy, 수행자 zhou-yu만 허용. 교전은 포함하지 않는다. no-first-strike는 먼저 공격하지 말라는 제한이다. 기타 조건과 기한은 확인 질문으로 돌린다. 여러 행동의 분해·실행은 M3 이전에는 지원하지 않는다.",
-    "targets": ["jiangdong-navy"],
-    "assignees": ["zhou-yu"],
-    "restrictions": ["no-first-strike"]
+    "description": "주유가 강동 수군을 정비한다. 교전 없음. 조건: secret/public, after:0 또는 after:1 (같은 초안의 앞 행동 완료 후). 기한: N분 이내.",
+    "targets": [
+      "jiangdong-navy"
+    ],
+    "assignees": [
+      "zhou-yu"
+    ],
+    "restrictions": [
+      "no-first-strike"
+    ]
+  },
+  {
+    "kind": "hold-reply",
+    "description": "조조 사신 답변 보류 또는 명시한 문구 회신. no-firm-answer는 보류. 회신은 conditions의 message:원문 문구. 항복·조약 자동 성립 없음.",
+    "targets": [
+      "cao-cao-envoy"
+    ],
+    "assignees": [
+      "zhang-hong"
+    ],
+    "restrictions": [
+      "no-firm-answer"
+    ]
+  },
+  {
+    "kind": "sound-out",
+    "description": "노숙이 유비 측 의중을 타진한다. secret/public 공개 범위, no-war-promise 참전 약속 금지. 즉시 동맹 없음.",
+    "targets": [
+      "liu-bei"
+    ],
+    "assignees": [
+      "lu-su"
+    ],
+    "restrictions": [
+      "no-war-promise"
+    ]
   }
 ]

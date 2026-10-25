@@ -1,5 +1,5 @@
 import type { CharacterId, CommandDraftView, KnowledgeView, PersonRef, PlayerView, TaskView } from '../shared/contracts.ts';
-import { NAVAL_DRILL_LABEL, restriction } from './rules.ts';
+import { ACTION_LABELS, ACTION_RULES, restriction } from './rules.ts';
 import type { WorldState } from './world.ts';
 
 // Allowlist fields explicitly. Spreading WorldState or an internal document leaks future fields.
@@ -21,8 +21,10 @@ function person(world: WorldState, id: CharacterId): PersonRef {
 
 function draftView(world: WorldState, draft: WorldState['drafts'][number]): CommandDraftView {
   return {
+    actions: draft.actions.map(a => ({ action: a.kind, actionLabel: ACTION_LABELS[a.kind], target: a.target, assignee: person(world, a.assignee), restrictions: a.restrictions.map(restriction), conditions: [...a.conditions], deadline: a.deadline, estimate: { ...ACTION_RULES[a.kind] } })),
+    taskIds: [...draft.taskIds],
     id: draft.id, version: draft.version, status: draft.status, text: draft.text,
-    action: draft.action, actionLabel: NAVAL_DRILL_LABEL, target: '강동 수군',
+    action: draft.action, actionLabel: ACTION_LABELS[draft.action], target: { 'naval-drill': '강동 수군', 'hold-reply': '조조 사신', 'sound-out': '유비 측' }[draft.action],
     assignee: person(world, draft.assignee), messenger: person(world, draft.messenger),
     restrictions: draft.restrictions.map(restriction), estimate: { ...draft.estimate },
     unresolved: [...draft.unresolved],
@@ -33,8 +35,11 @@ function draftView(world: WorldState, draft: WorldState['drafts'][number]): Comm
 
 function taskView(world: WorldState, task: WorldState['tasks'][number]): TaskView {
   return {
+    conditions: [...task.plan.conditions],
+    ...(task.deadlineAtMs !== undefined ? { deadlineAtMs: task.deadlineAtMs } : {}),
+    ...(task.recall ? { recall: { ...task.recall } } : {}),
     id: task.id, draftId: task.draftId, draftVersion: task.draftVersion,
-    action: task.action, actionLabel: NAVAL_DRILL_LABEL, assignee: person(world, task.assignee),
+    action: task.action, actionLabel: ACTION_LABELS[task.action], assignee: person(world, task.assignee),
     restrictions: task.restrictions.map(restriction), stage: task.stage,
     registeredAtMs: task.registeredAtMs,
     ...(task.deliveredAtMs !== undefined ? { deliveredAtMs: task.deliveredAtMs } : {}),

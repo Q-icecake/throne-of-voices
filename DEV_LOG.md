@@ -1,5 +1,19 @@
 # Development Log
 
+## 2026-10-25 — J06 / 006 M3 복합 명령
+
+- 구현: 최대 3행동 초안, `hold-reply`/`sound-out`/기존 `naval-drill`, 원문 조건 보존, 미해결 부분의 명시적 부분 실행 확인, 최신 담당자·예약 군량·기한 재검사, 작업별 소모 ID, 중복 확인/회수 방지. 기존 계약 필드와 56개 테스트는 수정·삭제하지 않았다. 새 의존성 없음.
+- 상태: 조조 요청 보류/회신·보류 기한·전언, 노숙 명 전달/출발 준비/이동/수신·회신 대기/고정 회신, 비밀 보고·전언 수신자 범위, 참전 약속 금지, 수군 교전 방침. 선행 작업 완료 후 시작과 중단 전파, 확인 후 회수 요청 기록을 추가했다. 출발·수행 후 회수는 미지원이며 이미 사용한 군량·공개·전언은 보존한다.
+- 화면: 기존 S5 안에서 행동별 담당·조건 칩·비용/시간·미해결, 다중 작업·회수 요청·보고 연결을 표시한다. 복합 초안의 세부 내용만 내부 스크롤하므로 두 해상도에서 확인/수정/취소 버튼을 유지한다.
+- 해석 결정: 006 예문에는 참전 약속 금지가 없으므로 확답 보류·비밀·선제공격 금지만 반영. 명시한 변형에서만 참전 약속 금지를 시험했다. 명시적인 1~999분 기한 및 바로 앞 행동 완료 후 관계만 지원한다. `scout`는 선택 범위에서 제외하고 미지원으로 기록했다. 상세: `docs/COMMANDS.md`.
+- 자동 검증 통과: `node --test tests/*.test.ts` **66/66** (기존 56 + M3 10); `node node_modules/typescript/bin/tsc --noEmit`; `node node_modules/vite/bin/vite.js build`; `git -c safe.directory=C:/Users/q_ice/dispatch-work/throne-integrate diff --check`.
+- 브라우저 통과: `node scripts/screenshots.ts --out artifacts/m3/scenes` **12/12**, `node scripts/verify-visual.ts --out artifacts/m3/visual` **16/16**, `node scripts/verify-m3.ts` **10/10**. 설치된 Edge headless, 1920×1080·1366×768. 실제 입력→수정→중복 확인→30초 회신 대기→60초 회신 열람에서 작업 3개, 군량 880, 준비도 35. 부분 범위 표시·취소·회수 경로와 스크롤 전후 버튼의 화면 내 위치·hit test도 검사했다.
+- 증거: `artifacts/m3/compound-{draft,awaiting,reply}-{1920x1080,1366x768}.png`, `compound-checks.json`, `scenes/metrics.json`, `visual/browser-checks.json`, `tests.txt`. 대표 1366 초안·1920 회신 이미지를 직접 확인했다. artifacts는 기존 Git 제외 정책 유지.
+- 수정 중 발견·해결: 단독 수군 명령의 기한 전달 누락, 명시 수행자와 기본 수행자 불일치, 선후관계가 있는 Provider 제안 순서 변경. 새 회귀 검사와 기존 M2 낯선 표현·전달자 표현 검사를 모두 유지했다.
+- 미검증/제외: 실제 LLM 호출 **0회**, 한국어 전반 이해·실제 API 품질·실제 IME·다른 브라우저·15분 재미는 미검증. 인물 대화·범용 사건 스케줄러·자동 급보·기한 만료 후속 사건은 M4/M5 인계. Mock/ScriptedProvider의 성공을 일반 언어 이해 성능으로 보고하지 않는다.
+- Git: 소유권 불일치는 읽기 명령에 한정한 `-c safe.directory=...`로 처리했으며 전역 설정은 변경하지 않았다. `_common.md`의 명시적 add/commit 금지 및 쓰기 범위 밖 worktree 메타데이터 제약을 따라 **add/commit/push 미실행**. 변경은 이 worktree에 남겨 리드가 제출·커밋한다. 원본·main·다른 브랜치·원격 변경 없음.
+- 변경 파일: `shared/contracts.ts`, `server/{compound,mock-interpreter,engine,world,rules,knowledge,http}.ts`, `server/llm/{actions.json,validator.ts,pipeline.ts,system.ko.txt}`, `client/src/{main.ts,panels.css,ui/panels.ts}`, `tests/compound.test.ts`, `scripts/verify-m3.ts`, `docs/COMMANDS.md`, 이 로그.
+
 ## 2026-10-25 — J05 / 005 M2 Provider
 
 - 완료: 교체 가능한 `InterpretationProvider`, 한국어 프롬프트·행동 레지스트리·JSON Schema, 서버 검증/해석 파이프라인, Gemini fetch 어댑터, ScriptedProvider 오프라인 시험, 30문장 라이브 평가 초안. 새 의존성 없음.

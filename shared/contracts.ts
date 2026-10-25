@@ -29,10 +29,22 @@ export interface KnowledgeView {
   documents: PublicDocument[];
 }
 
-// ---- M1 command vocabulary. Only one executable action exists in M1. ----
+// ---- M3 command vocabulary; legacy single-action fields remain compatible. ----
 
-export type CommandActionKind = 'naval-drill';
-export type RestrictionId = 'no-first-strike';
+export type CommandActionKind = 'naval-drill' | 'hold-reply' | 'sound-out';
+export type RestrictionId = 'no-first-strike' | 'no-war-promise' | 'no-firm-answer';
+export interface ActionPlan {
+  kind: CommandActionKind;
+  target: string;
+  assignee: CharacterId;
+  restrictions: RestrictionId[];
+  conditions: string[];
+  deadline: string | null;
+}
+export interface ActionView {
+  action: CommandActionKind; actionLabel: string; target: string; assignee: PersonRef;
+  restrictions: Restriction[]; conditions: string[]; deadline: string | null; estimate: CommandEstimate;
+}
 export type EngagementPolicy = 'hold' | 'no-first-strike';
 
 export interface Restriction { id: RestrictionId; label: string }
@@ -48,6 +60,8 @@ export interface CommandEstimate {
 export type DraftStatus = 'awaiting-confirmation' | 'confirmed' | 'cancelled' | 'rejected';
 
 export interface CommandDraftView {
+  actions: ActionView[];
+  taskIds: string[];
   id: string;
   version: number;
   status: DraftStatus;
@@ -64,9 +78,12 @@ export interface CommandDraftView {
   taskId?: string;
 }
 
-export type TaskStage = 'delivering' | 'in-progress' | 'completed';
+export type TaskStage = 'delivering' | 'in-progress' | 'completed' | 'preparing' | 'travelling' | 'awaiting-reply' | 'waiting' | 'stopped';
 
 export interface TaskView {
+  conditions: string[];
+  deadlineAtMs?: number;
+  recall?: { status: 'stopped' | 'unsupported'; requestedAtMs: number };
   id: string;
   draftId: string;
   draftVersion: number;
@@ -132,27 +149,29 @@ export type CommandRequest =
   | { type: 'submit'; text: string }
   | { type: 'revise'; draftId: string; version: number; text: string }
   | { type: 'cancel'; draftId: string; version: number }
-  | { type: 'confirm'; draftId: string; version: number };
+  | { type: 'confirm'; draftId: string; version: number; acceptPartial?: boolean }
+  | { type: 'recall'; taskId: string };
 
 export type CommandIntent = 'command' | 'question' | 'hypothetical' | 'discussion' | 'ambiguous' | 'unsupported';
 
 export type RejectionCode =
   | 'DRAFT_NOT_FOUND' | 'DRAFT_VERSION_OUTDATED' | 'DRAFT_CANCELLED' | 'DRAFT_REJECTED'
   | 'DRAFT_ALREADY_CONFIRMED' | 'REVISION_NOT_COMMAND'
-  | 'TASK_CONFLICT' | 'GRAIN_SHORT' | 'ASSIGNEE_BUSY';
+  | 'TASK_CONFLICT' | 'GRAIN_SHORT' | 'ASSIGNEE_BUSY' | 'PARTIAL_CONFIRMATION_REQUIRED' | 'DEADLINE_PASSED' | 'TASK_NOT_FOUND';
 
 export type CommandOutcome =
   | { kind: 'error'; code: 'PROVIDER_ERROR' | 'PROVIDER_TIMEOUT' | 'CALL_LIMIT' | 'INVALID_PROPOSAL' | 'STALE_RESPONSE'; reply: string; input: string }
   | { kind: 'draft'; draftId: string; version: number; reply: string }
   | { kind: 'answer'; intent: Exclude<CommandIntent, 'command'>; reply: string; reason: string }
-  | { kind: 'confirmed'; draftId: string; taskId: string; duplicate: boolean; reply: string }
+  | { kind: 'confirmed'; draftId: string; taskId: string; taskIds: string[]; duplicate: boolean; reply: string }
+  | { kind: 'recalled'; taskId: string; reply: string }
   | { kind: 'cancelled'; draftId: string; reply: string }
   | { kind: 'rejected'; code: RejectionCode; reply: string };
 
 export type LogKind =
   | 'reset' | TestAction['type']
   | 'command-submit' | 'command-revise' | 'command-cancel' | 'command-confirm' | 'command-rejected'
-  | 'task-delivered' | 'task-completed';
+  | 'task-delivered' | 'task-completed' | 'task-progress' | 'command-recall';
 
 export interface PublicLogRecord {
   id: string;

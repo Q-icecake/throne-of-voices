@@ -1,5 +1,5 @@
 import type {
-  ActionResponse, CommandOutcome, CommandRequest, CommandResponse, LogKind, PublicLogRecord, PublicSnapshot,
+  ActionPlan, ActionResponse, CommandOutcome, CommandRequest, CommandResponse, LogKind, PublicLogRecord, PublicSnapshot,
   RejectionCode, TestAction,
 } from '../shared/contracts.ts';
 import { FakeClock } from './clock.ts';
@@ -12,7 +12,7 @@ import { interpret, toReading } from './llm/pipeline.ts';
 import { actionVocabulary, validateProposal } from './llm/validator.ts';
 import { MockLLMProvider } from './provider.ts';
 import type { LLMProvider } from './provider.ts';
-import { ENGAGEMENT_POLICY_LABELS, NAVAL_DRILL, RESTRICTION_LABELS } from './rules.ts';
+import { ACTION_RULES, DIPLOMACY_RULES, deadlineDuration, ENGAGEMENT_POLICY_LABELS, NAVAL_DRILL, RESTRICTION_LABELS } from './rules.ts';
 import { createInitialWorld } from './world.ts';
 import type { DraftRecord, EventCause, EventRecord, TaskRecord, WorldState } from './world.ts';
 
@@ -25,10 +25,13 @@ const REJECTION_REPLIES: Record<RejectionCode, string> = {
   DRAFT_CANCELLED: '취소된 초안은 실행할 수 없습니다.',
   DRAFT_REJECTED: '이미 반려된 초안입니다. 새로 지시해 주세요.',
   DRAFT_ALREADY_CONFIRMED: '이미 확정된 초안은 수정하거나 취소할 수 없습니다.',
-  REVISION_NOT_COMMAND: '수정한 문장이 수군 정비 지시로 인식되지 않았습니다. 기존 초안은 그대로 남아 있습니다.',
-  TASK_CONFLICT: '이미 진행 중인 수군 정비가 있어 이 초안을 실행할 수 없습니다. 진행 중인 작업이 끝난 뒤 새로 지시해 주세요.',
-  GRAIN_SHORT: '장부상 군량이 부족해 수군 정비를 시작할 수 없습니다.',
-  ASSIGNEE_BUSY: '주유가 지금 명을 받을 수 없는 상태입니다.',
+  REVISION_NOT_COMMAND: '수정한 문장이 지원하는 지시로 인식되지 않았습니다. 기존 초안은 그대로 남아 있습니다.',
+  TASK_CONFLICT: '담당자에게 이미 진행 중인 작업이 있어 이 초안을 실행할 수 없습니다. 작업이 끝난 뒤 새로 지시해 주세요.',
+  GRAIN_SHORT: '진행 중인 작업에 필요한 군량을 제외하면 이 초안에 쓸 군량이 부족합니다.',
+  ASSIGNEE_BUSY: '담당자가 지금 명을 받을 수 없는 상태입니다.',
+  PARTIAL_CONFIRMATION_REQUIRED: '미해결 부분을 제외하고 표시된 행동만 실행할지 확인해 주세요.',
+  DEADLINE_PASSED: '기한 안에 완료할 수 없습니다. 새 기한으로 작성해 주세요.',
+  TASK_NOT_FOUND: '작업을 찾을 수 없습니다.',
 };
 
 export class GameEngine<P extends InterpretationProvider | undefined = undefined> {
@@ -150,12 +153,17 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
   #readMock(text: string): Interpretation {
     const reading = this.#interpreter.interpret(text);
     if (reading.intent !== 'command') return reading;
+    if (this.#plans(reading).length > 3) return { intent: 'ambiguous', reason: '최대 3행동', reply: '[Mock] 한 초안은 최대 3행동입니다. 명령을 나누어 확인해 주세요.' };
     const proposal = validateProposal({ intent: 'command', dialogue: reading.reply,
-      proposedActions: [{ kind: reading.action, target: 'jiangdong-navy', assignee: 'zhou-yu',
-        restrictions: reading.restrictions, conditions: [], deadline: null }], unresolvedQuestions: reading.unresolved,
+      proposedActions: this.#plans(reading), unresolvedQuestions: reading.unresolved,
       referencedKnowledgeIds: [], usage: { inputTokens: 0, outputTokens: 0, externalCalls: 0, costUsd: 0 } },
     { text, knowledge: knowledgeFor(this.#world, 'player'), context: [], actions: actionVocabulary() });
-    return proposal.intent === 'command' ? reading : { intent: 'ambiguous', reply: `[Mock] ${proposal.dialogue}`, reason: '조건 확인 필요 · 실행 없음' };
+    return proposal.intent === 'command' ? { ...reading, actions: proposal.proposedActions as ActionPlan[], unresolved: proposal.unresolvedQuestions } : { intent: 'ambiguous', reply: `[Mock] ${proposal.dialogue}`, reason: '조건 확인 필요 · 실행 없음' };
+  }
+
+  #plans(reading: Extract<Interpretation, { intent: 'command' }>): ActionPlan[] {
+    return structuredClone(reading.actions ?? [{ kind: reading.action, target: 'jiangdong-navy', assignee: 'zhou-yu',
+      restrictions: reading.restrictions, conditions: [], deadline: null }]);
   }
 
   #handleCommand(request: CommandRequest): CommandOutcome {
@@ -164,6 +172,7 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
       case 'revise': return this.#revise(request);
       case 'cancel': return this.#cancel(request);
       case 'confirm': return this.#confirm(request);
+      case 'recall': return this.#recall(request);
       default: throw new Error('UNKNOWN_COMMAND');
     }
   }
@@ -177,10 +186,12 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
       this.#record('command-submit', `입력 「${quoted}」 · ${INTENT_LABELS[reading.intent]} · 실행 없음 · ${reading.reason}`, structuredClone(request));
       return { kind: 'answer', intent: reading.intent, reply: reading.reply, reason: reading.reason };
     }
+    const plans = this.#plans(reading);
     const draft: DraftRecord = {
+      actions: plans, taskIds: [], createdAtMs: this.#world.clock.activeMs,
       id: `draft-${pad(++this.#world.counters.draft)}`, version: 1, status: 'awaiting-confirmation',
-      text: request.text, action: reading.action, assignee: 'zhou-yu', messenger: 'zhang-hong',
-      restrictions: [...reading.restrictions], estimate: { ...NAVAL_DRILL }, unresolved: [...reading.unresolved],
+      text: request.text, action: plans[0]!.kind, assignee: plans[0]!.assignee, messenger: 'zhang-hong',
+      restrictions: [...reading.restrictions], estimate: { ...ACTION_RULES[plans[0]!.kind] }, unresolved: [...reading.unresolved],
     };
     this.#world.drafts.push(draft);
     this.#record('command-submit', `입력 「${quoted}」 · ${draft.id} v1 초안 작성 · 확인 대기 · 자원 변화 없음`, structuredClone(request));
@@ -197,6 +208,11 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
     const target = draft!;
     target.version++;
     target.text = request.text;
+    target.actions = this.#plans(reading);
+    target.action = target.actions[0]!.kind;
+    target.assignee = target.actions[0]!.assignee;
+    target.estimate = { ...ACTION_RULES[target.action] };
+    target.createdAtMs = this.#world.clock.activeMs;
     target.restrictions = [...reading.restrictions];
     target.unresolved = [...reading.unresolved];
     this.#record('command-revise', `${target.id} v${target.version}로 수정 · 이전 버전은 실행 불가`, structuredClone(request));
@@ -217,11 +233,12 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
     if (!draft) return this.#reject('DRAFT_NOT_FOUND', request);
     // Idempotent: confirming the same draft version again returns the existing task untouched.
     if (draft.status === 'confirmed' && draft.confirmedVersion === request.version && draft.taskId) {
-      return { kind: 'confirmed', draftId: draft.id, taskId: draft.taskId, duplicate: true,
+      return { kind: 'confirmed', draftId: draft.id, taskId: draft.taskId, taskIds: [...draft.taskIds], duplicate: true,
         reply: '이미 확정된 지시입니다. 새 작업을 만들지 않았습니다.' };
     }
     const blocked = this.#editBlock(draft, request.version);
     if (blocked) return this.#reject(blocked, request);
+    if (draft.unresolved.length && !request.acceptPartial) return this.#reject('PARTIAL_CONFIRMATION_REQUIRED', request);
     // Re-check against the current world, not the world at drafting time.
     const recheck = this.#recheck(draft);
     if (recheck) {
@@ -229,18 +246,42 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
       draft.statusNote = REJECTION_REPLIES[recheck];
       return this.#reject(recheck, request);
     }
-    const task: TaskRecord = {
-      id: `task-${pad(++this.#world.counters.task)}`, draftId: draft.id, draftVersion: draft.version,
-      action: draft.action, assignee: draft.assignee, restrictions: [...draft.restrictions],
-      stage: 'delivering', registeredAtMs: this.#world.clock.activeMs, grainSpent: 0, reportIds: [],
-    };
-    this.#world.tasks.push(task);
+    const tasks: TaskRecord[] = [];
+    for (const plan of draft.actions) {
+      const dependency = plan.conditions.find(c => c.startsWith('after:'));
+      const duration = deadlineDuration(plan.deadline);
+      const task: TaskRecord = {
+        id: `task-${pad(++this.#world.counters.task)}`, draftId: draft.id, draftVersion: draft.version,
+        action: plan.kind, assignee: plan.assignee, restrictions: [...plan.restrictions], plan: structuredClone(plan),
+        stage: dependency ? 'waiting' : 'delivering', registeredAtMs: this.#world.clock.activeMs,
+        grainSpent: 0, reportIds: [],
+        ...(dependency ? { dependencyId: tasks[Number(dependency.slice(6))]!.id } : {}),
+        ...(duration !== undefined ? { deadlineAtMs: draft.createdAtMs + duration } : {}),
+      };
+      tasks.push(task);
+    }
+    this.#world.tasks.push(...tasks);
     draft.status = 'confirmed';
     draft.confirmedVersion = draft.version;
-    draft.taskId = task.id;
-    this.#record('command-confirm', `${draft.id} v${draft.version} 확정 · ${task.id} 등록 · 전령 출발 (자원 소모는 착수 시점)`, structuredClone(request));
-    return { kind: 'confirmed', draftId: draft.id, taskId: task.id, duplicate: false,
-      reply: '확정했습니다. 장굉이 주유에게 전령을 보냈습니다. 명이 전달되면 정비가 시작됩니다.' };
+    draft.taskIds = tasks.map(t => t.id);
+    draft.taskId = tasks[0]!.id;
+    this.#record('command-confirm', `${draft.id} v${draft.version} 확정 · ${draft.taskIds.join(', ')} 등록 · 소모는 착수 시점`, structuredClone(request));
+    return { kind: 'confirmed', draftId: draft.id, taskId: draft.taskId, taskIds: [...draft.taskIds], duplicate: false,
+      reply: `확정했습니다. ${tasks.length}개 작업을 등록했습니다. 전달과 결과는 시간이 지나야 보고됩니다.` };
+  }
+
+  #recall(request: Extract<CommandRequest, { type: 'recall' }>): CommandOutcome {
+    const task = this.#world.tasks.find(t => t.id === request.taskId);
+    if (!task) return this.#reject('TASK_NOT_FOUND', request);
+    if (!task.recall) {
+      const stoppable = ['waiting', 'delivering', 'preparing'].includes(task.stage);
+      task.recall = { status: stoppable ? 'stopped' : 'unsupported', requestedAtMs: this.#world.clock.activeMs };
+      if (stoppable) task.stage = 'stopped';
+      this.#fileReport(task, this.#world.clock.activeMs, '회수 요청 기록', '장굉',
+        stoppable ? '전달·출발 전 작업을 중단했습니다. 이미 사용한 군량과 전달한 정보는 보존합니다.' : '회수 요청을 기록했습니다. 출발·수행 이후 회수는 미지원입니다. 기존 작업은 계속되며 소모·전언·공개를 되돌리지 않습니다.');
+      this.#record('command-recall', `${task.id} 회수 요청 · ${task.recall.status}`, structuredClone(request));
+    }
+    return { kind: 'recalled', taskId: task.id, reply: task.recall.status === 'stopped' ? '출발 전 작업을 중단했습니다. 이미 발생한 소모·공개는 유지됩니다.' : '회수 요청 기록. 출발·수행 이후 회수는 미지원이며 작업은 계속됩니다.' };
   }
 
   #editBlock(draft: DraftRecord | undefined, version: number): RejectionCode | undefined {
@@ -253,9 +294,20 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
   }
 
   #recheck(draft: DraftRecord): RejectionCode | undefined {
-    if (this.#world.tasks.some(task => task.action === draft.action && task.stage !== 'completed')) return 'TASK_CONFLICT';
-    if (!this.#world.characters.find(character => character.id === draft.assignee)?.available) return 'ASSIGNEE_BUSY';
-    if (this.#world.resources.grain < draft.estimate.grain) return 'GRAIN_SHORT';
+    const active = this.#world.tasks.filter(t => !['completed', 'stopped'].includes(t.stage));
+    const ends: number[] = [];
+    for (const plan of draft.actions) {
+      if (active.some(t => t.assignee === plan.assignee)) return 'TASK_CONFLICT';
+      if (!this.#world.characters.find(c => c.id === plan.assignee)?.available) return 'ASSIGNEE_BUSY';
+      const rule = ACTION_RULES[plan.kind];
+      const dep = plan.conditions.find(c => c.startsWith('after:'));
+      const end = (dep ? ends[Number(dep.slice(6))]! : this.#world.clock.activeMs) + rule.deliveryMs + rule.workMs;
+      ends.push(end);
+      const duration = deadlineDuration(plan.deadline);
+      if (duration !== undefined && end > draft.createdAtMs + duration) return 'DEADLINE_PASSED';
+    }
+    const reserved = active.filter(t => !t.grainSpentEventId).reduce((n,t) => n + ACTION_RULES[t.action].grain, 0);
+    if (this.#world.resources.grain < reserved + draft.actions.reduce((n,a) => n + ACTION_RULES[a.kind].grain, 0)) return 'GRAIN_SHORT';
     return undefined;
   }
 
@@ -267,14 +319,77 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
 
   #progressTasks(): void {
     const now = this.#world.clock.activeMs;
-    for (const task of this.#world.tasks) {
-      if (task.stage === 'delivering' && now >= task.registeredAtMs + NAVAL_DRILL.deliveryMs) {
-        this.#deliver(task, task.registeredAtMs + NAVAL_DRILL.deliveryMs);
+    for (;;) {
+      for (const task of this.#world.tasks.filter(t => t.stage === 'waiting')) {
+        const dependency = this.#world.tasks.find(t => t.id === task.dependencyId)!;
+        if (dependency.stage === 'stopped') {
+          task.stage = 'stopped';
+          this.#fileReport(task, now, '선행 작업 중단', '장굉', '선행 작업이 중단되어 후속 작업도 착수하지 않았습니다.');
+        } else if (dependency.stage === 'completed') {
+          task.stage = 'delivering'; task.startedAtMs = dependency.completedAtMs!;
+        }
       }
-      if (task.stage === 'in-progress' && task.deliveredAtMs !== undefined && now >= task.deliveredAtMs + NAVAL_DRILL.workMs) {
-        this.#complete(task, task.deliveredAtMs + NAVAL_DRILL.workMs);
-      }
+      const next = this.#world.tasks.map(task => {
+        const rule = ACTION_RULES[task.action];
+        const at = task.stage === 'delivering' ? (task.startedAtMs ?? task.registeredAtMs) + rule.deliveryMs
+          : task.stage === 'in-progress' ? task.deliveredAtMs! + rule.workMs
+          : task.stage === 'preparing' ? task.deliveredAtMs! + DIPLOMACY_RULES.prepareMs
+          : task.stage === 'travelling' ? task.departedAtMs! + DIPLOMACY_RULES.travelMs
+          : task.stage === 'awaiting-reply' ? task.receivedAtMs! + DIPLOMACY_RULES.replyMs : Infinity;
+        return { task, at };
+      }).filter(e => e.at <= now).sort((a,b) => a.at - b.at || a.task.id.localeCompare(b.task.id))[0];
+      if (!next) break;
+      const { task, at } = next;
+      if (task.action === 'naval-drill') {
+        if (task.stage === 'delivering') this.#deliver(task, at); else this.#complete(task, at);
+      } else this.#diplomaticStep(task, at);
     }
+  }
+
+  #message(task: TaskRecord): string {
+    const explicit = task.plan.conditions.find(c => c.startsWith('message:'))?.slice(8);
+    return [explicit ?? (task.action === 'hold-reply' ? '당장 확답하지 않고 답변을 보류합니다.' : '유비 측 의중과 협력 조건을 타진합니다.'),
+      task.plan.conditions.includes('secret') ? '비밀 접촉. 수신자 외 공개 금지.' : '공개 범위로 전달.',
+      ...task.restrictions.map(r => RESTRICTION_LABELS[r])].join(' ');
+  }
+
+  #diplomaticStep(task: TaskRecord, at: number): void {
+    const rule = ACTION_RULES[task.action];
+    let title: string, claim: string;
+    if (task.stage === 'delivering') {
+      task.deliveredAtMs = at;
+      if (!task.grainSpentEventId) {
+        this.#world.resources.grain -= rule.grain;
+        task.grainSpent = rule.grain; task.grainSpentEventId = this.#nextEventId();
+      }
+      task.stage = task.action === 'sound-out' ? 'preparing' : 'in-progress';
+      title = '명 전달·출발 준비 보고';
+      claim = `${task.action === 'sound-out' ? '노숙에게 명을 전했습니다. 사절 출발 준비 중이며 유비의 수락을 뜻하지 않습니다.' : '장굉이 조조 사신에게 전달할 답변을 준비합니다.'} 군량 ${rule.grain} 사용. ${this.#message(task)}`;
+    } else if (task.stage === 'preparing') {
+      task.departedAtMs = at; task.stage = 'travelling';
+      title = '사절 출발 보고'; claim = `노숙의 사절이 출발했습니다. 아직 상대에게 전달되지 않았습니다. ${this.#message(task)}`;
+    } else if (task.stage === 'travelling') {
+      task.receivedAtMs = at; task.stage = 'awaiting-reply';
+      this.#world.diplomacy.messages.push({ taskId: task.id, text: this.#message(task), atMs: at,
+        recipients: task.plan.conditions.includes('secret') ? ['player', 'lu-su', 'liu-bei'] : ['player', 'zhang-hong', 'zhang-zhao', 'zhou-yu', 'lu-su', 'liu-bei'] });
+      title = '전언 수신·회신 대기'; claim = `유비 측에 전언을 전달했습니다. 회신을 기다립니다. ${this.#message(task)}`;
+    } else {
+      task.stage = 'completed'; task.completedAtMs = at;
+      if (task.action === 'hold-reply') {
+        const request = this.#world.diplomacy.requests.find(r => r.id === 'cao-cao-envoy')!;
+        const held = task.restrictions.includes('no-firm-answer');
+        request.status = held ? 'held' : 'answered';
+        if (held) request.heldUntilMs = task.deadlineAtMs ?? at + DIPLOMACY_RULES.holdMs;
+        else delete request.heldUntilMs;
+        request.message = this.#message(task);
+        this.#world.diplomacy.messages.push({ taskId: task.id, text: request.message, atMs: at, recipients: ['player', 'zhang-hong', 'cao-cao'] });
+        title = held ? '조조 사신 답변 보류 보고' : '조조 사신 회신 전달 보고';
+        claim = `${request.message} ${held ? `보류 기한: 시험 시계 ${request.heldUntilMs}ms.` : ''} 항복이나 조약은 성립하지 않았습니다.`;
+      } else { title = '유비 측 회신 도착'; claim = `${DIPLOMACY_RULES.response} 전달 범위: ${this.#message(task)}`; }
+    }
+    this.#fileReport(task, at, title, task.action === 'sound-out' ? '노숙 (사절 경유)' : '장굉', claim);
+    this.#record(task.stage === 'completed' ? 'task-completed' : 'task-progress', `${task.id} · ${title}`,
+      { type: 'task-progress', taskId: task.id, stage: task.stage }, at);
   }
 
   #deliver(task: TaskRecord, at: number): void {
@@ -317,8 +432,8 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
     const id = `report-${pad(++this.#world.counters.report)}`;
     this.#world.documents.push({
       id, title, claim, source, observedAtMs: at, arrivedAtMs: at,
-      evidence: '담당자 보고 · M1 시험 규칙에 따른 처리', region: '강동 수군',
-      provenance: 'test-reconstruction', taskId: task.id, readers: ['player', 'zhang-hong'],
+      evidence: '담당자 보고 · 고정 시험 규칙에 따른 처리', region: task.action === 'naval-drill' ? '강동 수군' : '외교',
+      provenance: 'test-reconstruction', taskId: task.id, readers: task.plan.conditions.includes('secret') ? ['player', 'zhang-hong', task.assignee] : ['player', 'zhang-hong', 'zhang-zhao', 'zhou-yu', 'lu-su'],
     });
     task.reportIds.push(id);
     this.#world.ledger = {

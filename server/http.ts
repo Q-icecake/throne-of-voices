@@ -65,6 +65,9 @@ const validDraftRef = (value: Record<string, unknown>) =>
   typeof value.version === 'number' && Number.isSafeInteger(value.version) && value.version >= 1;
 
 export function parseCommand(value: Record<string, unknown>): CommandRequest {
+  if (value.type === 'recall' && exactKeys(value, ['type', 'taskId']) && typeof value.taskId === 'string' && /^task-\d{4,}$/.test(value.taskId)) return { type: 'recall', taskId: value.taskId };
+  if (value.type === 'confirm' && exactKeys(value, ['type', 'draftId', 'version', 'acceptPartial']) && validDraftRef(value) && typeof value.acceptPartial === 'boolean')
+    return { type: 'confirm', draftId: value.draftId as string, version: value.version as number, acceptPartial: value.acceptPartial };
   if (value.type === 'submit' && exactKeys(value, ['type', 'text']) && validText(value.text)) {
     return { type: 'submit', text: value.text };
   }

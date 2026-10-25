@@ -70,8 +70,9 @@ function renderFocus(): void {
 
 const panelActions = (): PanelActions => ({
   busy,
+  recall: task => void run(async () => { await command({ type: 'recall', taskId: task.id }); }),
   openDocument: id => setFocus({ type: 'open', panel: 'document', documentId: id }),
-  confirm: draft => void run(async () => { await command({ type: 'confirm', draftId: draft.id, version: draft.version }); }),
+  confirm: draft => void run(async () => { await command({ type: 'confirm', draftId: draft.id, version: draft.version, ...(draft.unresolved.length ? { acceptPartial: true } : {}) }); }),
   cancel: draft => void run(async () => { await command({ type: 'cancel', draftId: draft.id, version: draft.version }); }),
   revise: (draft: CommandDraftView, text: string) => void run(async () => { await command({ type: 'revise', draftId: draft.id, version: draft.version, text }); }),
 });

@@ -1,3 +1,4 @@
+import type { ActionPlan } from '../../shared/contracts.ts';
 import type { Interpretation } from '../mock-interpreter.ts';
 import type { Proposal, InterpretationProvider, ProviderInput } from './types.ts';
 import { ProviderError } from './types.ts';
@@ -37,8 +38,8 @@ export async function interpret(provider: InterpretationProvider, input: Provide
 
 export function toReading(proposal: Proposal): Interpretation {
   if (proposal.intent === 'command') {
-    return { intent: 'command', action: 'naval-drill', restrictions: [...proposal.proposedActions[0]!.restrictions], unresolved: [],
-      reply: '[AI 해석] 수군 정비 초안을 작성했습니다. 아직 실행하지 않았습니다. 조건을 읽고 확인해 주세요.' };
+    return { intent: 'command', action: proposal.proposedActions[0]!.kind as ActionPlan['kind'], actions: structuredClone(proposal.proposedActions) as ActionPlan[], restrictions: [...proposal.proposedActions[0]!.restrictions], unresolved: [...proposal.unresolvedQuestions],
+      reply: '[AI 해석] 명령 초안을 작성했습니다. 아직 실행하지 않았습니다. 조건을 읽고 확인해 주세요.' };
   }
   // Do not present model-authored completion claims as game results.
   const answer = proposal.intent === 'ambiguous' ? proposal.unresolvedQuestions.join(' ') : proposal.dialogue;

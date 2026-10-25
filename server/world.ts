@@ -1,14 +1,17 @@
 import type {
-  CharacterId, ClockState, CommandEstimate, CommandRequest, DraftStatus, EngagementPolicy, LedgerView,
+  ActionPlan, CharacterId, ClockState, CommandEstimate, CommandRequest, DraftStatus, EngagementPolicy, LedgerView,
   LogKind, PublicDocument, RestrictionId, TaskStage, TestAction,
 } from '../shared/contracts.ts';
 
 export interface DraftRecord {
+  actions: ActionPlan[];
+  taskIds: string[];
+  createdAtMs: number;
   id: string;
   version: number;
   status: DraftStatus;
   text: string;
-  action: 'naval-drill';
+  action: ActionPlan['kind'];
   assignee: CharacterId;
   messenger: CharacterId;
   restrictions: RestrictionId[];
@@ -21,10 +24,17 @@ export interface DraftRecord {
 }
 
 export interface TaskRecord {
+  plan: ActionPlan;
+  dependencyId?: string;
+  deadlineAtMs?: number;
+  startedAtMs?: number;
+  departedAtMs?: number;
+  receivedAtMs?: number;
+  recall?: { status: "stopped" | "unsupported"; requestedAtMs: number };
   id: string;
   draftId: string;
   draftVersion: number;
-  action: 'naval-drill';
+  action: ActionPlan['kind'];
   assignee: CharacterId;
   restrictions: RestrictionId[];
   stage: TaskStage;
@@ -50,7 +60,7 @@ export interface WorldState {
     privatePerspective: string;
   }[];
   resources: { grain: number; treasury: number };
-  diplomacy: { requests: { id: string; status: 'pending' | 'answered' }[] };
+  diplomacy: { requests: { id: string; status: 'pending' | 'held' | 'answered'; heldUntilMs?: number; message?: string }[]; messages: { taskId: string; text: string; recipients: ('player' | CharacterId | 'liu-bei' | 'cao-cao')[]; atMs: number }[] };
   navy: { readiness: number; engagementPolicy: EngagementPolicy };
   documents: (PublicDocument & { readers: ('player' | CharacterId)[] })[];
   /** What the player's ledger last recorded. Updated only when a report is filed. */
@@ -92,12 +102,12 @@ export function createInitialWorld(clock: ClockState): WorldState {
       { id: 'lu-su', name: '노숙', role: '외교', location: 'residence', available: true, privatePerspective: 'PRIVATE_DIPLOMATIC_FIXTURE' },
     ],
     resources: { grain: 1000, treasury: 500 },
-    diplomacy: { requests: [] },
+    diplomacy: { requests: [{ id: 'cao-cao-envoy', status: 'pending' }], messages: [] },
     navy: { readiness: 20, engagementPolicy: 'hold' },
     documents: [
       {
         id: 'm0-public-note', title: '시험용 집무 기록',
-        claim: '정무청 화면과 보고 전달 경로를 점검하기 위한 문서입니다. M1에서는 장굉을 통해 수군 정비 지시 하나만 실제로 처리할 수 있으며, 역사 사건은 아직 진행하지 않습니다.',
+        claim: '정무청 화면과 보고 전달 경로를 점검하기 위한 문서입니다. M3에서는 답변 보류·유비 타진·수군 정비를 처리하며, 역사 사건은 아직 진행하지 않습니다.',
         source: '시험 자료', observedAtMs: 0, arrivedAtMs: 0,
         evidence: '실행 환경 점검용', region: '강동', provenance: 'test-reconstruction',
         readers: ['player', 'zhang-hong'],

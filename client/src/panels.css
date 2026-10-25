@@ -92,3 +92,9 @@
   .draft-card .draft-actions { margin: 8px 0 6px; }
   .draft-card > .muted { margin: 8px 0 0; line-height: 1.4; }
 }
+
+/* Compound details scroll independently; confirmation stays in the panel. */
+.compound .draft-content { max-height: min(42vh, 350px); overflow-y: auto; overscroll-behavior: contain; }
+.action-row { border-bottom: 1px solid #786345; padding: 4px 0 8px; }
+.action-row .muted { margin: 6px 0 0; }
+@media (max-height: 850px) { .compound .draft-content { max-height: 225px; } }

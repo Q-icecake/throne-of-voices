@@ -1,3 +1,4 @@
+import { FIRST_STRIKE as STRIKE, WAR_PROMISE, HOLD, parseCompound } from '../compound.ts';
 import { readFileSync } from 'node:fs';
 import type { ActionVocabulary, Proposal, ProviderInput } from './types.ts';
 import { ProviderError } from './types.ts';
@@ -35,7 +36,6 @@ function matches(value: unknown, schema: Schema): void {
 }
 
 const NEGATION = /지\s*(?:는\s*)?(?:마|말|않)|금지|(?<![가-힣])안(?:\s+|(?=하|해|쓰|쓸|보내|움직|공격))|말고|없이|못하게/;
-const FIRST_STRIKE = /(?:먼저\s*|선제\s*)?(?:공격|치)[은는]?\s*(?:하)?지\s*[는도은]?\s*(?:마[가-힣]*|말[가-힣]*|않[가-힣]*)|(?:선제)?공격\s*금지/g;
 const CONDITIONAL = /경우|만약|때까지|기한|내일|오늘까지|이후에|전까지|\d+\s*(시간|일|분)\s*(내|후)|[가-힣]+(?:으면|라면|다면|되면|오면|하면|거든)|정비하지/;
 
 export function validateProposal(raw: unknown, input: ProviderInput): Proposal {
@@ -59,18 +59,38 @@ export function validateProposal(raw: unknown, input: ProviderInput): Proposal {
     dialogue: question, unresolvedQuestions: [question] });
   if (proposal.intent === 'ambiguous' && !proposal.unresolvedQuestions.length) return clarify('어떤 대상에게 무엇을 지시할지 알려 주시겠습니까?');
   if (proposal.intent !== 'command') return proposal;
-  if (proposal.proposedActions.length !== 1) return clarify('현재는 수군 정비 한 가지씩만 확인할 수 있습니다. 어떤 지시를 먼저 검토할까요?');
-  if (proposal.unresolvedQuestions.length) return clarify(proposal.unresolvedQuestions[0]!);
-  const action = proposal.proposedActions[0]!;
-  const negative = NEGATION.test(input.text);
-  const knownNegative = input.text.match(FIRST_STRIKE);
-  if ((negative && !action.restrictions.length) ||
-    (knownNegative && !action.restrictions.includes('no-first-strike')) ||
-    NEGATION.test(input.text.replace(FIRST_STRIKE, '')) || CONDITIONAL.test(input.text.replace(FIRST_STRIKE, '')) ||
-    action.conditions.length || action.deadline !== null) {
-    return clarify('금지·조건 또는 기한을 안전하게 반영하지 못했습니다. 지켜야 할 조건을 구체적으로 알려 주시겠습니까?');
+  // Explicit assignments cannot be silently replaced by the vocabulary's default actor.
+  if (/(장조|노숙|장굉)(?:은|는|에게|더러)[^.,]*수군|(?:주유|장조|장굉)(?:은|는|에게|더러)[^.,]*유비|(?:주유|노숙|장조)(?:은|는|에게|더러)[^.,]*조조/.test(input.text.replace(/장굉은\s*(?=주유에게)/g, '')))
+    return clarify('지정한 담당자는 이 행동을 수행할 수 없습니다. 담당자를 다시 지정해 주세요.');
+  if (!proposal.proposedActions.length || proposal.proposedActions.length > 3 ||
+    new Set(proposal.proposedActions.map(a => a.kind)).size !== proposal.proposedActions.length)
+    return clarify('한 초안은 서로 다른 행동 최대 세 개입니다. 나누어 확인해 주세요.');
+  const parsed = parseCompound(input.text);
+  if (proposal.proposedActions.some(a => a.conditions.some(c => c.startsWith('after:'))) &&
+    JSON.stringify(proposal.proposedActions.map(a => a.kind)) !== JSON.stringify(parsed.actions.map(a => a.kind)))
+    return clarify('선후관계가 있는 행동 순서가 원문과 다릅니다. 다시 지정해 주세요.');
+  const stripKnown = (text: string) => text.replace(STRIKE, '').replace(WAR_PROMISE, '').replace(HOLD, '')
+    .replace(/\d+\s*분\s*(?:이내|내에)/g, '').replace(/그\s*뒤|그\s*후|다음에|완료\s*후/g, '');
+  // Fail closed for unknown prohibitions/conditional logic, including omitted model conditions.
+  if (NEGATION.test(stripKnown(input.text)) || CONDITIONAL.test(stripKnown(input.text)))
+    return clarify('금지·조건 또는 기한을 안전하게 반영하지 못했습니다. 조건을 구체적으로 알려 주세요.');
+  for (const [index, action] of proposal.proposedActions.entries()) {
+    const source = parsed.actions.find(a => a.kind === action.kind) ?? (action.kind === 'naval-drill' ? {
+      restrictions: input.text.match(STRIKE) ? ['no-first-strike'] : [], conditions: [], deadline: null,
+    } : undefined);
+    if (action.conditions.some(c => !['secret', 'public', 'after:0', 'after:1'].includes(c) && !c.startsWith('message:')) ||
+      (action.conditions.includes('secret') && action.conditions.includes('public')) ||
+      action.conditions.some(c => c.startsWith('after:') && Number(c.slice(6)) >= index) ||
+      (action.deadline !== null && !/^[1-9]\d{0,2}분 이내$/.test(action.deadline)))
+      return clarify('지원하지 않는 조건·기한 또는 선행 관계입니다. 다시 지정해 주세요.');
+    if (!source || JSON.stringify([...source.restrictions].sort()) !== JSON.stringify([...action.restrictions].sort()) ||
+      JSON.stringify([...source.conditions].sort()) !== JSON.stringify([...action.conditions].sort()) || source.deadline !== action.deadline)
+      return clarify('원문의 담당·대상·금지·공개 범위·기한을 보존하지 못했습니다. 다시 지정해 주세요.');
   }
-  if (/(장조|노숙|장굉)(에게|더러|를\s*시켜)/.test(input.text)) return clarify('현재 정비 수행자는 주유입니다. 수행자를 다시 지정해 주시겠습니까?');
+  if (parsed.actions.some(a => !proposal.proposedActions.some(p => p.kind === a.kind)))
+    return clarify('원문의 행동 일부가 빠졌습니다. 실행 범위를 다시 지정해 주세요.');
+  proposal.unresolvedQuestions = [...new Set([...proposal.unresolvedQuestions, ...(parsed.actions.length ? parsed.unresolved : [])])].slice(0, 5);
+  if (/(장조|노숙|장굉)(에게|더러|를\s*시켜)[^.,]*수군/.test(input.text)) return clarify('현재 정비 수행자는 주유입니다. 수행자를 다시 지정해 주시겠습니까?');
   if (/(조조|유비|적군|북방)(의\s*|군\s*)?(수군|함대|병선)|조조군/.test(input.text)) return clarify('현재 정비 대상은 강동 수군입니다. 대상을 다시 지정해 주시겠습니까?');
   return proposal;
 }
