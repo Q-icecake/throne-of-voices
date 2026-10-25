@@ -1,12 +1,12 @@
+import { listenForFetch } from './test-server.ts';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { writeFile } from 'node:fs/promises';
 import { createServer } from 'node:net';
-import { once } from 'node:events';
 import type { AddressInfo } from 'node:net';
 // Exercise the documented Windows entry point, including its working directory.
 const freePort = async () => {
-  const probe = createServer(); probe.listen(0, '127.0.0.1'); await once(probe, 'listening');
+  const probe = createServer(); await listenForFetch(probe);
   const port = (probe.address() as AddressInfo).port; await new Promise<void>(r => probe.close(() => r())); return port;
 };
 const apiPort = await freePort(); let webPort = await freePort(); while (webPort === apiPort) webPort = await freePort();

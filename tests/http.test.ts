@@ -1,6 +1,6 @@
+import { listenForFetch } from '../scripts/test-server.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { once } from 'node:events';
 import { request as httpRequest } from 'node:http';
 import { createGameServer } from '../server/http.ts';
 import { GameEngine } from '../server/engine.ts';
@@ -9,8 +9,7 @@ import type { AddressInfo } from 'node:net';
 test('HTTP boundary: lifecycle, validation, disclosure and safe failure', async t => {
   const engine = new GameEngine();
   const server = createGameServer(engine);
-  server.listen(0, '127.0.0.1');
-  await once(server, 'listening');
+  await listenForFetch(server);
   const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   t.after(async () => { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); });
   const post = (path: string, body: unknown, headers = {}) => fetch(url + path, {
@@ -83,8 +82,7 @@ test('HTTP boundary: lifecycle, validation, disclosure and safe failure', async 
 test('HTTP provider failure exposes neither exception details nor partial state changes', async t => {
   const engine = new GameEngine({ mode: 'mock', respond() { throw new Error('PRIVATE_KEY_SENTINEL'); } });
   const server = createGameServer(engine);
-  server.listen(0, '127.0.0.1');
-  await once(server, 'listening');
+  await listenForFetch(server);
   t.after(async () => { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); });
   const before = engine.internalSnapshot();
   const response = await fetch(`http://127.0.0.1:${(server.address() as AddressInfo).port}/api/test/action`, {

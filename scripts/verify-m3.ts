@@ -1,8 +1,8 @@
+import { listenForFetch } from './test-server.ts';
 import { createServer as createPortProbe } from 'node:net';
 import type { AddressInfo } from 'node:net';
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { once } from 'node:events';
 import { chromium } from 'playwright-core';
 import { createServer } from 'vite';
 import { createGameServer } from '../server/http.ts';
@@ -14,12 +14,12 @@ const output = outIndex >= 0 ? process.argv[outIndex + 1]! : 'artifacts/m3';
 const order = '조조에게는 당장 확답하지 말고 시간을 벌어. 노숙은 유비에게 비밀리에 연락하고, 주유는 수군을 준비시키되 먼저 공격하지는 마.';
 // Explicit offline engine, independent ports, installed Edge. No provider/network credentials.
 // Allocate isolated ports: another worktree's verification must not be stopped.
-const probe = createPortProbe(); probe.listen(0, '127.0.0.1'); await once(probe, 'listening');
+const probe = createPortProbe(); await listenForFetch(probe);
 const webPort = (probe.address() as AddressInfo).port;
 await new Promise<void>(resolve => probe.close(() => resolve()));
 const base = `http://127.0.0.1:${webPort}`;
 const api = createGameServer(new GameEngine(), webPort);
-api.listen(0, '127.0.0.1'); await once(api, 'listening');
+await listenForFetch(api);
 const apiPort = (api.address() as AddressInfo).port;
 const vite = await createServer({ logLevel: 'error', server: { port: webPort, strictPort: true, proxy: { '/api': `http://127.0.0.1:${apiPort}` } } });
 await vite.listen();

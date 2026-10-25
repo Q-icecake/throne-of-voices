@@ -37,7 +37,7 @@ function matches(value: unknown, schema: Schema): void {
 
 // Only action-specific supported qualifiers are stripped first. A postponed
 // naval/contact action is never a request to perform it; hold-reply is distinct.
-const NEGATION = /지\s*(?:는\s*)?(?:마|말|않)|금지|(?<![가-힣])안(?:\s+|(?=하|해|쓰|쓸|보내|움직|공격))|말고|없이|못하게|아직|보류|미루|중단|취소|그만|멈[춰추]|필요[가는은]?\s*없/;
+const NEGATION = /지\s*(?:는\s*)?(?:마|말|않)|금지|(?<![가-힣])안(?:\s+|(?=하|해|쓰|쓸|보내|움직|공격))|말고|없이|못하게|아직|보류|미루|미뤄|중단|중지|취소|그만|관두|접어\s*두|유예|철회|멈[춰추]|필요[가는은]?\s*없/;
 const CONDITIONAL = /경우|만약|때까지|때만|기한|내일|오늘까지|이후에|전까지|(?:허락|승인).*받|\d+\s*(시간|일|분)\s*(내|후)|[가-힣]+(?:으면|라면|다면|되면|오면|하면|거든)|정비하지/;
 const DISCUSSION = /논의|토론|득실|우선순위|비교|견해|생각|설명/;
 const EXECUTION = /(?:정비|훈련|조련|점검|준비|연락|접촉|타진|보류)(?:하라|해(?:[.!\s]|$)|하도록|시켜)|명령/;

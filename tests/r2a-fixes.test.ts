@@ -1,6 +1,6 @@
+import { listenForFetch } from '../scripts/test-server.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { once } from 'node:events';
 import type { AddressInfo } from 'node:net';
 import { GameEngine } from '../server/engine.ts';
 import { createGameServer } from '../server/http.ts';
@@ -133,7 +133,7 @@ for (const finish of ['complete', 'recall'] as const) {
 test('R2a HTTP 2000-char boundary, body limit and public projection', async t => {
   const p = new ScriptedProvider(answer('근거는 card-zhang-hong입니다.'));
   const server = createGameServer(new GameEngine(undefined, undefined, p));
-  server.listen(0, '127.0.0.1'); await once(server, 'listening');
+  await listenForFetch(server);
   t.after(async () => { server.closeAllConnections(); await new Promise<void>(r => server.close(() => r())); });
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   const post = (text: string) => fetch(base + '/api/talk', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ characterId: 'zhang-hong', text }) });
@@ -151,7 +151,7 @@ test('R2a HTTP document unshare is unsupported and does not retract knowledge', 
   g.audience({ type: 'invite', participants: ['lu-su'] });
   g.audience({ type: 'share', characterId: 'lu-su', documentId: 'm0-public-note' });
   const before = g.internalSnapshot();
-  const server = createGameServer(g); server.listen(0, '127.0.0.1'); await once(server, 'listening');
+  const server = createGameServer(g); await listenForFetch(server);
   t.after(async () => { server.closeAllConnections(); await new Promise<void>(r => server.close(() => r())); });
   const response = await fetch(`http://127.0.0.1:${(server.address() as AddressInfo).port}/api/audience`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },

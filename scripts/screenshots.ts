@@ -1,5 +1,5 @@
+import { listenForFetch } from './test-server.ts';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { once } from 'node:events';
 import { createServer as createPortProbe } from 'node:net';
 import type { AddressInfo } from 'node:net';
 import { fileURLToPath } from 'node:url';
@@ -244,13 +244,12 @@ const SCENES: Record<string, (page: Page) => Promise<void>> = {
 };
 if (wanted[0] === 'all') wanted.splice(0, wanted.length, ...Object.keys(SCENES));
 
-const probe = createPortProbe(); probe.listen(0, '127.0.0.1'); await once(probe, 'listening');
+const probe = createPortProbe(); await listenForFetch(probe);
 const WEB_PORT = (probe.address() as AddressInfo).port;
 await new Promise<void>(resolve => probe.close(() => resolve()));
 const base = `http://127.0.0.1:${WEB_PORT}`;
 const api = createGameServer(undefined, WEB_PORT);
-api.listen(0, '127.0.0.1');
-await once(api, 'listening');
+await listenForFetch(api);
 const API_PORT = (api.address() as AddressInfo).port;
 const vite: ViteDevServer = await createServer({
   logLevel: 'error',

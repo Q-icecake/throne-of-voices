@@ -1,8 +1,8 @@
+import { listenForFetch } from './test-server.ts';
 import { createServer as createPortProbe } from 'node:net';
 import type { AddressInfo } from 'node:net';
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { once } from 'node:events';
 import { chromium } from 'playwright-core';
 import { createServer } from 'vite';
 import { createGameServer } from '../server/http.ts';
@@ -12,12 +12,12 @@ const outIndex = process.argv.indexOf('--out');
 const output = outIndex >= 0 ? process.argv[outIndex + 1]! : 'artifacts/r1-fixes';
 const repro = process.argv.includes('--repro');
 // Allocate isolated ports: another worktree's verification must not be stopped.
-const probe = createPortProbe(); probe.listen(0, '127.0.0.1'); await once(probe, 'listening');
+const probe = createPortProbe(); await listenForFetch(probe);
 const webPort = (probe.address() as AddressInfo).port;
 await new Promise<void>(resolve => probe.close(() => resolve()));
 const base = `http://127.0.0.1:${webPort}`;
 const api = createGameServer(new GameEngine(), webPort);
-api.listen(0, '127.0.0.1'); await once(api, 'listening');
+await listenForFetch(api);
 const apiPort = (api.address() as AddressInfo).port;
 const vite = await createServer({ logLevel: 'error', server: { port: webPort, strictPort: true, proxy: { '/api': `http://127.0.0.1:${apiPort}` } } });
 await vite.listen();

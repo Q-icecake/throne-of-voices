@@ -1,0 +1,1826 @@
+{
+  "commands": [
+    {
+      "id": "N001",
+      "group": "suppression-actor",
+      "text": "공근한테 함대 정비를 보류해 두어라.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N002",
+      "group": "suppression-contact",
+      "text": "노숙더러 유비 접촉을 보류해 두어라.",
+      "actions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N003",
+      "group": "suppression-mixed",
+      "text": "주유에게 수군 정비를 보류해 두어라. 노숙에게 유비를 타진하라.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        },
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N004",
+      "group": "suppression-with-hold",
+      "text": "장굉에게 조조 답변을 보류해. 노숙에게 유비 접촉을 보류해 두어라.",
+      "actions": [
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "restrictions": [
+            "no-firm-answer"
+          ],
+          "conditions": [],
+          "deadline": null
+        },
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N005",
+      "group": "suppression-actor",
+      "text": "공근한테 함대 정비를 미루도록 하라.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N006",
+      "group": "suppression-contact",
+      "text": "노숙더러 유비 접촉을 미루도록 하라.",
+      "actions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N007",
+      "group": "suppression-mixed",
+      "text": "주유에게 수군 정비를 미루도록 하라. 노숙에게 유비를 타진하라.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        },
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N008",
+      "group": "suppression-with-hold",
+      "text": "장굉에게 조조 답변을 보류해. 노숙에게 유비 접촉을 미루도록 하라.",
+      "actions": [
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "restrictions": [
+            "no-firm-answer"
+          ],
+          "conditions": [],
+          "deadline": null
+        },
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N009",
+      "group": "suppression-actor",
+      "text": "공근한테 함대 정비를 중단하도록 해.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N010",
+      "group": "suppression-contact",
+      "text": "노숙더러 유비 접촉을 중단하도록 해.",
+      "actions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N011",
+      "group": "suppression-mixed",
+      "text": "주유에게 수군 정비를 중단하도록 해. 노숙에게 유비를 타진하라.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        },
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N012",
+      "group": "suppression-with-hold",
+      "text": "장굉에게 조조 답변을 보류해. 노숙에게 유비 접촉을 중단하도록 해.",
+      "actions": [
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "restrictions": [
+            "no-firm-answer"
+          ],
+          "conditions": [],
+          "deadline": null
+        },
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N013",
+      "group": "suppression-actor",
+      "text": "공근한테 함대 정비를 취소하도록 해.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N014",
+      "group": "suppression-contact",
+      "text": "노숙더러 유비 접촉을 취소하도록 해.",
+      "actions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N015",
+      "group": "suppression-mixed",
+      "text": "주유에게 수군 정비를 취소하도록 해. 노숙에게 유비를 타진하라.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        },
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N016",
+      "group": "suppression-with-hold",
+      "text": "장굉에게 조조 답변을 보류해. 노숙에게 유비 접촉을 취소하도록 해.",
+      "actions": [
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "restrictions": [
+            "no-firm-answer"
+          ],
+          "conditions": [],
+          "deadline": null
+        },
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N017",
+      "group": "suppression-actor",
+      "text": "공근한테 함대 정비를 그만두어라.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N018",
+      "group": "suppression-contact",
+      "text": "노숙더러 유비 접촉을 그만두어라.",
+      "actions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N019",
+      "group": "suppression-mixed",
+      "text": "주유에게 수군 정비를 그만두어라. 노숙에게 유비를 타진하라.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        },
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N020",
+      "group": "suppression-with-hold",
+      "text": "장굉에게 조조 답변을 보류해. 노숙에게 유비 접촉을 그만두어라.",
+      "actions": [
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "restrictions": [
+            "no-firm-answer"
+          ],
+          "conditions": [],
+          "deadline": null
+        },
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N021",
+      "group": "suppression-actor",
+      "text": "공근한테 함대 정비를 멈추도록 해.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N022",
+      "group": "suppression-contact",
+      "text": "노숙더러 유비 접촉을 멈추도록 해.",
+      "actions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N023",
+      "group": "suppression-mixed",
+      "text": "주유에게 수군 정비를 멈추도록 해. 노숙에게 유비를 타진하라.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        },
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N024",
+      "group": "suppression-with-hold",
+      "text": "장굉에게 조조 답변을 보류해. 노숙에게 유비 접촉을 멈추도록 해.",
+      "actions": [
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "restrictions": [
+            "no-firm-answer"
+          ],
+          "conditions": [],
+          "deadline": null
+        },
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N025",
+      "group": "suppression-new-stem",
+      "text": "조조 답변은 보류하고 수군 정비는 미뤄라.",
+      "actions": [
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "restrictions": [
+            "no-firm-answer"
+          ],
+          "conditions": [],
+          "deadline": null
+        },
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N026",
+      "group": "suppression-new-stem",
+      "text": "주유에게 수군 정비는 미뤄 두라고 전해.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N027",
+      "group": "suppression-new-stem",
+      "text": "노숙에게 유비 연락을 미뤄 달라.",
+      "actions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N028",
+      "group": "suppression-new-stem",
+      "text": "수군 정비를 관두어라.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N029",
+      "group": "suppression-new-stem",
+      "text": "유비 접촉은 접어 두어라.",
+      "actions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N030",
+      "group": "suppression-new-stem",
+      "text": "수군 정비는 당분간 유예하라.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N031",
+      "group": "suppression-new-stem",
+      "text": "유비 타진은 철회하라.",
+      "actions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N032",
+      "group": "suppression-new-stem",
+      "text": "함대 점검을 중지하라.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N033",
+      "group": "suppression-new-stem",
+      "text": "노숙에게 유비 접촉을 하지 않게 해.",
+      "actions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N034",
+      "group": "suppression-new-stem",
+      "text": "주유에게 수군 정비를 하지 못하게 해.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N035",
+      "group": "suppression-new-stem",
+      "text": "장조에게 수군 정비를 보류하라.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N036",
+      "group": "suppression-new-stem",
+      "text": "주유에게 유비 접촉은 취소하라.",
+      "actions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "block"
+    },
+    {
+      "id": "N037",
+      "group": "normal-hold",
+      "text": "조조에게 답하지 말고 시간을 벌어라.",
+      "actions": [
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "restrictions": [
+            "no-firm-answer"
+          ],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N038",
+      "group": "normal-hold",
+      "text": "장굉한테 조조 답변을 보류해 달라.",
+      "actions": [
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "restrictions": [
+            "no-firm-answer"
+          ],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N039",
+      "group": "normal-hold",
+      "text": "아직은 조조에게 답변하지 말고 시간을 벌어.",
+      "actions": [
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "restrictions": [
+            "no-firm-answer"
+          ],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N040",
+      "group": "normal-hold",
+      "text": "조조에게 회신하지 말고 시간을 벌어라.",
+      "actions": [
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "restrictions": [
+            "no-firm-answer"
+          ],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N041",
+      "group": "normal-hold",
+      "text": "조조 답변은 잠시 미루도록 해.",
+      "actions": [
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "restrictions": [
+            "no-firm-answer"
+          ],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N042",
+      "group": "normal-hold",
+      "text": "조조의 답변을 잠시 보류해 줘.",
+      "actions": [
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "restrictions": [
+            "no-firm-answer"
+          ],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N043",
+      "group": "normal-hold",
+      "text": "장굉더러 조조 회신을 보류하도록 해.",
+      "actions": [
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "restrictions": [
+            "no-firm-answer"
+          ],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N044",
+      "group": "normal-hold",
+      "text": "장굉께 조조 답변을 미뤄 달라.",
+      "actions": [
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "restrictions": [
+            "no-firm-answer"
+          ],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N045",
+      "group": "normal-hold",
+      "text": "조조에게 답장은 하지 말고 시간을 벌어.",
+      "actions": [
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "restrictions": [
+            "no-firm-answer"
+          ],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N046",
+      "group": "normal-hold",
+      "text": "조조 회신은 보류해 두어라.",
+      "actions": [
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "restrictions": [
+            "no-firm-answer"
+          ],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N047",
+      "group": "normal-conjugation",
+      "text": "공근한테 수군을 손봐 주어라.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N048",
+      "group": "normal-conjugation",
+      "text": "주유더러 함대를 손봐 줘.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N049",
+      "group": "normal-conjugation",
+      "text": "주유에게 함대를 손보고 정돈하도록 해.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N050",
+      "group": "normal-conjugation",
+      "text": "공근께 수군 점검을 맡겨라.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N051",
+      "group": "normal-conjugation",
+      "text": "주유에게 수군을 준비하도록 해.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N052",
+      "group": "normal-conjugation",
+      "text": "우리 함대를 정비하라.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N053",
+      "group": "normal-conjugation",
+      "text": "공근한테 병선을 손보라.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N054",
+      "group": "normal-conjugation",
+      "text": "주유에게 전선을 점검해 달라.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N055",
+      "group": "normal-conjugation",
+      "text": "함대를 정돈해 주라.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N056",
+      "group": "normal-conjugation",
+      "text": "주유더러 수군 훈련을 맡아 달라.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N057",
+      "group": "normal-contact",
+      "text": "노숙한테 유비의 의중을 알아보라.",
+      "actions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N058",
+      "group": "normal-contact",
+      "text": "노숙더러 유비 측을 타진해 달라.",
+      "actions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N059",
+      "group": "normal-contact",
+      "text": "유비에게 연락해 줘.",
+      "actions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N060",
+      "group": "normal-contact",
+      "text": "노숙에게 유비 접촉을 맡겨라.",
+      "actions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N061",
+      "group": "normal-contact",
+      "text": "노숙께 유비와 접촉하도록 해.",
+      "actions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N062",
+      "group": "normal-restriction",
+      "text": "주유에게 수군을 정비하되 선제공격은 금지하라.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [
+            "no-first-strike"
+          ],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N063",
+      "group": "normal-restriction",
+      "text": "공근한테 함대를 손보되 먼저 공격하지 말아라.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [
+            "no-first-strike"
+          ],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N064",
+      "group": "normal-restriction",
+      "text": "수군을 점검하되 선제공격 없이 해.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [
+            "no-first-strike"
+          ],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N065",
+      "group": "normal-restriction",
+      "text": "함대를 정비하고 먼저 공격하지는 마.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [
+            "no-first-strike"
+          ],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N066",
+      "group": "normal-restriction",
+      "text": "주유더러 함대를 점검하되 공격은 말고 정비해.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [
+            "no-first-strike"
+          ],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N067",
+      "group": "normal-contact-restriction",
+      "text": "노숙에게 유비를 타진하되 참전 약속 없이 해.",
+      "actions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [
+            "no-war-promise"
+          ],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N068",
+      "group": "normal-contact-restriction",
+      "text": "유비에게 연락하되 약속하지 말아라.",
+      "actions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [
+            "no-war-promise"
+          ],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N069",
+      "group": "normal-contact-restriction",
+      "text": "노숙더러 유비와 접촉하되 참전 약속은 금지다.",
+      "actions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [
+            "no-war-promise"
+          ],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N070",
+      "group": "normal-contact-restriction",
+      "text": "노숙한테 유비를 타진하되 참전 약속하지는 마.",
+      "actions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [
+            "no-war-promise"
+          ],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N071",
+      "group": "normal-contact-restriction",
+      "text": "유비를 타진하되 참전 약속은 말고 연락해.",
+      "actions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [
+            "no-war-promise"
+          ],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N072",
+      "group": "normal-mixed",
+      "text": "수군을 정비해. 조조에게 답변하지 말고 시간을 벌어라.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        },
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "restrictions": [
+            "no-firm-answer"
+          ],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N073",
+      "group": "normal-mixed",
+      "text": "장굉에게 조조 답변을 보류해. 주유에게 함대를 손봐 달라.",
+      "actions": [
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "restrictions": [
+            "no-firm-answer"
+          ],
+          "conditions": [],
+          "deadline": null
+        },
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N074",
+      "group": "normal-mixed",
+      "text": "주유에게 함대 정비를 맡겨라. 노숙에게 유비를 타진해.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        },
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N075",
+      "group": "normal-mixed",
+      "text": "노숙에게 유비를 타진해. 주유에게 수군을 정비해.",
+      "actions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        },
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "N076",
+      "group": "normal-mixed",
+      "text": "주유에게 수군을 정비하고 장굉에게 조조 회신을 보류해.",
+      "actions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "restrictions": [],
+          "conditions": [],
+          "deadline": null
+        },
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "restrictions": [
+            "no-firm-answer"
+          ],
+          "conditions": [],
+          "deadline": null
+        }
+      ],
+      "expected": "accept"
+    }
+  ],
+  "claims": [
+    {
+      "id": "C001",
+      "expected": "block",
+      "text": "수군 정비를 끝내놨습니다."
+    },
+    {
+      "id": "C002",
+      "expected": "block",
+      "text": "주유가 함대 점검을 마쳐놨습니다."
+    },
+    {
+      "id": "C003",
+      "expected": "block",
+      "text": "유비와 동맹을 맺어놨습니다."
+    },
+    {
+      "id": "C004",
+      "expected": "block",
+      "text": "노숙이 협상을 해내놨습니다."
+    },
+    {
+      "id": "C005",
+      "expected": "block",
+      "text": "수군 준비를 끝냈어요."
+    },
+    {
+      "id": "C006",
+      "expected": "block",
+      "text": "함대 점검을 마쳤지요."
+    },
+    {
+      "id": "C007",
+      "expected": "block",
+      "text": "유비와 동맹이 성립됐습니다."
+    },
+    {
+      "id": "C008",
+      "expected": "block",
+      "text": "수군 훈련은 완수했습니다."
+    },
+    {
+      "id": "C009",
+      "expected": "block",
+      "text": "노숙은 유비에게 다녀왔습니다."
+    },
+    {
+      "id": "C010",
+      "expected": "block",
+      "text": "주유가 함대 점검을 마무리지었습니다."
+    },
+    {
+      "id": "C011",
+      "expected": "block",
+      "text": "함대 정비를 완료했답니다."
+    },
+    {
+      "id": "C012",
+      "expected": "block",
+      "text": "유비와 조약을 맺었대요."
+    },
+    {
+      "id": "C013",
+      "expected": "block",
+      "text": "군량 스무 석을 사용했습니다."
+    },
+    {
+      "id": "C014",
+      "expected": "block",
+      "text": "군량이 20만큼 줄어들었습니다."
+    },
+    {
+      "id": "C015",
+      "expected": "block",
+      "text": "수군 정비는 끝난 셈입니다."
+    },
+    {
+      "id": "C016",
+      "expected": "block",
+      "text": "유비와 협상이 타결됐어요."
+    },
+    {
+      "id": "C017",
+      "expected": "block",
+      "text": "수군을 손봐 두었습니다."
+    },
+    {
+      "id": "C018",
+      "expected": "block",
+      "text": "유비와 합의를 봤습니다."
+    },
+    {
+      "id": "C019",
+      "expected": "block",
+      "text": "함대 정비는 종료됐습니다."
+    },
+    {
+      "id": "C020",
+      "expected": "block",
+      "text": "노숙을 유비에게 보낸 상태입니다."
+    },
+    {
+      "id": "C021",
+      "expected": "allow",
+      "text": "함대 정비를 끝내 볼 생각입니다."
+    },
+    {
+      "id": "C022",
+      "expected": "allow",
+      "text": "유비와 협상을 끝내고 싶습니다."
+    },
+    {
+      "id": "C023",
+      "expected": "allow",
+      "text": "정비를 끝냈다면 보고를 받겠습니다."
+    },
+    {
+      "id": "C024",
+      "expected": "allow",
+      "text": "동맹이 성립됐다면 확인하겠습니다."
+    },
+    {
+      "id": "C025",
+      "expected": "allow",
+      "text": "함대 정비가 끝났는지 물어보겠습니다."
+    },
+    {
+      "id": "C026",
+      "expected": "allow",
+      "text": "주유가 점검을 마쳤는지 알아보겠습니다."
+    },
+    {
+      "id": "C027",
+      "expected": "allow",
+      "text": "협상에 성공했을 경우 보고해 주십시오."
+    },
+    {
+      "id": "C028",
+      "expected": "allow",
+      "text": "함대 준비를 완료한 상태라면 알려 주십시오."
+    },
+    {
+      "id": "C029",
+      "expected": "allow",
+      "text": "수군 정비는 아직 완료된 것이 아닙니다."
+    },
+    {
+      "id": "C030",
+      "expected": "allow",
+      "text": "동맹을 맺은 상태는 아닙니다."
+    },
+    {
+      "id": "C031",
+      "expected": "allow",
+      "text": "협상을 마친 상태가 아닙니다."
+    },
+    {
+      "id": "C032",
+      "expected": "allow",
+      "text": "수군 정비가 끝난 상태는 아닙니다."
+    },
+    {
+      "id": "C033",
+      "expected": "allow",
+      "text": "수군 정비는 성공한 것이 아닙니다."
+    },
+    {
+      "id": "C034",
+      "expected": "allow",
+      "text": "주유는 정비를 끝내 놓았습니까?"
+    },
+    {
+      "id": "C035",
+      "expected": "allow",
+      "text": "노숙이 동맹을 맺어 두었나요?"
+    },
+    {
+      "id": "C036",
+      "expected": "allow",
+      "text": "정비가 끝나 있습니까?"
+    },
+    {
+      "id": "C037",
+      "expected": "allow",
+      "text": "주유가 정비를 마쳤죠?"
+    },
+    {
+      "id": "C038",
+      "expected": "allow",
+      "text": "유비와 동맹이 맺어졌나요?"
+    },
+    {
+      "id": "C039",
+      "expected": "allow",
+      "text": "군량이 이미 20 줄었습니까?"
+    },
+    {
+      "id": "C040",
+      "expected": "allow",
+      "text": "정비를 완료해 두었다면 검토하겠습니다."
+    },
+    {
+      "id": "C041",
+      "expected": "allow",
+      "text": "정비가 완료되었는지 확인해 주십시오."
+    },
+    {
+      "id": "C042",
+      "expected": "allow",
+      "text": "함대 준비를 완료했습니다라는 말은 하지 않겠습니다."
+    },
+    {
+      "id": "C043",
+      "expected": "allow",
+      "text": "정비를 완료했다고 단정할 근거가 없습니다."
+    },
+    {
+      "id": "C044",
+      "expected": "allow",
+      "text": "동맹을 맺었다고 볼 수 없습니다."
+    },
+    {
+      "id": "C045",
+      "expected": "allow",
+      "text": "협상이 성공했다고 말하기는 이릅니다."
+    },
+    {
+      "id": "C046",
+      "expected": "allow",
+      "text": "정비가 끝났다고 확정하지 마십시오."
+    },
+    {
+      "id": "C047",
+      "expected": "allow",
+      "text": "함대 정비를 검토하는 중입니다."
+    },
+    {
+      "id": "C048",
+      "expected": "allow",
+      "text": "유비의 의중을 먼저 살펴야 합니다."
+    },
+    {
+      "id": "C049",
+      "expected": "allow",
+      "text": "군량을 아끼며 준비할 계획입니다."
+    },
+    {
+      "id": "C050",
+      "expected": "allow",
+      "text": "선제공격을 삼가야 합니다."
+    },
+    {
+      "id": "C051",
+      "expected": "allow",
+      "text": "장차 정비를 끝내 두겠습니다."
+    },
+    {
+      "id": "C052",
+      "expected": "allow",
+      "text": "가능하다면 유비를 만나겠습니다."
+    },
+    {
+      "id": "C053",
+      "expected": "allow",
+      "text": "주유에게 맡기는 방안을 제안합니다."
+    },
+    {
+      "id": "C054",
+      "expected": "allow",
+      "text": "어느 조건을 우선할지 정해 주십시오."
+    },
+    {
+      "id": "C055",
+      "expected": "allow",
+      "text": "동맹 체결은 앞으로 논의할 일입니다."
+    },
+    {
+      "id": "C056",
+      "expected": "allow",
+      "text": "정비의 완료 여부는 아직 모릅니다."
+    },
+    {
+      "id": "C057",
+      "expected": "allow",
+      "text": "유비 접촉을 당분간 미루는 편이 좋겠습니다."
+    },
+    {
+      "id": "C058",
+      "expected": "allow",
+      "text": "현재는 조조에게 확답할 단계가 아닙니다."
+    },
+    {
+      "id": "C059",
+      "expected": "allow",
+      "text": "수군의 준비 상태를 점검할 필요가 있습니다."
+    },
+    {
+      "id": "C060",
+      "expected": "allow",
+      "text": "검토한 뒤 다시 말씀드리겠습니다."
+    }
+  ],
+  "encodings": [
+    {
+      "variant": "hexMixed",
+      "value": "736B2D5265766965772D345138764C326E52377053397854357A413162433621"
+    },
+    {
+      "variant": "hexColon",
+      "value": "73:6b:2d:52:65:76:69:65:77:2d:34:51:38:76:4c:32:6e:52:37:70:53:39:78:54:35:7a:41:31:62:43:36:21"
+    },
+    {
+      "variant": "hexSpace",
+      "value": "73 6b 2d 52 65 76 69 65 77 2d 34 51 38 76 4c 32 6e 52 37 70 53 39 78 54 35 7a 41 31 62 43 36 21"
+    },
+    {
+      "variant": "hexDash4",
+      "value": "736b-2d52-6576-6965-772d-3451-3876-4c32-6e52-3770-5339-7854-357a-4131-6243-3621"
+    },
+    {
+      "variant": "hexDot4",
+      "value": "736b.2d52.6576.6965.772d.3451.3876.4c32.6e52.3770.5339.7854.357a.4131.6243.3621"
+    },
+    {
+      "variant": "hexUpperColon",
+      "value": "73:6B:2D:52:65:76:69:65:77:2D:34:51:38:76:4C:32:6E:52:37:70:53:39:78:54:35:7A:41:31:62:43:36:21"
+    },
+    {
+      "variant": "hexNewlines",
+      "value": "73\n6b\n2d\n52\n65\n76\n69\n65\n77\n2d\n34\n51\n38\n76\n4c\n32\n6e\n52\n37\n70\n53\n39\n78\n54\n35\n7a\n41\n31\n62\n43\n36\n21"
+    },
+    {
+      "variant": "hex0x",
+      "value": "0x73,0x6b,0x2d,0x52,0x65,0x76,0x69,0x65,0x77,0x2d,0x34,0x51,0x38,0x76,0x4c,0x32,0x6e,0x52,0x37,0x70,0x53,0x39,0x78,0x54,0x35,0x7a,0x41,0x31,0x62,0x43,0x36,0x21"
+    },
+    {
+      "variant": "hexPercentColon",
+      "value": "73%3A6b%3A2d%3A52%3A65%3A76%3A69%3A65%3A77%3A2d%3A34%3A51%3A38%3A76%3A4c%3A32%3A6e%3A52%3A37%3A70%3A53%3A39%3A78%3A54%3A35%3A7a%3A41%3A31%3A62%3A43%3A36%3A21"
+    },
+    {
+      "variant": "base64Dot4",
+      "value": "c2st.UmV2.aWV3.LTRR.OHZM.Mm5S.N3BT.OXhU.NXpB.MWJD.NiE"
+    },
+    {
+      "variant": "base64Space4",
+      "value": "c2st UmV2 aWV3 LTRR OHZM Mm5S N3BT OXhU NXpB MWJD NiE"
+    },
+    {
+      "variant": "base64Dash4",
+      "value": "c2st-UmV2-aWV3-LTRR-OHZM-Mm5S-N3BT-OXhU-NXpB-MWJD-NiE"
+    },
+    {
+      "variant": "base64Newlines",
+      "value": "c2st\nUmV2\naWV3\nLTRR\nOHZM\nMm5S\nN3BT\nOXhU\nNXpB\nMWJD\nNiE"
+    },
+    {
+      "variant": "reverseSix",
+      "value": "6!|5zA1bC|7pS9xT|8vL2nR|iew-4Q|sk-Rev"
+    },
+    {
+      "variant": "indexedReverseSix",
+      "value": "5:6!|4:5zA1bC|3:7pS9xT|2:8vL2nR|1:iew-4Q|0:sk-Rev"
+    },
+    {
+      "variant": "doubleHex",
+      "value": "37333662326435323635373636393635373732643334353133383736346333323665353233373730353333393738353433353761343133313632343333363231"
+    },
+    {
+      "variant": "hexOfB64",
+      "value": "63327374556d5632615756334c5452524f485a4d4d6d35534e3342544f5868554e5870424d574a444e6945"
+    },
+    {
+      "variant": "b64OfHex",
+      "value": "NzM2YjJkNTI2NTc2Njk2NTc3MmQzNDUxMzg3NjRjMzI2ZTUyMzc3MDUzMzk3ODU0MzU3YTQxMzE2MjQzMzYyMQ"
+    },
+    {
+      "variant": "b64OfHexColon",
+      "value": "NzM6NmI6MmQ6NTI6NjU6NzY6Njk6NjU6Nzc6MmQ6MzQ6NTE6Mzg6NzY6NGM6MzI6NmU6NTI6Mzc6NzA6NTM6Mzk6Nzg6NTQ6MzU6N2E6NDE6MzE6NjI6NDM6MzY6MjE"
+    },
+    {
+      "variant": "percentTwice",
+      "value": "sk-Review-4Q8vL2nR7pS9xT5zA1bC6!"
+    },
+    {
+      "variant": "rawPunctuation",
+      "value": "sk-·Rev·iew·-4Q·8vL·2nR·7pS·9xT·5zA·1bC·6!"
+    },
+    {
+      "variant": "unicodeUpper",
+      "value": "\\u0073\\u006B\\u002D\\u0052\\u0065\\u0076\\u0069\\u0065\\u0077\\u002D\\u0034\\u0051\\u0038\\u0076\\u004C\\u0032\\u006E\\u0052\\u0037\\u0070\\u0053\\u0039\\u0078\\u0054\\u0035\\u007A\\u0041\\u0031\\u0062\\u0043\\u0036\\u0021"
+    }
+  ],
+  "ordinary": [
+    "수군을 손봐 주십시오.",
+    "주유가 맡는 편이 좋겠습니다.",
+    "이 방안은 아직 검토 중입니다.",
+    "조조 회신은 미루는 편이 낫겠습니다.",
+    "0123456789abcdef",
+    "deadbeef cafe 0123",
+    "VGhpcyBpcyBhIG5vcm1hbCByZXBseS4=",
+    "조건과 기한을 구체적으로 알려 주십시오."
+  ]
+}

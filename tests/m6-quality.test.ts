@@ -1,8 +1,8 @@
+import { listenForFetch } from '../scripts/test-server.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { GameEngine } from '../server/engine.ts';
 import { Opening } from '../server/opening.ts';
-import { once } from 'node:events';
 import type { AddressInfo } from 'node:net';
 import { createGameServer } from '../server/http.ts';
 import { ScriptedProvider } from './fixtures/scripted-provider.ts';
@@ -91,7 +91,7 @@ for (const operation of ['command', 'talk'] as const) test(`M6 delayed ${operati
 
 test('M6 HTTP server restart creates a fresh in-memory opening; reset clears tasks, requests and observed state', async () => {
   for (let cycle = 0; cycle < 2; cycle++) {
-    const server = createGameServer(); server.listen(0, '127.0.0.1'); await once(server, 'listening');
+    const server = createGameServer(); await listenForFetch(server);
     const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
     const post = async (path: string, body: unknown) => { const r = await fetch(url + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); assert.equal(r.status, 200); return r.json(); };
     try {

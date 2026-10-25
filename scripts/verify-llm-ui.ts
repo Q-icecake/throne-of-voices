@@ -1,5 +1,5 @@
+import { listenForFetch } from './test-server.ts';
 import assert from 'node:assert/strict';
-import { once } from 'node:events';
 import { createServer as createPortProbe } from 'node:net';
 import type { AddressInfo } from 'node:net';
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -23,12 +23,12 @@ const perViewport = () => [
 ];
 const provider = new ScriptedProvider(...perViewport(), ...perViewport());
 const engine = new GameEngine(undefined, undefined, provider, 100);
-const probe = createPortProbe(); probe.listen(0, '127.0.0.1'); await once(probe, 'listening');
+const probe = createPortProbe(); await listenForFetch(probe);
 const webPort = (probe.address() as AddressInfo).port;
 await new Promise<void>(resolve => probe.close(() => resolve()));
 const base = `http://127.0.0.1:${webPort}`;
 const api = createGameServer(engine, webPort);
-api.listen(0, '127.0.0.1'); await once(api, 'listening');
+await listenForFetch(api);
 const apiPort = (api.address() as AddressInfo).port;
 const vite = await createServer({ logLevel: 'error', server: { port: webPort, strictPort: true, proxy: { '/api': `http://127.0.0.1:${apiPort}` } } });
 const checks: { size: string; check: string }[] = [];

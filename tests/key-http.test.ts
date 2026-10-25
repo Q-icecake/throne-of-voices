@@ -1,6 +1,6 @@
+import { listenForFetch } from '../scripts/test-server.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { once } from 'node:events';
 import { request as httpRequest } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { mkdtemp, rm } from 'node:fs/promises';
@@ -14,7 +14,7 @@ test('start HTTP strict local settings, secret-free boundaries, clear and mock s
   const dir = await mkdtemp(join(tmpdir(), 'throne-key-http-'));
   let calls = 0;
   const server = createGameServer(undefined, 5173, { env: {}, budgetFile: join(dir, 'usage.json'), transport: async () => { calls++; return Response.json({ candidates: [{ finishReason: 'STOP', content: { parts: [{ text: 'OK' }] } }] }); } });
-  server.listen(0, '127.0.0.1'); await once(server, 'listening');
+  await listenForFetch(server);
   t.after(async () => { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); await rm(dir, { recursive: true, force: true }); });
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   const guard = new SecretGuard(key);
@@ -51,7 +51,7 @@ test('start switching mode discards an in-flight AI command and keeps the new wo
   let entered!: () => void, release!: (response: Response) => void;
   const ready = new Promise<void>(resolve => { entered = resolve; });
   const server = createGameServer(undefined, 5173, { env: {}, budgetFile: join(dir, 'usage.json'), transport: async () => { entered(); return await new Promise<Response>(resolve => { release = resolve; }); } });
-  server.listen(0, '127.0.0.1'); await once(server, 'listening');
+  await listenForFetch(server);
   t.after(async () => { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); await rm(dir, { recursive: true, force: true }); });
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   const post = async (path: string, body: unknown) => (await fetch(base + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })).json();

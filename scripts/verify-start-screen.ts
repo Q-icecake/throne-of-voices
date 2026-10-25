@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { once } from 'node:events';
 import { mkdtemp, mkdir, rm, writeFile, readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -10,22 +9,26 @@ import type { Page } from 'playwright-core';
 import { createServer } from 'vite';
 import { createGameServer } from '../server/http.ts';
 import { SecretGuard } from '../server/llm/secrets.ts';
+import { listenForFetch } from './test-server.ts';
 
 const output = 'artifacts/start-screen'; await mkdir(output, { recursive: true });
 const temp = await mkdtemp(join(tmpdir(), 'throne-start-visual-'));
 const fakeKey = 'browser-synthetic-Q7v2B9m4L6r8S3x5', guard = new SecretGuard(fakeKey);
-const probe = portProbe(); probe.listen(0, '127.0.0.1'); await once(probe, 'listening');
+const probe = portProbe(); await listenForFetch(probe);
 const webPort = (probe.address() as AddressInfo).port; await new Promise<void>(resolve => probe.close(() => resolve()));
 let calls = 0, reply: number | 'timeout' | 'schema' = 200;
-const api = createGameServer(undefined, webPort, { env: {}, budgetFile: join(temp, 'usage.json'), timeoutMs: 80, transport: async (_url, init) => {
+function freshApi() { return createGameServer(undefined, webPort, { env: {}, budgetFile: join(temp, 'usage.json'), timeoutMs: 80, transport: async (_url, init) => {
   calls++; assert.equal(new Headers(init?.headers).get('x-goog-api-key'), fakeKey);
   if (reply === 'timeout') return await new Promise<Response>(() => {});
   if (reply === 'schema') return new Response('invalid');
   return reply === 200 ? Response.json({ candidates: [{ finishReason: 'STOP', content: { parts: [{ text: 'OK' }] } }] }) : new Response(fakeKey, { status: reply });
-} });
-api.listen(0, '127.0.0.1'); await once(api, 'listening');
-const apiPort = (api.address() as AddressInfo).port, base = `http://127.0.0.1:${webPort}`;
-const vite = await createServer({ logLevel: 'error', server: { port: webPort, strictPort: true, proxy: { '/api': `http://127.0.0.1:${apiPort}` } } }); await vite.listen();
+} }); }
+let api = freshApi();
+await listenForFetch(api);
+let apiPort = (api.address() as AddressInfo).port;
+const base = `http://127.0.0.1:${webPort}`;
+const startVite = () => createServer({ logLevel: 'error', server: { port: webPort, strictPort: true, proxy: { '/api': `http://127.0.0.1:${apiPort}` } } });
+let vite = await startVite(); await vite.listen();
 const browser = await chromium.launch({ channel: 'msedge' });
 const evidence: unknown[] = [];
 async function measure(page: Page, scene: string, size: string) {
@@ -55,6 +58,14 @@ const geometry = (page: Page) => page.evaluate(() => ['#scene', '#speech', '.hud
 }));
 try {
   for (const viewport of [{ width: 1920, height: 1080 }, { width: 1366, height: 768 }]) {
+    // A new server session per viewport: clear-key deliberately preserves the
+    // user's model setting and is not a simulation of a first application run.
+    if (evidence.length) {
+      await vite.close();
+      api.closeAllConnections(); await new Promise<void>(resolve => api.close(() => resolve()));
+      api = freshApi(); await listenForFetch(api); apiPort = (api.address() as AddressInfo).port;
+      vite = await startVite(); await vite.listen();
+    }
     const size = `${viewport.width}x${viewport.height}`, page = await browser.newPage({ viewport });
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
@@ -78,6 +89,10 @@ try {
     await page.keyboard.press('Tab'); assert.equal(await page.evaluate(() => document.activeElement?.id), 'start-mock');
     await page.keyboard.press('Tab'); await page.keyboard.press('Enter'); await page.locator('#ai-model').waitFor();
     assert.equal(await page.evaluate(() => document.activeElement?.id), 'settings-title');
+    assert.equal(await page.locator('#ai-model').inputValue(), '');
+    assert.equal((await (await page.request.get(base + '/api/llm/status')).json()).model, '');
+    assert.equal(await page.locator('#start-ai').isDisabled(), true);
+    evidence.push({ size, firstRunModel: '', firstRunKeyConfigured: false });
     await measure(page, 'settings', size);
     assert.equal(await page.locator('#ai-key').getAttribute('type'), 'password'); assert.equal(await page.locator('#ai-key').getAttribute('autocomplete'), 'off');
     await page.fill('#ai-model', 'offline-model'); await page.fill('#ai-key', fakeKey);

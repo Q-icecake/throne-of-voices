@@ -1,6 +1,6 @@
+import { listenForFetch } from '../scripts/test-server.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { once } from 'node:events';
 import type { AddressInfo } from 'node:net';
 import { GameEngine } from '../server/engine.ts';
 import { CHARACTER_IDS, characterInput } from '../server/characters.ts';
@@ -186,7 +186,7 @@ test('M4 stale Provider response after audience switch/reset is ignored; errors 
 });
 
 test('M4 HTTP talk/audience reject malformed input and expose no internal character state', async t => {
-  const server = createGameServer(new GameEngine()); server.listen(0, '127.0.0.1'); await once(server, 'listening');
+  const server = createGameServer(new GameEngine()); await listenForFetch(server);
   t.after(async () => { server.closeAllConnections(); await new Promise<void>(r => server.close(() => r())); });
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   const post = (path: string, body: unknown) => fetch(base + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });

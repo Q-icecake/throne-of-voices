@@ -1,6 +1,6 @@
+import { listenForFetch } from '../scripts/test-server.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { once } from 'node:events';
 import type { AddressInfo } from 'node:net';
 import { GameEngine } from '../server/engine.ts';
 import { createGameServer } from '../server/http.ts';
@@ -9,8 +9,7 @@ import type { CommandResponse } from '../shared/contracts.ts';
 test('HTTP command route: strict validation, idempotent confirm, no disclosure', async t => {
   const engine = new GameEngine();
   const server = createGameServer(engine);
-  server.listen(0, '127.0.0.1');
-  await once(server, 'listening');
+  await listenForFetch(server);
   t.after(async () => { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); });
   const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   const post = (path: string, body: unknown, headers: Record<string, string> = {}) => fetch(url + path, {
@@ -55,8 +54,7 @@ test('HTTP command route: strict validation, idempotent confirm, no disclosure',
   await t.test('interpreter failure over HTTP exposes nothing and changes nothing', async () => {
     const failing = new GameEngine(undefined, { mode: 'mock', interpret() { throw new Error('PRIVATE_KEY_SENTINEL'); } });
     const failingServer = createGameServer(failing);
-    failingServer.listen(0, '127.0.0.1');
-    await once(failingServer, 'listening');
+    await listenForFetch(failingServer);
     try {
       const before = failing.internalSnapshot();
       const response = await fetch(`http://127.0.0.1:${(failingServer.address() as AddressInfo).port}/api/command`, {

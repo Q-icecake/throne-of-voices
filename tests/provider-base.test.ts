@@ -1,9 +1,9 @@
+import { listenForFetch } from '../scripts/test-server.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { once } from 'node:events';
 import type { AddressInfo } from 'node:net';
 import { inspect } from 'node:util';
 import { configuredProvider, geminiConfig } from '../server/llm/config.ts';
@@ -228,7 +228,7 @@ test('HTTP neutral errors, chip polling, budget Korean guidance and all output p
   });
   const p = make('openai-compatible', async () => new Response(key, { status: 429, headers: { 'x-reflected-key': key } }), join(dir, 'usage.json'), { ...settings, sessionLimit: 1 });
   const engine = new GameEngine(undefined, undefined, p, 500);
-  const server = createGameServer(engine); server.listen(0, '127.0.0.1'); await once(server, 'listening');
+  const server = createGameServer(engine); await listenForFetch(server);
   t.after(async () => { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); });
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api/`;
   const outputs: unknown[] = [];
@@ -258,7 +258,7 @@ for (const kind of ['gemini', 'openai-compatible'] as const) test(`${kind}: HTTP
   const p = make(kind, async () => next(), file, { ...settings, timeoutMs: 20, sessionLimit: 7 });
   const engine = new GameEngine(undefined, undefined, p, 500);
   engine.audience({ type: 'invite', participants: ['zhou-yu'] });
-  const server = createGameServer(engine); server.listen(0, '127.0.0.1'); await once(server, 'listening');
+  const server = createGameServer(engine); await listenForFetch(server);
   t.after(async () => { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); });
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api/`;
   const post = async (path: string, data: unknown) => (await fetch(base + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })).json();

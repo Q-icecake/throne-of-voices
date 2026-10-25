@@ -1,6 +1,6 @@
+import { listenForFetch } from '../scripts/test-server.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { once } from 'node:events';
 import type { AddressInfo } from 'node:net';
 import { GameEngine } from '../server/engine.ts';
 import { createGameServer } from '../server/http.ts';
@@ -18,8 +18,7 @@ test('M2 HTTP awaits provider and preserves Korean errors/input without exceptio
   new Error('PRIVATE_PROVIDER_HEADER'), () => new Promise(() => {}));
   const engine = new GameEngine(undefined, undefined, provider, 20);
   const server = createGameServer(engine);
-  server.listen(0, '127.0.0.1');
-  await once(server, 'listening');
+  await listenForFetch(server);
   t.after(async () => { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); });
   const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api/command`;
   const post = async () => {

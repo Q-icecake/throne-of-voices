@@ -1,7 +1,7 @@
+import { listenForFetch } from '../scripts/test-server.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, mkdtempSync, rmSync } from 'node:fs';
-import { once } from 'node:events';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -120,7 +120,7 @@ for (const provider of ['gemini', 'openai-compatible'] as const) for (const [nam
     const game = new GameEngine(undefined, undefined, configuredProvider(env, transport).provider);
     game.audience({ type: 'invite', participants: ['zhou-yu'] });
     const api = createGameServer(game);
-    api.listen(0, '127.0.0.1'); await once(api, 'listening');
+    await listenForFetch(api);
     try {
       const port = (api.address() as { port: number }).port;
       const response = await fetch(`http://127.0.0.1:${port}/api/talk`, { method: 'POST', headers: { 'content-type': 'application/json' },
