@@ -13,6 +13,7 @@ import type { DiagnosticAttempt } from './gemini-response.ts';
 import { fetchWithDiagnostics, proxyDetected } from './network.ts';
 import { NetworkRouter } from './network-routing.ts';
 import type { SystemProxyReader } from './network-routing.ts';
+import { OllamaClient, OllamaProvider, OllamaQueue, OLLAMA_BASE_URL, ollamaBaseUrl, validOllamaModel } from './ollama.ts';
 
 export interface RuntimeOptions { pacer?: RequestPacer; env?: NodeJS.ProcessEnv; transport?: typeof fetch; budgetFile?: string; timeoutMs?: number; diagnosticsFile?: string; readSystemProxy?: SystemProxyReader }
 export class RuntimeSettings {
@@ -35,8 +36,19 @@ export class RuntimeSettings {
   #generation: ReturnType<typeof geminiGenerationSettings>;
   #proxyDetected: boolean;
   #network: NetworkRouter;
+  #provider: 'gemini' | 'ollama';
+  #ollamaBase = OLLAMA_BASE_URL;
+  #ollamaTimeout: number;
+  #ollamaValid = true;
+  #ollamaQueue = new OllamaQueue();
   constructor(options: RuntimeOptions = {}) {
     const env = options.env ?? process.env;
+    this.#provider = env.LLM_PROVIDER === 'ollama' ? 'ollama' : 'gemini';
+    try { this.#ollamaBase = ollamaBaseUrl(env.OLLAMA_BASE_URL); } catch { this.#ollamaValid = false; }
+    this.#ollamaTimeout = options.timeoutMs ?? Number(env.OLLAMA_TIMEOUT_MS ?? 60000);
+    if (!Number.isSafeInteger(this.#ollamaTimeout) || this.#ollamaTimeout < 1 || this.#ollamaTimeout > 120000) {
+      this.#ollamaValid = false; this.#ollamaTimeout = 60000;
+    }
     let rate;
     try { rate = rateLimits(env); } catch { this.#rateValid = false; }
     this.#pacer = options.pacer ?? new RequestPacer(rate);
@@ -47,17 +59,38 @@ export class RuntimeSettings {
     this.#key = env.GEMINI_API_KEY ?? '';
     this.#source = this.#key ? 'env' : 'none';
     this.#guards.push(new SecretGuard(this.#key));
-    const model = env.GEMINI_MODEL_ID ?? '';
-    this.#model = /^[a-zA-Z0-9._-]{1,200}$/.test(model) && !this.reflects(model) ? model : '';
+    const model = (this.#provider === 'ollama' ? env.OLLAMA_MODEL_ID : env.GEMINI_MODEL_ID) ?? '';
+    this.#model = (this.#provider === 'ollama' ? validOllamaModel(model) : /^[a-zA-Z0-9._-]{1,200}$/.test(model)) && !this.reflects(model) ? model : '';
     this.#transport = options.transport ?? globalThis.fetch;
     this.#timeout = options.timeoutMs ?? 15000;
     this.#budget = new CallBudget({ model: 'runtime', timeoutMs: 15000, retries: 0, dailyLimit: 30, sessionLimit: 30 }, options.budgetFile);
   }
-  status(): LlmStatus { return { ...this.#network.status(), networkError: this.#diagnostics.latest({ reflects: text => this.reflects(text) })?.networkError ?? null,
+  status(): LlmStatus { return { ...(this.#provider === 'ollama' ? { networkMode: 'direct', route: 'direct', pacUnsupported: false, manualProxyConfigured: false } as const : this.#network.status()),
+    provider: this.#provider, ...(this.#provider === 'ollama' ? { ollamaBaseUrl: this.#ollamaBase, ollamaTimeoutMs: this.#ollamaTimeout } : {}),
+    networkError: this.#diagnostics.latest({ reflects: text => this.reflects(text) })?.networkError ?? null,
     keyConfigured: !!this.#key, keySource: this.#source, model: this.#model, proxyDetected: this.#proxyDetected,
     lastDiagnostic: this.#diagnostics.latest({ reflects: text => this.reflects(text) }),
     ...this.#budget.snapshot(), ...this.#pacer.snapshot(), ...(this.#retryAfterSeconds !== undefined ? { retryAfterSeconds: this.#retryAfterSeconds } : {}), limit: this.#limit, testResult: this.#result, mode: this.#mode }; }
   get pacer(): RequestPacer { return this.#pacer; }
+  get ollamaQueue() { return this.#ollamaQueue; }
+  get timeoutMs() { return this.#provider === 'ollama' ? this.#ollamaTimeout : this.#timeout; }
+  #localClient() {
+    if (!this.#ollamaValid) throw new ProviderError('request');
+    return new OllamaClient({ model: this.#model, baseUrl: this.#ollamaBase, timeoutMs: this.#ollamaTimeout }, this.#transport,
+      this.#ollamaQueue, this.#diagnostics, { reflects: text => this.reflects(text) });
+  }
+  async models(baseUrl: string) {
+    const client = new OllamaClient({ model: '', baseUrl, timeoutMs: Math.min(this.#ollamaTimeout, 10000) }, this.#transport,
+      this.#ollamaQueue, this.#diagnostics, { reflects: text => this.reflects(text) });
+    return client.tags();
+  }
+  configureOllama(model: string, baseUrl: string, timeoutMs: number) {
+    const normalized = ollamaBaseUrl(baseUrl);
+    if (!validOllamaModel(model) || this.reflects(model) || this.reflects(normalized) ||
+      !Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 120000) throw new ProviderError('request');
+    this.#invalidate(); this.#provider = 'ollama'; this.#model = model; this.#ollamaBase = normalized;
+    this.#ollamaTimeout = timeoutMs; this.#ollamaValid = true; this.#mode = 'mock';
+  }
   resetUsage() { this.#invalidate(); return this.#budget.resetToday(); }
   reflects(text: string) { return this.#guards.some(guard => guard.reflects(text)); }
   assertSafe(value: unknown) { for (const guard of this.#guards) guard.assertSafe(value); }
@@ -71,16 +104,17 @@ export class RuntimeSettings {
     if (clearProxy) this.#network.clearManual();
     this.#invalidate(); this.#pacer.setRpm(rpm);
     if (key) { this.#guards.push(guard); this.#key = key; this.#source = 'screen'; }
-    this.#model = model; this.#limit = limit; this.#budget.setLimits(limit, limit); this.#mode = 'mock';
+    this.#provider = 'gemini'; this.#model = model; this.#limit = limit; this.#budget.setLimits(limit, limit); this.#mode = 'mock';
   }
   clear() { this.#invalidate(); this.#key = ''; this.#source = 'none'; this.#network.clearManual(); this.#mode = 'mock'; }
   select(mode: 'mock' | 'ai') {
-    if (mode === 'ai' && (!this.#key || !this.#model)) throw new ProviderError('auth');
-    if (mode === 'ai' && (!this.#generation || !this.#rateValid)) throw new ProviderError('request');
+    if (mode === 'ai' && (!this.#model || this.#provider === 'gemini' && !this.#key)) throw new ProviderError('auth');
+    if (mode === 'ai' && (this.#provider === 'gemini' ? !this.#generation || !this.#rateValid : !this.#ollamaValid)) throw new ProviderError('request');
     this.#version++; this.#pending?.abort(); this.#pending = undefined; this.#mode = mode;
   }
   provider() {
     if (this.#mode !== 'ai') return undefined;
+    if (this.#provider === 'ollama') return new OllamaProvider(this.#localClient());
     if (!this.#generation || !this.#rateValid) throw new ProviderError('request');
     const config: ProviderConfig = { ...this.#generation, model: this.#model, timeoutMs: this.#timeout, retries: 0, dailyLimit: this.#limit, sessionLimit: this.#limit };
     return new GeminiProvider(config, this.#transport, this.#budget, this.#key, this.#diagnostics, this.#network, undefined, this.#pacer);
@@ -93,6 +127,12 @@ export class RuntimeSettings {
     this.#retryAfterSeconds = undefined;
     let result: ConnectionTestResult;
     let diagnostic: DiagnosticAttempt | undefined;
+    if (this.#provider === 'ollama') {
+      try { result = await this.#localClient().test(controller.signal); }
+      catch (error) { result = error instanceof ProviderError ? error.neutralCode === 'aborted' ? 'stale' : error.neutralCode : 'server'; }
+      if (version !== this.#version) return 'stale';
+      this.#pending = undefined; this.#result = result; return result;
+    }
     try {
       if (!key || !model) throw new ProviderError('auth');
       if (!this.#generation || !this.#rateValid) throw new ProviderError('request');

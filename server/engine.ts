@@ -69,7 +69,7 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
     this.#provider = provider;
     this.#interpreter = interpreter;
     this.#interpretationProvider = interpretationProvider;
-    if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0 || timeoutMs > 15000) throw new Error('INVALID_TIMEOUT');
+    if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0 || timeoutMs > 120000) throw new Error('INVALID_TIMEOUT');
     this.#timeoutMs = timeoutMs;
     this.#initialStatus = this.#connectionStatus = interpretationProvider?.status ?? status;
     this.reset();

@@ -1,4 +1,5 @@
 // V1 integration seam: provider selection and settings belong to the neutral factory.
+import { ollamaConfig } from '../../server/llm/ollama.ts';
 import { configuredProvider, geminiConfig, providerConfig } from '../../server/llm/config.ts';
 import { RequestPacer } from '../../server/llm/pacer.ts';
 import type { PacerClock } from '../../server/llm/pacer.ts';
@@ -49,7 +50,7 @@ const token = (v: unknown): number | null => typeof v === 'number' && Number.isS
 
 /** Bounded numeric usage only, including failed responses. Never log upstream text. */
 export function observedTransport(transport: typeof fetch, attempts: Attempt[], limit: number, guard = () => {},
-  format: 'gemini' | 'openai-compatible' = 'gemini'): typeof fetch {
+  format: 'gemini' | 'openai-compatible' | 'ollama' = 'gemini'): typeof fetch {
   return async (url, init) => {
     guard();
     if (attempts.length >= limit) throw new ProviderError('CALL_LIMIT');
@@ -76,9 +77,10 @@ export function observedTransport(transport: typeof fetch, attempts: Attempt[], 
             const body = JSON.parse(Buffer.concat(chunks).toString('utf8')) as {
               usageMetadata?: { promptTokenCount?: unknown; candidatesTokenCount?: unknown };
               usage?: { prompt_tokens?: unknown; completion_tokens?: unknown };
+              prompt_eval_count?: unknown; eval_count?: unknown;
             } | null;
-            record.inputTokens = token(format === 'gemini' ? body?.usageMetadata?.promptTokenCount : body?.usage?.prompt_tokens);
-            record.outputTokens = token(format === 'gemini' ? body?.usageMetadata?.candidatesTokenCount : body?.usage?.completion_tokens);
+            record.inputTokens = token(format === 'gemini' ? body?.usageMetadata?.promptTokenCount : format === 'ollama' ? body?.prompt_eval_count : body?.usage?.prompt_tokens);
+            record.outputTokens = token(format === 'gemini' ? body?.usageMetadata?.candidatesTokenCount : format === 'ollama' ? body?.eval_count : body?.usage?.completion_tokens);
           }
         } catch { /* Missing usage stays null, never silently becomes zero. */ }
         finally { void reader.cancel().catch(() => {}); }
@@ -95,16 +97,19 @@ export function liveSource(maxCalls: number, env: NodeJS.ProcessEnv = process.en
   limits: { maxTokens?: number; budgetUsd?: number; inputPrice?: number; outputPrice?: number } = {},
   runtime: LiveRuntime = {}): Source | undefined {
   const format = env.LLM_PROVIDER;
-  if ((format !== 'gemini' && format !== 'openai-compatible') || !Number.isSafeInteger(maxCalls) || maxCalls <= 0) return undefined;
+  const local = format === 'ollama';
+  if ((!local && format !== 'gemini' && format !== 'openai-compatible') || !(Number.isSafeInteger(maxCalls) || local && maxCalls === Infinity) || maxCalls <= 0) return undefined;
   // The CLI is one attempt per case, regardless of inherited retry settings.
   const settings = { ...env, LLM_RETRIES: '0', ...(runtime.rpm !== undefined ? { LLM_RPM_LIMIT: String(runtime.rpm) } : {}) };
-  const config = format === 'gemini' ? geminiConfig(settings) : providerConfig(settings, env.OPENAI_COMPAT_MODEL_ID ?? '');
-  if (!config || config.dailyLimit <= 0 || config.sessionLimit <= 0) return undefined;
-  if (format !== 'gemini' && (runtime.proxy || runtime.networkMode && runtime.networkMode !== 'auto'))
+  const config = local ? ollamaConfig(settings) : format === 'gemini' ? geminiConfig(settings) : providerConfig(settings, env.OPENAI_COMPAT_MODEL_ID ?? '');
+  if (!config) return undefined;
+  const remoteConfig = local ? undefined : format === 'gemini' ? geminiConfig(settings) : providerConfig(settings, env.OPENAI_COMPAT_MODEL_ID ?? '');
+  if (!local && (!remoteConfig || remoteConfig.dailyLimit <= 0 || remoteConfig.sessionLimit <= 0)) return undefined;
+  if (format !== 'gemini' && (runtime.proxy || runtime.networkMode && runtime.networkMode !== 'auto' && !(local && runtime.networkMode === 'direct')))
     throw new Error('NETWORK_GOOGLE_ONLY');
   const isolated = !!(runtime.transport || process.env.NODE_TEST_CONTEXT || env.LLM_DIAGNOSTIC_SOURCE === 'test');
-  const secretGuard = new EvalSecrets((format === 'gemini' ? env.GEMINI_API_KEY : env.OPENAI_COMPAT_API_KEY) ?? '');
-  for (const address of [runtime.proxy, env.HTTPS_PROXY, env.https_proxy, env.HTTP_PROXY, env.http_proxy, env.OPENAI_COMPAT_BASE_URL])
+  const secretGuard = new EvalSecrets(local ? '' : (format === 'gemini' ? env.GEMINI_API_KEY : env.OPENAI_COMPAT_API_KEY) ?? '');
+  for (const address of [runtime.proxy, env.HTTPS_PROXY, env.https_proxy, env.HTTP_PROXY, env.http_proxy, env.OPENAI_COMPAT_BASE_URL, local ? env.OLLAMA_BASE_URL : undefined])
     secretGuard.addAddress(address);
   const readSystem = runtime.readSystemProxy ?? (isolated ? () => ({ enabled: false, server: '', pac: false }) : readWindowsProxy);
   let network: EvalNetwork | undefined;
@@ -138,20 +143,21 @@ export function liveSource(maxCalls: number, env: NodeJS.ProcessEnv = process.en
   const transport = observedTransport(runtime.transport ?? globalThis.fetch, attempts, maxCalls, guard, format);
   const budgetFile = runtime.budgetFile ?? (isolated ? isolatedUsageFile() : env.LLM_USAGE_FILE || PLAY_USAGE_FILE);
   let capture: Pick<Sample, 'modelRaw' | 'modelRawStatus'> = { modelRawStatus: 'not-received' };
-  const selected = configuredProvider(settings, transport, { budget: new ObservedBudget(config, budgetFile), network: router,
-    pacer: new RequestPacer({ rpmLimit: config.rpmLimit ?? 12, tpmLimit: config.tpmLimit ?? 200000, maxWaitMs: Infinity }, runtime.pacerClock),
+  const selected = configuredProvider(settings, transport, { budget: remoteConfig ? new ObservedBudget(remoteConfig, budgetFile) : undefined, network: router,
+    pacer: local ? undefined : new RequestPacer({ rpmLimit: remoteConfig!.rpmLimit ?? 12, tpmLimit: remoteConfig!.tpmLimit ?? 200000, maxWaitMs: Infinity }, runtime.pacerClock),
     onModelRaw: raw => { capture = captureModelRaw(raw, secretGuard); } });
   if (!selected.provider) return undefined;
   const provider = selected.provider;
   return {
     secretGuard,
-    counterPolicy: isolated || runtime.budgetFile ? 'isolated-test' : 'shared-play-daily',
-    networkPolicy: format === 'gemini' ? runtime.networkMode ?? 'auto' : 'provider-managed',
-    maxOutputTokens: format === 'gemini' ? config.maxOutputTokens ?? GAME_MAX_TOKENS : undefined,
+    provider: format,
+    counterPolicy: local ? 'unlimited-local' : isolated || runtime.budgetFile ? 'isolated-test' : 'shared-play-daily',
+    networkPolicy: local ? 'direct' : format === 'gemini' ? runtime.networkMode ?? 'auto' : 'provider-managed',
+    maxOutputTokens: local ? 2048 : format === 'gemini' ? remoteConfig!.maxOutputTokens ?? GAME_MAX_TOKENS : undefined,
     model: `${format}/${config.model}`, timeoutMs: selected.timeoutMs,
     async sample(_fixture, input) {
       const first = attempts.length, reserved = reservations;
-      network = undefined;
+      network = local ? { networkMode: 'direct', route: 'direct', pacUnsupported: false } : undefined;
       capture = { modelRawStatus: 'not-received' };
       let raw: unknown, error: string | undefined, neutralError: string | undefined;
       try { raw = await provider.interpret(input, new AbortController().signal); secretGuard.assertSafe(raw); }

@@ -7,6 +7,8 @@ import type { CallBudget } from './budget.ts';
 import { rateLimits } from './pacer.ts';
 import type { RequestPacer, RateLimits } from './pacer.ts';
 import type { ModelRawObserver } from './remote.ts';
+import { OllamaClient, OllamaProvider, ollamaConfig } from './ollama.ts';
+import type { OllamaQueue } from './ollama.ts';
 
 export interface ProviderConfig {
   model: string;
@@ -58,9 +60,15 @@ export function geminiGenerationSettings(env: NodeJS.ProcessEnv): Pick<ProviderC
 }
 export interface ProviderSelection { provider?: InterpretationProvider; status: string; timeoutMs: number }
 export function configuredProvider(env: NodeJS.ProcessEnv = process.env, transport: typeof fetch = globalThis.fetch,
-  runtime: { budget?: CallBudget; network?: NetworkRouter; onModelRaw?: ModelRawObserver; pacer?: RequestPacer } = {}): ProviderSelection {
+  runtime: { budget?: CallBudget; network?: NetworkRouter; onModelRaw?: ModelRawObserver; pacer?: RequestPacer; ollamaQueue?: OllamaQueue } = {}): ProviderSelection {
   const mock = (status: string): ProviderSelection => ({ status, timeoutMs: 15000 });
   if (!env.LLM_PROVIDER || env.LLM_PROVIDER === 'mock') return mock('AI 미연결, Mock 사용 중');
+  if (env.LLM_PROVIDER === 'ollama') {
+    const config = ollamaConfig(env);
+    if (!config) return mock('AI 설정 오류, Mock 사용 중');
+    const provider = new OllamaProvider(new OllamaClient(config, transport, runtime.ollamaQueue), runtime.onModelRaw);
+    return { provider, status: provider.status, timeoutMs: config.timeoutMs };
+  }
   if (!['gemini', 'openai-compatible'].includes(env.LLM_PROVIDER)) return mock('AI 설정 오류, Mock 사용 중');
   const gemini = env.LLM_PROVIDER === 'gemini';
   const key = (gemini ? env.GEMINI_API_KEY : env.OPENAI_COMPAT_API_KEY) ?? '';

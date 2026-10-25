@@ -96,7 +96,7 @@ export function parseCommand(value: Record<string, unknown>): CommandRequest {
 export function createGameServer(engine?: GameEngine | GameEngine<InterpretationProvider | undefined>, webPort = 5173, runtimeOptions: RuntimeOptions = {}) {
   const runtime = new RuntimeSettings(runtimeOptions);
   if (!engine) {
-    const config = configuredProvider(runtimeOptions.env ?? process.env, runtimeOptions.transport ?? globalThis.fetch, { pacer: runtime.pacer });
+    const config = configuredProvider(runtimeOptions.env ?? process.env, runtimeOptions.transport ?? globalThis.fetch, { pacer: runtime.pacer, ollamaQueue: runtime.ollamaQueue });
     engine = new GameEngine(undefined, undefined, config.provider, config.timeoutMs, config.status, { mode: 'auto', ready: false });
   }
   let game = engine;
@@ -106,7 +106,7 @@ export function createGameServer(engine?: GameEngine | GameEngine<Interpretation
   const replaceGame = () => {
     game.reset(); // Existing engine request versions invalidate pending command/talk results.
     generation++;
-    game = new GameEngine(undefined, undefined, runtime.provider(), 15000, undefined, { mode: 'auto', ready: false });
+    game = new GameEngine(undefined, undefined, runtime.provider(), runtime.timeoutMs, undefined, { mode: 'auto', ready: false });
     failureCode = undefined;
   };
   let failureCode: ProviderErrorCode | undefined;
@@ -154,6 +154,11 @@ export function createGameServer(engine?: GameEngine | GameEngine<Interpretation
         const body = await readObject(request);
         switch (path) {
           case '/api/llm/settings': {
+            if (body.provider === 'ollama') {
+              if (!exactKeys(body, ['provider', 'model', 'baseUrl', 'timeoutMs']) || typeof body.model !== 'string' || typeof body.baseUrl !== 'string' || typeof body.timeoutMs !== 'number') throw new HttpError(400, 'INVALID_SETTINGS');
+              try { runtime.configureOllama(body.model, body.baseUrl, body.timeoutMs); } catch { throw new HttpError(400, 'INVALID_SETTINGS'); }
+              replaceGame(); return json(response, 200, runtime.status());
+            }
             const rpmKeys = Object.hasOwn(body, 'rpm') ? ['rpm'] : [];
             const extended = exactKeys(body, ['model', 'key', 'limit', 'networkMode', 'proxyAddress', 'clearProxy', ...rpmKeys]);
             if ((!exactKeys(body, ['model', 'key', 'limit', ...rpmKeys]) && !extended) || typeof body.model !== 'string' || !/^[a-zA-Z0-9._-]{1,200}$/.test(body.model) ||
@@ -164,6 +169,11 @@ export function createGameServer(engine?: GameEngine | GameEngine<Interpretation
             try { runtime.configure(body.model, body.key, body.limit, extended ? body.networkMode as 'auto' | 'proxy' | 'direct' : undefined,
               extended ? body.proxyAddress as string : '', extended && body.clearProxy === true, body.rpm as number | undefined); } catch { throw new HttpError(400, 'INVALID_SETTINGS'); }
             replaceGame(); return json(response, 200, runtime.status());
+          }
+          case '/api/llm/models': {
+            if (!exactKeys(body, ['baseUrl']) || typeof body.baseUrl !== 'string') throw new HttpError(400, 'INVALID_SETTINGS');
+            try { return json(response, 200, { models: await runtime.models(body.baseUrl) }); }
+            catch { return json(response, 400, { error: 'LOCAL_MODELS_UNAVAILABLE' }); }
           }
           case '/api/llm/test':
             if (!exactKeys(body, [])) throw new HttpError(400, 'EMPTY_OBJECT_REQUIRED');

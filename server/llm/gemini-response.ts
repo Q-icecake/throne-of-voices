@@ -38,7 +38,7 @@ export interface DiagnosticAttempt {
   observe(httpStatus: number, value: unknown, retryAfterSeconds?: number): void;
   finish(resultCode: string): void;
 }
-type DiagnosticContext = Pick<LlmDiagnostic, 'callKind' | 'model' | 'retries' | 'dailyCalls' | 'sessionCalls'> & Partial<Pick<LlmDiagnostic, 'networkMode' | 'route'>>;
+type DiagnosticContext = Pick<LlmDiagnostic, 'callKind' | 'model' | 'retries' | 'dailyCalls' | 'sessionCalls'> & Partial<Pick<LlmDiagnostic, 'provider' | 'networkMode' | 'route'>>;
 export const DIAGNOSTIC_MAX_LINES = 500;
 export const DIAGNOSTIC_MAX_BYTES = 1024 * 1024;
 /** Free-form upstream messages can echo arbitrary prompts. Export only recognized
@@ -84,20 +84,22 @@ export class GeminiDiagnostics {
     const safeEnum = (item: unknown, allowed: Set<string>) =>
       typeof item === 'string' && allowed.has(item) && !guard.reflects(item) ? item : null;
     const details = Array.isArray(error.details) ? error.details : [];
+    const local = context?.provider === 'ollama';
     const diagnostic: GeminiDiagnostic = { source: this.#source,
       ...(httpStatus === 429 && retryAfterSeconds !== undefined ? { retryAfterSeconds } : {}),
       networkMode: context?.networkMode ?? 'auto', route: context?.route ?? 'direct',
       networkError: httpStatus === null && networkError ? safeNetworkError(networkError, guard) : null,
       timestamp: context?.timestamp ?? new Date().toISOString(),
-      callKind: context?.callKind ?? 'connection_test', provider: 'gemini',
-      model: context?.model && /^[a-zA-Z0-9._-]{1,200}$/.test(context.model) && !guard.reflects(context.model) ? context.model : null,
+      callKind: context?.callKind ?? 'connection_test', provider: context?.provider ?? 'gemini',
+      model: context?.model && (local ? /^[a-zA-Z0-9][a-zA-Z0-9._:/-]{0,199}$/ : /^[a-zA-Z0-9._-]{1,200}$/).test(context.model) && !guard.reflects(context.model) ? context.model : null,
       latencyMs: context?.latencyMs ?? 0, retries: context?.retries ?? 0,
       resultCode: context?.resultCode ?? (httpStatus && httpStatus >= 400 ? googleHttpError(httpStatus) : 'ok'),
       dailyCalls: context?.dailyCalls ?? 0, sessionCalls: context?.sessionCalls ?? 0,
-      httpStatus, googleStatus: safeEnum(error.status, statuses), googleMessage: safeMessage(error.message, guard),
-      googleReason: details.map(item => safeEnum(record(item).reason, reasons)).find(Boolean) ?? null,
-      finishReason: safeEnum(candidate.finishReason, finishes), inputTokens: count(usage.promptTokenCount),
-      outputTokens: count(usage.candidatesTokenCount), thinkingTokens: count(usage.thoughtsTokenCount) };
+      httpStatus, googleStatus: local ? null : safeEnum(error.status, statuses), googleMessage: local ? null : safeMessage(error.message, guard),
+      googleReason: local ? null : details.map(item => safeEnum(record(item).reason, reasons)).find(Boolean) ?? null,
+      finishReason: local ? safeEnum(envelope.done_reason, new Set(['stop', 'length', 'load'])) : safeEnum(candidate.finishReason, finishes),
+      inputTokens: count(local ? envelope.prompt_eval_count : usage.promptTokenCount),
+      outputTokens: count(local ? envelope.eval_count : usage.candidatesTokenCount), thinkingTokens: local ? null : count(usage.thoughtsTokenCount) };
     // Only fixed fields, sanitized metadata and recognized message clauses cross this boundary.
     // Also guard numeric fields against a short/numeric credential reflection.
     const line = JSON.stringify(diagnostic);

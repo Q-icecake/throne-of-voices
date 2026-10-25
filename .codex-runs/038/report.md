@@ -1,0 +1,19 @@
+# 038 V15 — 로컬 Ollama 공급자·비교 평가
+
+- 결론: Ollama 공급자, 기존 카드의 설정/모델 목록/키 없는 시작, 평가 CLI 및 여러 모델 비교 구현. 기준 `2d20969d114bf1e55d95091e4aadb4fcda254c26`, 단독 작업, 실제 Ollama·외부 모델 호출0·선택/확인 팝업0.
+- `server/llm/ollama.ts`: loopback 검증과 localhost literal 고정, 네이티브 `/api/chat` schema format·stream:false·think:false·qwen3 /no_think. 별도 thinking 무시, 선두 완결 think 블록만 제거, 미완결 사고/잘림/깨진 JSON/스키마 위반은 거절. 기존 validator·엔진 규칙 유지.
+- 로컬 요청은 명시적 직접 Agent·redirect:error·64KiB 응답 한계·재시도0. 공유 큐는 서버의 tags/시험/재생성한 공급자까지 직렬1개, 큐 대기도 timeout 포함. `OLLAMA_TIMEOUT_MS` 기본60000/최대120000, 모델 기본 없음. Google pacer·일일/세션 예약을 사용하지 않고 전역 프록시/OS/계정 설정 변경0.
+- `server/llm/{config,runtime-settings,gemini-response}.ts`, `server/{engine,http}.ts`, `shared/contracts.ts`: factory·런타임/API·진단·선택한 게임 timeout 연결. 기존 진단 형식에 provider/model/direct/지연/native 토큰/중립 오류, ECONNREFUSED 코드 포함. 임의 본문·사고·원문 예외 비공개. Gemini 상태에는 로컬 주소를 추가하지 않음.
+- `client/src/{start-screen,main}.ts`: 기존 Gemini/Ollama 선택, 주소/서버 tags 모델 선택/timeout, 키·Google 한도/프록시 숨김, 로컬 안내, 짧은 시험1회·키 없는 AI 시작, Mock 유지. 비활성 공급자의 입력은 숨김과 함께 disabled로 처리해 HTML 검증 충돌 방지. 기존 Gemini 사고+출력256 안내 유지. 서버/브라우저 timeout 일치, 새 화면/그림/CSS/의존성 추가0.
+- `scripts/eval/{provider-bridge,run,types,compare}.ts`: `--provider ollama` 또는 환경변수+`--live`, 키/Google 한도 없이 dev80 전체, 선택적 max-calls/토큰 예산 유지. provider/model/native 토큰/direct/unlimited-local/pacing:null 기록. compare는 결과 폴더2개 이상·동일 fixture/prompt/split 검증 후 모델 원본/검증 후 의도·행동·조건 정확도·안전 위반·오류·지연p50/p95 표. 부분 실행은 경고.
+- `docs/{LLM_SETUP,EVAL,START_SCREEN}.md`: 설정·설치확인/list/pull·GPU PROCESSOR/작업관리자/log 대조·두 모델 비교 명령·실제 지원 미검증 구분.
+- `tests/ollama.test.ts` 신규33개: 정상/native schema/direct Agent·키 불필요·Google pacer/예산 미사용·주소거절·사고·잘림·파싱·연결거부·시간초과·단일시도·큐/취소·지연응답·HTTP tags/시작·dev80 두 모델·비교. 기존1105개 테스트/fixture/점수/안전 단언 수정·삭제·약화0.
+- `scripts/verify-ollama.ts`, `scripts/verify-all.ts`: 기존 Edge 자동화에 추가. 두 해상도 Gemini/Ollama·tags·키없는 시작·연결거부·Mock·레이아웃·기밀 경계 및 모의dev80×2 비교 증거 생성.
+- 통과: `node --test tests/*.test.ts` 최종1138/1138(신규33·기존1105), `node node_modules/typescript/bin/tsc --noEmit`, `node node_modules/vite/bin/vite.js build`, `git diff --check` 모두 종료0. `node scripts/verify-all.ts` 최종 **21/21 종료0**. scripts/screenshots.ts/verify-visual.ts·Edge 두 해상도 게임/시계/접견/NPC/비교/실제시작 포함. 결과 `artifacts/ollama/verification-final.json`, 원문 `verify-all-final.log`; 기존 네트워크55/55·설정 전 시나리오 재실행도 통과.
+- 보존: 종합21단계 실제 usage/diagnostic SHA-256 불변. `artifacts/ollama/{usage-hash-final,diagnostic-hash-final}.json`. 실제 카운터 초기화/수정0, 최종 holdout 채점0.
+- 종합 최초19/21: tests는 Gemini 상태의 신규 Ollama 기본주소가 기존 주소 비공개 검사19개와 충돌; 로컬 선택시에만 주소를 공개하도록 수정 후55/55·전체1137/1137 통과. start-screen은 가짜80ms timeout이 숨은 로컬 초 입력의 min 검증을 건드려 제출을 막았음; 로컬 상태필드 분리+비활성 필드disabled로 수정. Gemini 기존256 안내 문구도 유지했고 기존 start-screen 전 해상도/21오류 시나리오 재실행 통과. 중간 실패 로그 보존.
+- 스크린샷: `artifacts/ollama/{gemini-settings,ollama-settings,ollama-refused}-{1920x1080,1366x768}.png`. Ollama 두 크기와 Gemini1366 PNG 직접 검토, 가림/스크롤/16px/클릭 가능 검사 통과. 사용 기술은 [game-playtest skill](C:/Users/q_ice/.codex/plugins/cache/openai-curated-remote/game-studio/0.1.2/skills/game-playtest/SKILL.md).
+- 모의 평가: 같은 dev80 정답 replay를 qwen3:4b와 org/larger:8b 이름으로 실행하여 각 modelRaw/adapter/validated80/80·명령 정확도60/60·안전위반0, 예약0 확인. `artifacts/ollama/{offline-runs.json,comparison.md,fake-eval-*}`. 실제 모델 품질·속도 점수로 해석하지 않음. 최종 holdout 채점0.
+- 추정/미검증: 설치 버전0.40.8은 작업 설명의 제공값. 설치 exe 경로만 읽기 확인했고 버전/HTTP/외부문서 조회0; native format 계약을 기준으로 선택했다. 해당 설치 버전의 schema/think 지원·RX6600XT GPU 가속·RAM16GB의 큰 모델 속도는 라이브 미검증. 400이면 단일 오류로 종료하며 자동 형식 전환/다운로드 없음.
+- 제출: 원 Git 메타데이터가 쓰기범위 밖이므로 `.codex-runs/038/build-delivery.ts`가 현재 폴더 안 독립 commit/ref·검증 bundle/patch를 생성한다. 확정ID/해시/원HEAD불변·빈 저장소 import/fsck·patch tree 일치 결과는 `artifacts/ollama/submission.json`에 기록. 원 worktree 브랜치 반영은 리드 환경에서 필요. push/main/다른worktree/전역Git/계정변경0.
+- 다음: 문서의 로컬 명령으로 사용자가 실제 dev80 비교를 별도 실행하고 설치 버전 지원/실제 성능을 확인한다. 서버와 CLI는 각각 직렬1개이며 프로세스 전체 잠금은 아니다. 기능상 미해결 차단사항 없음; 원 브랜치 업데이트와 라이브 확인은 이 환경 범위 밖.

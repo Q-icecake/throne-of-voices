@@ -231,6 +231,9 @@ export interface TalkResponse {
 export type ConnectionTestResult = 'daily_limit' | 'session_limit' | 'untested' | 'ok' | 'auth' | 'model' | 'rate_limited' | 'timeout' | 'schema' | 'server' | 'budget' | 'stale' |
   'truncated' | 'empty' | 'request' | 'google_server' | 'parse' | 'network' | 'tls' | 'pacing';
 export interface LlmStatus {
+  provider?: 'gemini' | 'ollama';
+  ollamaBaseUrl?: string;
+  ollamaTimeoutMs?: number;
   minuteCalls?: number;
   minuteTokens?: number;
   rpmLimit?: number;
@@ -263,7 +266,7 @@ export interface LlmDiagnostic {
   networkError: NetworkError | null;
   timestamp: string;
   callKind: 'connection_test' | 'command' | 'npc' | 'meeting';
-  provider: 'gemini';
+  provider: 'gemini' | 'ollama';
   model: string | null;
   httpStatus: number | null;
   googleStatus: string | null;

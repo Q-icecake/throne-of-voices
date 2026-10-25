@@ -13,6 +13,8 @@ export const TEST_LABELS: Record<ConnectionTestResult, string> = {
   request: '요청 형식 거부(400)·모델 설정 불일치', google_server: 'Google 서버 오류(5xx)', parse: '응답 파싱 실패',
 };
 
+export let gameRequestTimeoutMs = 20000;
+
 /** Court initialization (including its opening clock) begins only after explicit start. */
 export async function enterStartScreen(): Promise<void> {
   const stage = document.getElementById('stage')!;
@@ -29,10 +31,10 @@ export async function enterStartScreen(): Promise<void> {
       <p class="start-footnote">역사·대사·수치는 시험용 재구성입니다. Mock은 키와 네트워크가 필요 없습니다.</p>
     </section>
     <section class="start-card" data-start-page="settings" aria-labelledby="settings-title" hidden>
-      <header class="start-head"><div><p class="start-eyebrow">선택 사항 · Gemini</p><h1 id="settings-title" tabindex="-1">AI 연결 설정</h1></div><button data-home>첫 화면</button></header>
+      <header class="start-head"><div><p class="start-eyebrow">선택 사항</p><h1 id="settings-title" tabindex="-1">AI 연결 설정</h1></div><div><label for="ai-provider">공급자</label><select id="ai-provider"><option value="gemini">Gemini</option><option value="ollama">Ollama(로컬)</option></select></div><button data-home>첫 화면</button></header>
       <div class="start-settings-grid">
         <div class="start-instructions">
-          <h2>① 키를 준비하세요</h2>
+          <div data-gemini><h2>① 키를 준비하세요</h2>
           <p>Google AI Studio에서 API 키를 만드세요. 주소: <span class="start-address">https://aistudio.google.com/apikey</span><br>주소는 안내용 텍스트이며 앱이 이 주소를 요청하지 않습니다.</p>
           <p><strong>결제를 연결하지 않은 프로젝트를 권장합니다.</strong> 결제 연결 시 무료 한도 내에도 과금될 수 있으며 앱 상한은 과금을 제한하지 않습니다.</p>
           <p>무료 티어 입력은 제품 개선에 쓰일 수 있습니다. <strong>개인정보·다른 사람의 정보를 입력하지 마세요.</strong></p>
@@ -41,20 +43,21 @@ export async function enterStartScreen(): Promise<void> {
           <p id="local-usage" class="start-field-note" role="status" aria-live="polite">로컬 사용량 확인 중…</p>
           <button id="reset-usage" aria-describedby="reset-usage-note">오늘 로컬 카운터 초기화</button>
           <p id="reset-usage-note" class="start-field-note">Google 쪽 실제 사용량은 바뀌지 않습니다. 세션·상한 유지.<br>Google 일일 한도는 500(무료, 계정·모델별로 다를 수 있음).</p>
+          </div><div data-ollama hidden><h2>① 로컬 모델 준비</h2><p>Ollama를 실행하고 설치된 모델 목록을 불러오세요. 앱은 모델을 자동으로 내려받지 않습니다.</p><p>로컬 모델은 한도·비용이 없지만 품질·속도는 모델과 PC에 따라 다릅니다</p><p>항상 직접 연결 · 동시 요청 1개 · 키 불필요.<br>모델 설치: <code>ollama pull &lt;모델&gt;</code></p></div>
         </div>
         <div>
           <h2>② 연결 정보</h2>
-          <form id="ai-settings-form" autocomplete="off">
-            <div class="start-model-row"><div><label for="ai-model">모델 ID</label><input id="ai-model" name="model" maxlength="200" required autocomplete="off" spellcheck="false" placeholder="콘솔에서 확인한 모델 ID"></div><div><label for="ai-rpm">분당 상한(RPM)</label><input id="ai-rpm" name="rpm" type="number" min="1" max="10000" step="1" value="12" required title="AI Studio의 비율 제한 화면에서 모델별 RPM 확인"></div></div>
-            <div class="start-proxy-label"><label for="ai-key">API 키</label><p id="key-source" class="start-field-note">키 미설정</p></div><input id="ai-key" name="key" type="password" maxlength="512" autocomplete="off" spellcheck="false" placeholder="새 키 입력 (저장된 키는 표시하지 않음)">
+          <form id="ai-settings-form" autocomplete="off"><div data-ollama hidden><label for="ollama-base">Ollama 주소 (loopback)</label><input id="ollama-base" value="http://127.0.0.1:11434" maxlength="200" spellcheck="false"><div class="start-model-row"><div><label for="ollama-models">설치된 모델</label><select id="ollama-models"><option value="">목록을 불러오세요</option></select></div><div><label for="ollama-timeout">제한시간(초)</label><input id="ollama-timeout" type="number" min="1" max="120" value="60"></div></div><button id="load-models" type="button">모델 목록 불러오기</button></div>
+            <div class="start-model-row"><div><label for="ai-model">모델 ID</label><input id="ai-model" name="model" maxlength="200" required autocomplete="off" spellcheck="false" placeholder="콘솔에서 확인한 모델 ID"></div><div data-gemini><label for="ai-rpm">분당 상한(RPM)</label><input id="ai-rpm" name="rpm" type="number" min="1" max="10000" step="1" value="12" required title="AI Studio의 비율 제한 화면에서 모델별 RPM 확인"></div></div>
+            <div data-gemini><div class="start-proxy-label"><label for="ai-key">API 키</label><p id="key-source" class="start-field-note">키 미설정</p></div><input id="ai-key" name="key" type="password" maxlength="512" autocomplete="off" spellcheck="false" placeholder="새 키 입력 (저장된 키는 표시하지 않음)">
             <div class="start-network-row"><div><label for="ai-limit">일일·세션 상한</label><input id="ai-limit" name="limit" type="number" min="0" max="10000" step="1" value="30" required></div>
             <div><label for="ai-network">연결 방식</label><select id="ai-network" name="networkMode"><option value="auto">자동 (권장)</option><option value="proxy">VPN·프록시 사용</option><option value="direct">직접 연결 (VPN 끔 / TUN·전역 모드)</option></select></div>
             <div id="proxy-field" hidden><div class="start-proxy-label"><label for="ai-proxy">프록시 주소</label><label title="입력 프록시를 지우고 환경변수·시스템 설정을 자동 감지"><input id="clear-proxy" type="checkbox"> 지우기</label></div><input id="ai-proxy" name="proxyAddress" type="password" maxlength="2048" autocomplete="off" spellcheck="false" placeholder="예시 127.0.0.1:7890 · http:// 생략 가능"></div></div>
             <p class="start-field-note">UTC 각 30회 · 0은 차단 · 시험·실패도 차감<br>AI Studio의 비율 제한 화면에서 모델별 RPM 확인</p>
-            <button id="save-settings" type="submit">설정 적용</button>
+            </div><button id="save-settings" type="submit">설정 적용</button>
           </form>
           <div class="start-test-row"><h2>③ 연결 시험</h2><button id="test-connection">연결 시험</button><p id="test-result" role="status" aria-live="polite">시험 전</p></div>
-          <p class="start-field-note">누를 때만 1회 요청 · 사고·출력 합계 최대 256토큰</p>
+          <p id="connection-token-note" class="start-field-note">누를 때만 1회 요청 · 사고·출력 합계 최대 256토큰</p>
         </div>
       </div>
       <footer class="start-settings-footer"><div><p class="start-address"><span id="diagnostic-location">자세한 진단: &lt;프로젝트&gt;\u005cartifacts\u005cllm-diagnostics.jsonl의 마지막 줄</span><br><span id="untested-note">현재 설정은 시험하지 않았습니다. </span><span id="last-diagnostic" role="status" aria-live="polite">최근 진단 없음 · 이번 서버 세션</span></p><div class="start-actions"><button id="start-ai" class="start-primary" disabled>AI로 시작</button><button id="settings-mock">Mock으로 시작</button><button id="clear-key">키 지우기</button></div></div></footer>
@@ -70,35 +73,44 @@ export async function enterStartScreen(): Promise<void> {
   let dirty = false, busy = false;
   const model = el<HTMLInputElement>('ai-model'), key = el<HTMLInputElement>('ai-key'), limit = el<HTMLInputElement>('ai-limit');
   const rpm = el<HTMLInputElement>('ai-rpm');
+  const provider = el<HTMLSelectElement>('ai-provider'), base = el<HTMLInputElement>('ollama-base'), localTimeout = el<HTMLInputElement>('ollama-timeout'), models = el<HTMLSelectElement>('ollama-models');
   const network = el<HTMLSelectElement>('ai-network'), proxy = el<HTMLInputElement>('ai-proxy'), clearProxy = el<HTMLInputElement>('clear-proxy');
   async function request<T>(path: string, body?: unknown): Promise<T> {
     const response = await fetch(`/api/llm/${path}`, { method: body === undefined ? 'GET' : 'POST', cache: 'no-store',
-      ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }), signal: AbortSignal.timeout(path === 'test' ? 26000 : 5000) });
+      ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }), signal: AbortSignal.timeout(path === 'test' ? provider.value === 'ollama' ? Number(localTimeout.value) * 1000 + 5000 : 26000 : path === 'models' ? 15000 : 5000) });
     if (!response.ok) throw new Error('로컬 설정 요청에 실패했습니다. 입력 형식과 서버 실행 상태를 확인하세요.');
     return await response.json() as T;
   }
   function render() {
+    const local = provider.value === 'ollama';
+    for (const field of root.querySelectorAll<HTMLElement>('[data-gemini]')) field.hidden = local;
+    for (const field of root.querySelectorAll<HTMLElement>('[data-ollama]')) field.hidden = !local;
+    rpm.required = !local; limit.required = !local;
+    localTimeout.required = local; base.required = local;
+    el('connection-token-note').textContent = local ? '누를 때만 1회 요청 · 최대 256토큰' : '누를 때만 1회 요청 · 사고·출력 합계 최대 256토큰';
     const testLabel = status.testResult === 'rate_limited' && status.retryAfterSeconds !== undefined ? `Google 분당 한도(429): ${status.retryAfterSeconds}초 후 다시` : status.testResult === 'daily_limit' ? `${TEST_LABELS.daily_limit}: 오늘 ${status.dailyCalls}/${status.dailyLimit}`
       : status.testResult === 'session_limit' ? `${TEST_LABELS.session_limit}: ${status.sessionCalls}/${status.sessionLimit}` : TEST_LABELS[status.testResult];
     el('local-usage').textContent = `오늘(UTC) 로컬 호출 ${status.dailyCalls < 0 ? '확인 불가' : status.dailyCalls}/${status.dailyLimit} · 이번 서버 세션 ${status.sessionCalls}/${status.sessionLimit} · 최근 1분 ${status.minuteCalls ?? 0}/${status.rpmLimit ?? 12}`;
-    el('home-ai-status').textContent = !status.keyConfigured ? 'AI 미연결 · Mock' : status.testResult === 'ok' ? 'AI 연결 확인됨' : status.testResult === 'untested' ? 'AI 설정됨 · 시험 전' : `AI 연결 오류 · ${TEST_LABELS[status.testResult]}`;
+    el('home-ai-status').textContent = !(status.model && (status.provider === 'ollama' || status.keyConfigured)) ? 'AI 미연결 · Mock' : status.testResult === 'ok' ? 'AI 연결 확인됨' : status.testResult === 'untested' ? 'AI 설정됨 · 시험 전' : `AI 연결 오류 · ${TEST_LABELS[status.testResult]}`;
     el('key-source').textContent = status.keySource === 'env' ? '환경변수 키 사용 중' : status.keySource === 'screen' ? '화면 입력 키 사용 중 · 서버 메모리' : '키 미설정';
-    el('test-result').textContent = status.testResult === 'timeout' && status.lastDiagnostic?.networkError ? '연결 시간 초과' : testLabel;
+    el('test-result').textContent = local && status.testResult === 'network' ? status.networkError?.code === 'ECONNREFUSED' ? 'Ollama 미실행 · 로컬 서버를 실행하세요' : 'Ollama 연결 실패 · 로컬 주소와 실행 상태 확인' : status.testResult === 'timeout' && status.lastDiagnostic?.networkError ? '연결 시간 초과' : testLabel;
     const diagnostic = status.lastDiagnostic;
     const diagnosticModel = diagnostic?.model ?? '—';
     el('last-diagnostic').title = diagnosticModel;
     el('last-diagnostic').textContent = diagnostic
       ? `최근 진단: HTTP ${diagnostic.httpStatus ?? '—'} · ${diagnostic.resultCode} · ${diagnostic.networkError ? [diagnostic.networkError.name, diagnostic.networkError.code].filter(Boolean).join('/') : diagnostic.finishReason ?? '—'} · 토큰(입력/출력/사고) ${diagnostic.inputTokens ?? '—'}/${diagnostic.outputTokens ?? '—'}/${diagnostic.thinkingTokens ?? '—'} · ${diagnostic.latencyMs}ms · 모델 ${diagnosticModel.length > 48 ? diagnosticModel.slice(0, 48) + '…' : diagnosticModel}${diagnostic.googleMessage ? ` · ${diagnostic.googleMessage.slice(0, 80)}` : ''}`
       : '최근 진단 없음 · 이번 서버 세션';
-    el('last-diagnostic').textContent += ` · 프록시 환경변수 ${status.proxyDetected ? '감지됨' : '없음'}`;
+    el('last-diagnostic').textContent += ` · 공급자 ${diagnostic?.provider ?? status.provider ?? 'gemini'}`;
+    if (!local) el('last-diagnostic').textContent += ` · 프록시 환경변수 ${status.proxyDetected ? '감지됨' : '없음'}`;
     el('last-diagnostic').textContent += ` · 방식: ${NETWORK_MODE_LABELS[diagnostic?.networkMode ?? status.networkMode]} · 경로: ${NETWORK_ROUTE_LABELS[diagnostic?.route ?? status.route]}`;
     const advice = networkAdvice(diagnostic?.route ?? status.route, status.networkError);
     if (status.pacUnsupported) el('last-diagnostic').textContent += ' · PAC 자동 구성 미지원';
-    el('proxy-field').hidden = network.value !== 'proxy';
+    el('proxy-field').hidden = local || network.value !== 'proxy';
     proxy.placeholder = status.manualProxyConfigured ? '입력 프록시 보관 중 · 빈칸은 유지 · 서버 메모리만 사용' : '예시 127.0.0.1:7890 · http:// 생략 가능';
     el('untested-note').textContent = status.testResult === 'untested' ? '현재 설정은 시험하지 않았습니다. ' : advice ? `${advice} ` : '';
-    for (const control of root.querySelectorAll<HTMLButtonElement | HTMLInputElement | HTMLSelectElement>('button, input, select')) control.disabled = busy;
-    el<HTMLButtonElement>('start-ai').disabled = busy || !(model.value.trim() && (key.value || status.keyConfigured));
+    for (const control of root.querySelectorAll<HTMLButtonElement | HTMLInputElement | HTMLSelectElement>('button, input, select'))
+      control.disabled = busy || !!control.closest('[data-gemini][hidden], [data-ollama][hidden]');
+    el<HTMLButtonElement>('start-ai').disabled = busy || !(model.value.trim() && (local || key.value || status.keyConfigured));
   }
   function show(page: string) {
     for (const section of root.querySelectorAll<HTMLElement>('[data-start-page]')) section.hidden = section.dataset.startPage !== page;
@@ -123,10 +135,13 @@ export async function enterStartScreen(): Promise<void> {
     if (!el<HTMLFormElement>('ai-settings-form').reportValidity()) throw new Error('INVALID_SETTINGS');
     const payload = { model: model.value.trim(), key: key.value, limit: Number(limit.value), rpm: Number(rpm.value), networkMode: network.value, proxyAddress: proxy.value, clearProxy: clearProxy.checked };
     // fetch serializes synchronously; immediately remove the credential from the DOM and payload.
-    const pending = request<LlmStatus>('settings', payload); key.value = ''; payload.key = ''; proxy.value = ''; payload.proxyAddress = ''; clearProxy.checked = false;
+    const pending = request<LlmStatus>('settings', provider.value === 'ollama' ? { provider: 'ollama', model: model.value.trim(), baseUrl: base.value.trim(), timeoutMs: Number(localTimeout.value) * 1000 } : payload); key.value = ''; payload.key = ''; proxy.value = ''; payload.proxyAddress = ''; clearProxy.checked = false;
     status = await pending; dirty = false;
   }
-  for (const input of [model, key, limit, rpm, network, proxy, clearProxy]) input.addEventListener('input', () => { dirty = true; status.testResult = 'untested'; status.networkError = null; render(); });
+  for (const input of [model, key, limit, rpm, network, proxy, clearProxy, base, localTimeout]) input.addEventListener('input', () => { dirty = true; status.testResult = 'untested'; status.networkError = null; render(); });
+  provider.onchange = () => { key.value = ''; proxy.value = ''; model.value = provider.value === status.provider ? status.model : ''; dirty = true; status.testResult = 'untested'; render(); };
+  models.onchange = () => { model.value = models.value; dirty = true; status.testResult = 'untested'; render(); };
+  el('load-models').onclick = () => void run(async () => { const result = await request<{ models: string[] }>('models', { baseUrl: base.value.trim() }); models.replaceChildren(new Option('모델 선택', ''), ...result.models.map(name => new Option(name, name))); if (result.models.includes(model.value)) models.value = model.value; });
   el('open-settings').onclick = () => show('settings'); el('open-guide').onclick = () => show('guide');
   root.querySelectorAll<HTMLButtonElement>('[data-home]').forEach(button => { button.onclick = () => { key.value = ''; proxy.value = ''; show('home'); }; });
   const escape = (event: KeyboardEvent) => { if (event.key === 'Escape' && !busy) { key.value = ''; proxy.value = ''; show('home'); } };
@@ -138,11 +153,11 @@ export async function enterStartScreen(): Promise<void> {
   return await new Promise<void>(resolve => {
     const start = (mode: 'mock' | 'ai') => void run(async () => {
       if (mode === 'ai' && dirty) await save();
-      await request('start', { mode }); key.value = ''; document.removeEventListener('keydown', escape); root.remove(); stage.hidden = false; resolve();
+      await request('start', { mode }); gameRequestTimeoutMs = mode === 'ai' && status.provider === 'ollama' ? (status.ollamaTimeoutMs ?? 60000) + 5000 : 20000; key.value = ''; document.removeEventListener('keydown', escape); root.remove(); stage.hidden = false; resolve();
     });
     for (const id of ['start-mock', 'settings-mock', 'guide-mock']) el(id).onclick = () => start('mock');
     el('start-ai').onclick = () => start('ai');
-    void run(async () => { status = await request<LlmStatus>('status'); model.value = status.model; limit.value = String(status.limit); rpm.value = String(status.rpmLimit ?? 12); network.value = status.networkMode; });
+    void run(async () => { status = await request<LlmStatus>('status'); provider.value = status.provider ?? 'gemini'; base.value = status.ollamaBaseUrl ?? 'http://127.0.0.1:11434'; localTimeout.value = String((status.ollamaTimeoutMs ?? 60000) / 1000); model.value = status.model; limit.value = String(status.limit); rpm.value = String(status.rpmLimit ?? 12); network.value = status.networkMode; });
     el('start-title').focus();
   });
 }

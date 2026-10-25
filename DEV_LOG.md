@@ -1,5 +1,15 @@
 # Development Log
 
+## 2026-10-25 — 038 V15 / 로컬 Ollama 공급자·모델 비교
+
+- 기준2d20969, 단독 작업. loopback 전용 native Ollama schema chat·직접 Agent·공유 직렬 큐·60초/최대120초·재시도0·qwen3 사고 격리. Google pacer/일일·세션 카운터 미적용, 기존 Mock/validator/엔진 실행 경계 유지. 새 의존성0.
+- 기존 설정 카드에 Gemini/Ollama 선택·로컬 주소·서버 tags 목록·모델·timeout·키 없는 AI 시작·연결 시험. 숨긴 공급자 필드는 disabled 처리. CLI `--provider ollama`/환경 선택으로 dev80, compare.ts는 모델 원본/검증 후 정확도·안전·p50/p95 비교. 설치/list/pull/GPU 확인·비교 명령 문서화.
+- 신규33개, 기존1105개 수정·약화0. 최종 전체 **1138/1138**, 타입 검사·Vite build·diff 검사 통과. `node scripts/verify-all.ts` 최종 **21/21 종료0**: Edge 두 해상도 설정/게임/시계/접견/NPC/장면/실제시작 포함. 실제 카운터·진단 해시21단계 불변.
+- 최초 종합19/21 실패는 Gemini 상태에 추가한 로컬 주소가 기존 주소 비공개 검사와 충돌한 것 및 숨은 로컬 timeout 입력의 HTML min 검증으로 제출이 막힌 것. 로컬 상태필드 분리/비활성필드disabled·Gemini 원문 안내 유지로 해결, 기존55개 네트워크와 설정 전체 시나리오 재확인. 중간 로그 보존.
+- `artifacts/ollama/`: Gemini/Ollama/연결거부1920×1080·1366×768 PNG·레이아웃 JSON, 정답 모의dev80×2 및 comparison.md. 각 모델/후단80/80·명령60/60·안전0·예약0은 모의 연결 증거이며 실제 모델 점수가 아님. 실제 Ollama/외부 모델 호출0, 팝업0, 키/환경값 출력0.
+- 설치 버전0.40.8·RX6600XT 가속·큰 모델 성능은 라이브 미검증. native format 계약을 선택하되 설치 서버/외부문서 조회0, 지원거부400은 자동 변경 없이 종료. 다음 실제 로컬 비교는 사용자가 문서 명령으로 별도 수행. 상세 `.codex-runs/038/report.md`.
+- 원 Git 메타데이터는 쓰기범위 밖이므로 workspace-local 독립 commit/bundle/patch 제출. `.codex-runs/038/build-delivery.ts`가 원HEAD 불변·bundle import/fsck·patch tree를 검사하고 확정ID/해시를 `artifacts/ollama/submission.json`에 기록. 원 브랜치 반영은 리드 환경에서 필요. push/다른worktree/전역설정/계정변경0.
+
 ## 2026-10-25 — 037 V14 / 분당 호출 조절·429 지연
 
 - 기준 `77d2a43`, 단독 작업. 서버 연결 시험/게임 어댑터 공유 및 CLI 별도60초 pacer: RPM12/TPM200000, 게임 최대8초 대기 후 입력 보존 거절, 평가는 창 복구 대기. 예약은 전송 직전 예산과 원자적으로 처리하며 거절/취소는 카운터·진단 차감0. 기존 Provider 활성시계 보류·게임15초 deadline 유지.

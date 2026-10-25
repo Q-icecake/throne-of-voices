@@ -30,6 +30,7 @@ const jobs: [string, string[]][] = [
   ['build', ['node_modules/vite/bin/vite.js', 'build']],
   ['start-screen', ['scripts/verify-start-screen.ts']],
   ['network-mode', ['scripts/verify-network-mode.ts']],
+  ['ollama', ['scripts/verify-ollama.ts']],
   ['content', ['content/validate.mjs', '--self-test']],
   ['playthrough', ['scripts/playthrough.ts']],
   ['soak', ['scripts/soak.ts']],
