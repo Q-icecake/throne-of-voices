@@ -1,5 +1,15 @@
 # Development Log
 
+## 2026-10-25 — 019 V1 / v0.2 Provider 기반 중립화
+
+- `config.ts`·`budget.ts`로 설정/예산을 분리하고 기본 Mock 및 기존 Gemini export 경로를 보존했다. Gemini/OpenAI 호환 어댑터는 공통 예약·총 deadline·실패 계측·반사 방지를 사용한다. Chat Completions JSON Schema를 선택하고 공급자 REST 형식은 어댑터에 둔다. 기본 모델/호환 주소/키 없음, 호출 상한 기본 0, 추가 의존성·UI 디자인 변경·평가 소유 경로 변경 없음.
+- 중립 오류 7종과 usage 계약(null=미상, 총/시도별 토큰·지연·시도/재시도·예약·오류)을 추가했다. 엔진/shared의 기존 대문자 `code`는 호환 별칭으로 유지하고 HTTP `providerCode`와 기존 칩/오류칸은 같은 중립 코드·한국어 안내를 쓴다. 요청별 AsyncLocalStorage로 오류를 전달하며 NPC 오류도 칩에 반영한다. 예산 도달 시 실행/자동 Mock 전환 없이 차단, 입력/초안/세계 보존. 중첩 timeout을 aborted로 바꾸지 않고 실패 usage를 유지한다.
+- 새 `tests/provider-base.test.ts` **77개**: 양 어댑터 정상/스키마·잘림/거절/4xx·5xx/429/timeout·abort/늦은 응답·본문 취소/실패·재시도 사용량/상한/키 전체·변형·부분 반사/HTTP command·talk·poll·복구·reset 예산/로그·스냅샷·usage 안전. 기존 시험 변경·삭제·약화 없음. 기준 227/227, 최종 **304/304**, tsc·Vite build·diff check 통과. 증거 `artifacts/v02-provider/`.
+- `node scripts/verify-all.ts` 최초 **16/17**(exit 1): comparison만 현재 worktree에 과거 기준 PNG가 없어 실패했다. 읽기 전용 `throne-integrate`에서 필요한 PNG/metrics 72개만 현재 artifacts에 복사·SHA-256 검증한 뒤 `node scripts/compare-visual.ts` 독립 재실행 **68쌍/8개 비교 이미지 통과**. 원래 실패 로그/verification.json을 보존했다. 전체 묶음은 재실행하지 않았고 마지막 코드 검토 뒤 unit/type/build만 다시 실행했다. 최종 개별 게이트 17/17의 출처는 `verification-final.json`에 명시했다.
+- Edge headless 1920×1080·1366×768: scenes 42/42, visual 16/16, R1 6/6, M3 10/10, M4 20/20, LLM UI 12/12, 실제 자동 시계 M5 18/18, R3 4/4, 실행기·콘텐츠·playthrough·soak·guide 통과. Mock 초기 화면과 AI 오류 화면 직접 확인, M5 이전/현재 화면 점유율 차이 0%p. 스크린샷 `artifacts/m6/scenes/`, `artifacts/m6/llm-ui/`.
+- `docs/LLM_SETUP.md`에 PowerShell SecureString·현재 셸/영구 설정·해제/Mock 복귀·보수적 1회 점검·무료 한도/결제 확인·원문 전송 정책·계측 한계·사용자 라이브 절차를 정리했다. 라이브 LLM 호출 **0회**. 실제 모델 접근성·호환 strict schema·한국어 품질·가격/무료 한도·실제 토큰/지연은 라이브 미검증이다. 일반 DLP/현재 입력 삭제/기억 토큰 상한은 이번 범위가 아니다.
+- 제출: 사용자 요청에 따라 범위 내 파일 `git add`를 시도했으나 외부 worktree 메타데이터의 `index.lock: Permission denied`(exit 128)로 실패했다. 커밋 미생성, HEAD `ed3ef6b`, 변경은 현재 작업 트리에 남겼다. 오류 `artifacts/v02-provider/git-submission.log`, 전체 패치·해시 및 역적용 읽기 검사 결과는 같은 폴더에 보존한다. 원격 push·다른 worktree 수정·전역 설정·확인 팝업·권한 우회 없음.
+
 ## 2026-10-25 — 017 R3 최종 리뷰 수정
 
 - R3-01: Provider 질문/논의 및 오프라인 대사 풀의 행동·완료·진행 서술을 어간/활용으로 검사하고, 현재 대화방에 보이는 보고의 작업 ID + 실제 엔진 진행 사건으로 만든 고정 사실 문장과 정확히 대조한다. 근거 없는 답변은 인물별 고정 문구로 대체하며 `dialogue-filtered` 로그에는 거절 원문을 남기지 않는다. 사용자 전언/대화/모델 근거 ID는 증명이 아니다. 기록 인용은 원문과 별도로 대조한다. 일반 한국어 의미 판별은 불가능하며 라이브 AI의 보조 장치라는 한계를 `docs/KNOWN_LIMITS.md`에 명시했다.

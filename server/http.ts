@@ -1,10 +1,13 @@
 import { createServer } from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { PAUSE_REASONS } from '../shared/contracts.ts';
-import type { CommandRequest, PauseReason, TestAction } from '../shared/contracts.ts';
+import type { CommandOutcome, CommandRequest, PauseReason, TestAction } from '../shared/contracts.ts';
 import { GameEngine } from './engine.ts';
-import { configuredProvider } from './llm/gemini.ts';
+import { configuredProvider } from './llm/config.ts';
 import type { InterpretationProvider } from './llm/types.ts';
+import type { ProviderErrorCode } from './llm/types.ts';
+import { PROVIDER_MESSAGES } from './llm/types.ts';
+import { captureFailure } from './llm/failure-context.ts';
 import { CHARACTER_IDS } from './characters.ts';
 import type { AudienceRequest, CharacterId } from '../shared/contracts.ts';
 
@@ -13,7 +16,7 @@ class HttpError extends Error {
   constructor(status: number, message: string) { super(message); this.status = status; }
 }
 
-function json(response: ServerResponse, status: number, payload: unknown): void {
+function sendJson(response: ServerResponse, status: number, payload: unknown): void {
   response.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
     'Cache-Control': 'no-store',
@@ -93,6 +96,27 @@ export function createGameServer(engine?: GameEngine | GameEngine<Interpretation
     engine = new GameEngine(undefined, undefined, config.provider, config.timeoutMs, config.status, { mode: 'auto', ready: false });
   }
   const game = engine;
+  let failureCode: ProviderErrorCode | undefined;
+  const providerResult = async <T extends { outcome?: CommandOutcome }>(work: () => T | Promise<T>) => {
+    const { result, code } = await captureFailure(async () => await work());
+    if (result.outcome?.kind === 'error' && result.outcome.code !== 'STALE_RESPONSE') {
+      failureCode = code ?? 'schema';
+      // Keep legacy outcome.code for existing clients/eval. providerCode is the neutral wire contract.
+      return { ...result, outcome: { ...result.outcome, providerCode: failureCode,
+        reply: `[${failureCode}] ${PROVIDER_MESSAGES[failureCode]} 입력과 초안은 보존되었습니다. Mock으로 전환하지 않았습니다.` } };
+    }
+    if (result.outcome?.kind !== 'error') failureCode = undefined;
+    return result;
+  };
+  const json = (response: ServerResponse, status: number, payload: unknown): void => {
+    // Overlay the existing chip on command/talk responses and subsequent health/state polls.
+    if (failureCode && payload && typeof payload === 'object') {
+      const copy = structuredClone(payload) as Record<string, unknown>;
+      const state = (copy.state ?? copy) as { interpretation?: { source: string; status: string } };
+      if (state.interpretation?.source === 'AI') state.interpretation.status = `[${failureCode}] ${PROVIDER_MESSAGES[failureCode]}`;
+      sendJson(response, status, copy);
+    } else sendJson(response, status, payload);
+  };
   const allowedOrigins = [`http://127.0.0.1:${webPort}`, `http://localhost:${webPort}`];
   const server = createServer(async (request, response) => {
     try {
@@ -116,6 +140,7 @@ export function createGameServer(engine?: GameEngine | GameEngine<Interpretation
         const body = await readObject(request);
         if (!exactKeys(body, [])) throw new HttpError(400, 'EMPTY_OBJECT_REQUIRED');
         engine.reset();
+        failureCode = undefined;
         return json(response, 200, { state: engine.view() });
       }
       if (request.method === 'POST' && path === '/api/test/action') {
@@ -124,12 +149,13 @@ export function createGameServer(engine?: GameEngine | GameEngine<Interpretation
       }
       if (request.method === 'POST' && path === '/api/command') {
         const command = parseCommand(await readObject(request));
-        return json(response, 200, await game.command(command));
+        return json(response, 200, await providerResult(() => game.command(command)));
       }
       if (request.method === 'POST' && path === '/api/talk') {
         const body = await readObject(request);
         if (!exactKeys(body, ['characterId', 'text']) || !CHARACTER_IDS.includes(body.characterId as CharacterId) || !validText(body.text)) throw new HttpError(400, 'INVALID_TALK');
-        return json(response, 200, await game.talk({ characterId: body.characterId as CharacterId, text: body.text }));
+        const text = body.text;
+        return json(response, 200, await providerResult(() => game.talk({ characterId: body.characterId as CharacterId, text })));
       }
       if (request.method === 'POST' && path === '/api/audience') {
         const body = await readObject(request);

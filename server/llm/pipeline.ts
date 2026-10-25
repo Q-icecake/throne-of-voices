@@ -1,24 +1,26 @@
 import type { ActionPlan } from '../../shared/contracts.ts';
 import type { Interpretation } from '../mock-interpreter.ts';
 import type { Proposal, InterpretationProvider, ProviderInput } from './types.ts';
-import { ProviderError } from './types.ts';
+import { ProviderError, abortError } from './types.ts';
 import { validateProposal } from './validator.ts';
 import { hasUnsupportedClaim } from './claims.ts';
+import { recordFailure } from './failure-context.ts';
 export { hasUnsupportedClaim } from './claims.ts';
 
 /** Also races providers that ignore AbortSignal; late work can never reach the engine. */
 export async function withDeadline<T>(work: (signal: AbortSignal) => Promise<T>, timeoutMs: number, parent?: AbortSignal): Promise<T> {
   const controller = new AbortController();
-  const abort = () => controller.abort();
-  parent?.addEventListener('abort', abort, { once: true });
-  if (parent?.aborted) controller.abort();
+  const abort = () => controller.abort(new ProviderError('timeout'));
+  const parentAbort = () => controller.abort(parent ? abortError(parent) : new ProviderError('aborted'));
+  parent?.addEventListener('abort', parentAbort, { once: true });
+  if (parent?.aborted) parentAbort();
   let timer: ReturnType<typeof setTimeout> | undefined;
   let onAbort: () => void = () => {};
   try {
     return await Promise.race([
       Promise.resolve().then(() => { controller.signal.throwIfAborted(); return work(controller.signal); }),
       new Promise<never>((_, reject) => {
-        onAbort = () => reject(new ProviderError('PROVIDER_TIMEOUT'));
+        onAbort = () => reject(abortError(controller.signal));
         controller.signal.addEventListener('abort', onAbort, { once: true });
         timer = setTimeout(abort, timeoutMs);
         if (controller.signal.aborted) onAbort();
@@ -26,7 +28,7 @@ export async function withDeadline<T>(work: (signal: AbortSignal) => Promise<T>,
     ]);
   } finally {
     clearTimeout(timer);
-    parent?.removeEventListener('abort', abort);
+    parent?.removeEventListener('abort', parentAbort);
     controller.signal.removeEventListener('abort', onAbort);
     controller.abort();
   }
@@ -34,8 +36,23 @@ export async function withDeadline<T>(work: (signal: AbortSignal) => Promise<T>,
 
 export async function interpret(provider: InterpretationProvider, input: ProviderInput, timeoutMs: number): Promise<Proposal> {
   const original = structuredClone(input);
-  const raw = await withDeadline(signal => provider.interpret(structuredClone(input), signal), timeoutMs);
-  return validateProposal(raw, original);
+  let operation: Promise<unknown> | undefined;
+  try {
+    const raw = await withDeadline(signal => {
+      operation = provider.interpret(structuredClone(input), signal);
+      return operation;
+    }, timeoutMs);
+    return validateProposal(raw, original);
+  } catch (error) {
+    // A cooperative adapter finalizes telemetry on abort. Never wait for an uncooperative provider.
+    if (error instanceof ProviderError && operation) {
+      await Promise.race([operation.catch(caught => {
+        if (caught instanceof ProviderError && caught.usage) error.usage = structuredClone(caught.usage);
+      }), Promise.resolve()]);
+    }
+    recordFailure(error instanceof ProviderError ? error.neutralCode : 'server');
+    throw error;
+  }
 }
 
 export function toReading(proposal: Proposal, guard = (text: string) => hasUnsupportedClaim(text)

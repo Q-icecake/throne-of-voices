@@ -1,0 +1,116 @@
+# LLM 연결 설정 (v0.2)
+
+기본 `LLM_PROVIDER=mock`은 키·네트워크·결제 없이 기존 게임을 실행한다. 실제 공급자를 선택해도 모델은 행동을 제안할 뿐이며, 엔진의 검증과 사용자의 초안 확인 뒤에만 실행된다. 이번 구현은 가짜 transport로 검증했다. 모델 접근성·한국어 품질·가격·토큰·실제 지연·무료 한도·호환 서버의 JSON Schema 지원은 **라이브 미검증**이다. 실제 키나 현재 환경값은 이 문서에 기록하지 않는다.
+
+## 설정 계약
+
+| 변수 | 의미 / 기본값 |
+| --- | --- |
+| `LLM_PROVIDER` | `mock` (기본), `gemini`, `openai-compatible` |
+| `GEMINI_API_KEY` / `GEMINI_MODEL_ID` | Gemini 서버 키 / 사용자가 확인한 모델 ID. 기본값 없음 |
+| `OPENAI_COMPAT_API_KEY` | OpenAI 호환 서버의 키. 기본값 없음 |
+| `OPENAI_COMPAT_MODEL_ID` | 사용자가 확인한 모델 ID. 기본값 없음, `owner/model` 형태 가능 |
+| `OPENAI_COMPAT_BASE_URL` | 사용자가 확인한 API 기본 주소. 기본값 없음. `/chat/completions`를 뒤에 붙인다. 통상 API 버전 경로까지 입력한다 |
+| `LLM_TIMEOUT_MS` | 재시도를 포함한 총 제한시간. 기본 15000ms, 허용 1~15000 |
+| `LLM_RETRIES` | 추가 시도 횟수. 기본 0, 허용 0~100 |
+| `LLM_DAILY_CALL_LIMIT` | UTC 일일 예약 상한. 기본 0 (차단), 허용 0~10000 |
+| `LLM_SESSION_CALL_LIMIT` | Provider 인스턴스/서버 세션 예약 상한. 기본 0 (차단), 허용 0~10000 |
+
+주소는 HTTPS를 사용한다. 로컬 호환 서버는 loopback HTTP만 허용한다. 주소 안의 사용자명·비밀번호·쿼리·fragment와 리다이렉트는 거부한다. 키는 인증 헤더로만 전달한다. Chat Completions의 `response_format: json_schema`, `strict: true`를 선택했다. 호환 서버의 지원 여부는 별도 확인해야 한다. strict 스키마 호환 범위를 넓히기 위해 `uniqueItems`는 전송 스키마에서 제거하고 로컬 검증에서 계속 강제한다. [공식 OpenAI 구조화 출력 문서](https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=chat).
+
+## Windows PowerShell — 현재 셸
+
+프로젝트 폴더에서 다음을 직접 실행한다. 먼저 공급자 계정의 모델 접근 권한·데이터 보관 정책·무료 한도·요금과 결제 연결 여부를 확인한다. 이 절차는 결제 연결·계정 설정 변경을 자동 실행하지 않는다. 무료 한도는 바뀔 수 있으며 애플리케이션의 호출 수 제한은 계정의 과금 제한이 아니다.
+
+```powershell
+$env:LLM_PROVIDER = 'mock'
+$secureKey = Read-Host 'API 키 (화면에 표시하지 않음)' -AsSecureString
+
+# Gemini를 사용할 때만:
+$env:GEMINI_API_KEY = [System.Net.NetworkCredential]::new('', $secureKey).Password
+$env:GEMINI_MODEL_ID = Read-Host '직접 확인한 Gemini 모델 ID'
+
+# OpenAI 호환 서버를 사용할 때만 (위 Gemini 설정 대신):
+$env:OPENAI_COMPAT_API_KEY = [System.Net.NetworkCredential]::new('', $secureKey).Password
+$env:OPENAI_COMPAT_MODEL_ID = Read-Host '직접 확인한 호환 모델 ID'
+$env:OPENAI_COMPAT_BASE_URL = Read-Host '직접 확인한 API 기본 주소'
+
+Remove-Variable secureKey
+$env:LLM_TIMEOUT_MS = '15000'
+$env:LLM_RETRIES = '0'
+# 첫 점검은 일일/세션 각 1회가 보수적이다. 기본값은 0회 차단이다.
+$env:LLM_DAILY_CALL_LIMIT = '1'
+$env:LLM_SESSION_CALL_LIMIT = '1'
+```
+
+선택한 공급자의 설정만 입력한다. 실제 연결을 결정한 뒤 같은 셸에서 아래 **한 가지**를 선택하고 서버를 새로 시작한다. 이미 실행 중인 서버에는 변경된 환경이 적용되지 않는다.
+
+```powershell
+$env:LLM_PROVIDER = 'gemini'
+# 또는 $env:LLM_PROVIDER = 'openai-compatible'
+.\run.ps1 dev
+```
+
+키 확인은 값 대신 존재 여부만 확인한다. `Get-ChildItem Env:`나 환경 전체 출력·터미널 기록 공유는 피한다.
+
+```powershell
+[bool]$env:GEMINI_API_KEY
+[bool]$env:OPENAI_COMPAT_API_KEY
+```
+
+키 값·유효 모델·접근 권한 확인은 사용자가 직접 한다. 첫 요청도 실제 입력과 허용된 지식을 외부 서버에 전송하며 요금이 발생할 수 있다. 화면의 `AI 연결 설정됨 · 라이브 미검증`은 설정 존재만 뜻하며 연결 성공을 뜻하지 않는다. 미설정·설정 오류의 시작 시 Mock 선택은 상태 칩에 명시한다. 요청 실패·호출 상한에서 Mock으로 자동 전환하지 않는다.
+
+## 영구 설정과 해제
+
+현재 셸 설정은 그 셸과 자식 프로세스에만 적용된다. 영구 저장이 필요한 경우 사용자가 해당 변수만 직접 저장한다. **User 환경변수는 암호화된 비밀 저장소가 아니며 키가 평문으로 남는다.** 다음 예시는 선택한 공급자에만 적용한다. 키 자체를 명령문 문자열에 붙여 넣지 않는다.
+
+```powershell
+[Environment]::SetEnvironmentVariable('GEMINI_API_KEY', $env:GEMINI_API_KEY, 'User')
+[Environment]::SetEnvironmentVariable('GEMINI_MODEL_ID', $env:GEMINI_MODEL_ID, 'User')
+# 호환 서버를 선택했을 때만:
+[Environment]::SetEnvironmentVariable('OPENAI_COMPAT_API_KEY', $env:OPENAI_COMPAT_API_KEY, 'User')
+[Environment]::SetEnvironmentVariable('OPENAI_COMPAT_MODEL_ID', $env:OPENAI_COMPAT_MODEL_ID, 'User')
+[Environment]::SetEnvironmentVariable('OPENAI_COMPAT_BASE_URL', $env:OPENAI_COMPAT_BASE_URL, 'User')
+# 공통 변수도 영구 저장이 필요할 때만:
+foreach ($name in @('LLM_PROVIDER', 'LLM_TIMEOUT_MS', 'LLM_RETRIES', 'LLM_DAILY_CALL_LIMIT', 'LLM_SESSION_CALL_LIMIT')) {
+  [Environment]::SetEnvironmentVariable($name, [Environment]::GetEnvironmentVariable($name, 'Process'), 'User')
+}
+```
+
+새 PowerShell을 열어 존재 여부만 다시 확인하고 서버를 재시작한다. 해제 및 Mock 복귀:
+
+```powershell
+$env:LLM_PROVIDER = 'mock'
+[Environment]::SetEnvironmentVariable('LLM_PROVIDER', 'mock', 'User')
+foreach ($name in @('GEMINI_API_KEY', 'GEMINI_MODEL_ID', 'OPENAI_COMPAT_API_KEY', 'OPENAI_COMPAT_MODEL_ID', 'OPENAI_COMPAT_BASE_URL', 'LLM_TIMEOUT_MS', 'LLM_RETRIES', 'LLM_DAILY_CALL_LIMIT', 'LLM_SESSION_CALL_LIMIT')) {
+  Remove-Item -LiteralPath "Env:$name" -ErrorAction SilentlyContinue
+  [Environment]::SetEnvironmentVariable($name, $null, 'User')
+}
+```
+
+실행 중인 서버를 종료·재시작해야 메모리에 읽힌 키도 해제된다. 이미 노출한 키는 환경변수 삭제만으로 폐기되지 않으므로 사용자가 공급자에서 폐기·재발급한다.
+
+## 예산·오류·계측
+
+모든 실제 시도 직전에 예약하고 실패·재시도도 차감한다. 429·인증·스키마 오류는 재시도하지 않으며 서버/전송 오류만 설정 횟수 안에서 재시도한다. 전체 시간 제한을 재시도마다 초기화하지 않는다. UTC 일일 예약은 `artifacts/llm-usage.json`의 날짜와 호출 수만 저장한다. 세션은 Provider 인스턴스 기준이며 게임 리셋으로 초기화하지 않는다. 두 공급자는 같은 일일 파일을 사용한다. 잠금 경합·손상·쓰기 실패는 차단한다. 비정상 종료의 `.lock`은 운영자가 실행 프로세스가 없는지 확인한 뒤 복구하며 일일 기록을 지워 한도를 우회하지 않는다.
+
+중립 오류는 `timeout`, `rate_limited`, `auth`, `schema`, `server`, `budget`, `aborted`이다. `ProviderError.neutralCode`와 HTTP `outcome.providerCode`가 같은 값을 쓰며 기존 상태 칩·오류칸에 코드와 한국어 안내를 표시한다. 엔진/기존 평가기의 `ProviderError.code` 및 HTTP `outcome.code`는 기존 대문자 코드 호환 별칭이다. 다른 작업 소유의 엔진·shared/UI 파일은 변경하지 않았다.
+
+중립 `ProviderUsage`는 `lastUsage`로 마지막 완료 호출에서 읽고, 실패는 `ProviderError.usage`에도 기록한다. 입력/출력 토큰, 총/시도별 지연, 시도·재시도·예약·외부 호출 수, 총/시도별 오류를 제공한다. 실패 응답이나 누락 메타데이터의 토큰은 **null (미상)**이며 성공한 재시도의 토큰만으로 전체를 추정하지 않는다. 평가기는 매 호출 직후 이 정보를 복사해 기록해야 한다. `lastUsage`는 누적 감사 파일이 아니며 동시 호출별 실패는 예외의 usage로 구분한다. 기존 Proposal의 4필드 usage는 호환을 유지하며 숫자만 허용하므로 미상은 0 자리를 사용한다. 비용은 단가를 추정하지 않고 null이다. 외부 응답 본문·헤더·예외 원문·요청 원문·키는 계측에 포함하지 않는다.
+
+## 전송 정책과 한계
+
+**현재 입력 `input.text`는 원문 그대로 전송한다.** 비밀 맥락 필터는 과거 맥락·지식의 공개 경계를 처리하며 현재 입력의 개인정보나 비밀번호를 지우는 필터가 아니다. 현재 입력에 비밀·개인정보·키를 입력하지 않는다. 허용된 지식·최근 맥락·행동 어휘와 NPC 경로의 허용 인물 정보를 함께 보낸다. 이 단계는 기억/문서 토큰 상한이나 일반 의미 기반 DLP를 추가하지 않는다.
+
+키는 서버 환경에서만 읽어 비공개 필드로 보관한다. 상위 오류 원문은 폐기한다. 정상 envelope와 제안에서 전체·대소문자·URL/Unicode escape·base64·hex·공백/구두점 분리·충분히 긴 연속 부분 반사를 보수적으로 검사한다. 이는 임의 암호화·짧은 단편·일반 의미 변형까지 막는 보장이 아니며 오탐 가능성이 있다. 64KiB envelope 상한·로컬 스키마/지식 검증을 유지한다.
+
+## 키 없는 확인 및 사용자 라이브 점검
+
+```powershell
+node --test tests/provider*.test.ts tests/llm*.test.ts tests/gemini.test.ts
+node node_modules/typescript/bin/tsc --noEmit
+node --test tests/*.test.ts
+node node_modules/vite/bin/vite.js build
+```
+
+실제 키 없는 가짜 transport 시험은 두 공급자의 요청·정상·스키마/잘림·4xx/5xx·429·취소/시간초과·예산·키 반사를 검사한다. 실제 연결은 사용자가 위 설정으로 서버를 시작한 뒤 상태 칩과 요청 하나의 응답을 직접 확인한다. 상한 1에서는 두 번째 호출이 budget으로 차단되어야 한다. 오류 때 입력/초안을 보존하고 세계 상태가 실행되지 않는지 확인한다. 점검 뒤 Mock으로 복귀한다. 평가 장치는 별도 소유 작업이며 이 문서가 기존 Gemini 전용 평가기의 다른 공급자 지원을 보증하지 않는다.

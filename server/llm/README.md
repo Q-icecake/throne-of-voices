@@ -12,9 +12,10 @@ HTTP 경로는 두 방식 모두 await한다. M0 `mock-probe`는 별도 시험 �
 
 | 환경변수 | 의미 / 기본값 |
 | --- | --- |
-| `LLM_PROVIDER` | `mock` (기본) 또는 `gemini` |
+| `LLM_PROVIDER` | `mock` (기본), `gemini`, `openai-compatible` |
 | `GEMINI_API_KEY` | 서버 환경변수에서만 읽음. 없으면 명시적 Mock 상태 |
 | `GEMINI_MODEL_ID` | 승인 후 확인한 모델 ID, 기본값 없음 |
+| `OPENAI_COMPAT_API_KEY` / `OPENAI_COMPAT_MODEL_ID` / `OPENAI_COMPAT_BASE_URL` | 호환 서버의 키·모델·API 기본 주소, 기본값 없음 |
 | `LLM_TIMEOUT_MS` | 전체 해석 제한, 기본 15000ms, 1~15000 |
 | `LLM_RETRIES` | 추가 시도 횟수, 기본 0 |
 | `LLM_DAILY_CALL_LIMIT` | UTC 일일 호출 상한, 기본 0 (차단) |
@@ -26,6 +27,12 @@ HTTP 경로는 두 방식 모두 await한다. M0 `mock-probe`는 별도 시험 �
 비정상 종료로 `.lock`이 남으면 실행 프로세스가 없는지 운영자가 확인한 뒤 잠금만 복구한다. 일일 기록은 지우지 않는다.
 모델·공급자·결제 티어를 자동 전환하지 않는다. 상한은 실제 계정의 무료/유료 여부를 판별하지 않으므로 라이브 전 계정 확인과 승인이 필요하다.
 무키 상태, 설정 오류의 Mock 선택은 화면에 표시하며, 요청 도중 오류는 AI 오류로 남기고 입력/초안을 보존한다.
+
+v0.2 설정 팩터리는 `config.ts`, 공통 예산은 `budget.ts`에 있다. 기존 `gemini.ts` export는 평가기 호환을 위해 유지한다.
+Chat Completions JSON Schema 호환 어댑터는 `openai-compatible.ts`이며, 두 어댑터는 `remote.ts`의 제한시간·재시도·계측·반사 방지를 공유한다.
+중립 오류는 `ProviderError.neutralCode`와 HTTP `outcome.providerCode`에서 읽는다. 기존 `code`는 대문자 호환 별칭이다.
+중립 `ProviderUsage`는 `provider.lastUsage`와 실패 예외의 `usage`에 있으며, 실패·미상 토큰은 null이다. 기존 Proposal usage의 숫자 필드와 구분한다.
+PowerShell 키 입력·영구 설정/해제·전송 정책·사용자 라이브 점검 절차는 [LLM_SETUP](../../docs/LLM_SETUP.md)을 따른다.
 
 ## 오프라인과 라이브 평가
 

@@ -37,8 +37,44 @@ export interface InterpretationProvider {
   readonly source: 'AI';
   readonly status: string;
   interpret(input: ProviderInput, signal: AbortSignal): Promise<unknown>;
+  /** Neutral telemetry is authoritative; null tokens mean unknown, including failed attempts. */
+  readonly lastUsage?: ProviderUsage;
 }
+export type ProviderErrorCode = 'timeout' | 'rate_limited' | 'auth' | 'schema' | 'server' | 'budget' | 'aborted';
+export interface AttemptUsage {
+  inputTokens: number | null;
+  outputTokens: number | null;
+  latencyMs: number;
+  errorCode: ProviderErrorCode | null;
+}
+export interface ProviderUsage extends AttemptUsage {
+  attempts: number;
+  retries: number;
+  reservations: number;
+  externalCalls: number;
+  costUsd: null;
+  attemptUsage: AttemptUsage[];
+}
+export const PROVIDER_MESSAGES: Record<ProviderErrorCode, string> = {
+  timeout: 'AI 응답 시간이 초과되었습니다.', rate_limited: 'AI 공급자 호출 한도에 도달했습니다. 추가 호출을 중단했습니다.',
+  auth: 'AI 인증 또는 연결 설정을 확인해 주세요.', schema: 'AI 제안의 형식이나 허용 범위가 맞지 않습니다.',
+  server: 'AI 연결에 실패했습니다.', budget: 'AI 호출 상한에 도달했습니다. 추가 호출을 차단했습니다.',
+  aborted: 'AI 요청이 취소되었습니다.',
+};
+const legacy = { timeout: 'PROVIDER_TIMEOUT', rate_limited: 'CALL_LIMIT', auth: 'PROVIDER_ERROR', schema: 'INVALID_PROPOSAL',
+  server: 'PROVIDER_ERROR', budget: 'CALL_LIMIT', aborted: 'PROVIDER_TIMEOUT' } as const;
+const neutral = { PROVIDER_ERROR: 'server', PROVIDER_TIMEOUT: 'timeout', CALL_LIMIT: 'budget', INVALID_PROPOSAL: 'schema' } as const;
 export class ProviderError extends Error {
   readonly code: 'PROVIDER_ERROR' | 'PROVIDER_TIMEOUT' | 'CALL_LIMIT' | 'INVALID_PROPOSAL';
-  constructor(code: ProviderError['code']) { super(code); this.code = code; }
+  readonly neutralCode: ProviderErrorCode;
+  usage?: ProviderUsage;
+  constructor(code: ProviderError['code'] | ProviderErrorCode) {
+    const mapped = code in legacy ? legacy[code as ProviderErrorCode] : code as ProviderError['code'];
+    super(mapped); this.code = mapped;
+    this.neutralCode = code in legacy ? code as ProviderErrorCode : neutral[mapped];
+  }
+}
+/** Propagate nested deadline reasons without relabeling a timeout as caller cancellation. */
+export function abortError(signal: AbortSignal): ProviderError {
+  return new ProviderError(signal.reason instanceof ProviderError && signal.reason.neutralCode === 'timeout' ? 'timeout' : 'aborted');
 }
