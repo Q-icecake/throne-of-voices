@@ -3,10 +3,12 @@ import type { WorldState } from './world.ts';
 import { knowledgeFor } from './knowledge.ts';
 import type { ProviderInput } from './llm/types.ts';
 import { actionVocabulary } from './llm/validator.ts';
+import { mayTransmit, providerKnowledge } from './llm/context-policy.ts';
+import type { EvidenceScope } from './llm/context-policy.ts';
 
 export const CHARACTER_IDS: CharacterId[] = ['zhang-hong', 'zhang-zhao', 'zhou-yu', 'lu-su'];
 export const HOME_LOCATIONS: Record<CharacterId, string> = { 'zhang-hong': 'office', 'zhang-zhao': 'residence', 'zhou-yu': 'naval-base', 'lu-su': 'residence' };
-export interface MemoryFact { eventId: string; fact: string; witnesses: CharacterId[] }
+export interface MemoryFact extends EvidenceScope { eventId: string; fact: string; witnesses: CharacterId[] }
 export interface CharacterMind {
   identity: string; stance: string; expertise: string; concerns: string;
   cards: { id: string; claim: string }[];
@@ -27,30 +29,38 @@ export function createMinds(): Record<CharacterId, CharacterMind> {
   })) as unknown as Record<CharacterId, CharacterMind>;
 }
 
-export function remember(world: WorldState, ids: CharacterId[], eventId: string, fact: string): void {
+export function remember(world: WorldState, ids: CharacterId[], eventId: string, fact: string, scope: EvidenceScope = {}): void {
   for (const id of ids) {
     const mind = world.minds[id];
-    mind.facts.push({ eventId, fact, witnesses: [...ids] });
+    mind.facts.push({ eventId, fact, witnesses: [...ids], ...scope });
     const recent = mind.facts.slice(-6);
     mind.summary = { text: recent.map(f => `[${f.eventId}] ${f.fact}`).join(' / '), eventIds: recent.map(f => f.eventId) };
   }
 }
 
 /** Detached allowlist: never pass WorldState, other minds, hidden truth or unshared private facts. */
-export function characterInput(world: WorldState, id: CharacterId, text: string, audience: CharacterId[]): ProviderInput {
+export function characterInput(world: WorldState, id: CharacterId, text: string, audience: CharacterId[], local = false): ProviderInput {
   const mind = world.minds[id];
   const visibleToRoom = (readers: ('player' | CharacterId)[]) => readers.includes('player') && audience.every(p => readers.includes(p));
   const allowed = new Set(world.documents.filter(d => visibleToRoom(d.readers)).map(d => d.id));
-  const knowledge: KnowledgeView = knowledgeFor(world, id);
+  const localScope = (scope: EvidenceScope) => {
+    const taskId = scope.taskId ?? world.documents.find(d => d.id === scope.documentId)?.taskId;
+    const task = world.tasks.find(t => t.id === taskId);
+    return !task?.plan.conditions.includes('secret') || audience.every(p => p === task.assignee);
+  };
+  const knowledge: KnowledgeView = local ? knowledgeFor(world, id) : providerKnowledge(world, id);
   knowledge.documents = knowledge.documents.filter(d => allowed.has(d.id));
-  const facts = mind.facts.filter(f => audience.every(p => f.witnesses.includes(p)));
+  if (local) knowledge.documents = knowledge.documents.filter(localScope);
+  const facts = mind.facts.filter(f => audience.every(p => f.witnesses.includes(p)) && (local ? localScope(f) : mayTransmit(world, f, f.fact)))
+    .map(({ eventId, fact, witnesses }) => ({ eventId, fact, witnesses: [...witnesses] }));
   return {
     text, knowledge, actions: actionVocabulary(),
     character: { id, identity: mind.identity, stance: mind.stance, expertise: mind.expertise, concerns: mind.concerns,
       relationship: mind.trust >= 70 ? '주군을 신뢰하며 판단은 주군에게 맡긴다' : '근거를 더 확인하며 신중하게 보좌한다',
       cards: structuredClone(mind.cards), memories: structuredClone(facts),
       memorySummary: { text: facts.slice(-6).map(f => `[${f.eventId}] ${f.fact}`).join(' / '), eventIds: facts.slice(-6).map(f => f.eventId) } },
-    context: world.conversation.filter(t => t.participants.includes(id) && audience.every(p => t.participants.includes(p)))
+    context: world.conversation.filter(t => t.participants.includes(id) && audience.every(p => t.participants.includes(p))
+      && mayTransmit(world, mind.facts.find(f => f.eventId === t.eventId), t.text))
       .slice(-6).map(t => ({ role: t.speaker === 'player' ? 'player' : 'assistant', text: t.text })),
   };
 }
@@ -67,7 +77,7 @@ export function offlineReply(input: ProviderInput, rebuttal = false): string {
     return shared ? `판단의 근거를 직접 보여 주신 일은 ${shared.eventId}에 기억하고 있습니다. 주군의 판단을 존중하되 제 전문 분야의 우려는 숨기지 않겠습니다.` : '주군을 신뢰하며 성실하게 보좌하겠습니다. 다만 그 신뢰가 근거 없는 확신을 뜻하지는 않으므로 우려는 솔직히 말씀드리겠습니다.';
   }
   if (/기억|아까|지난|이전|미뤘|연기했/.test(text)) {
-    const fact = input.character!.memories.filter(f => /명령을 확정|문서를 보여|접견을 미룸/.test(f.fact)).at(-1) ?? input.character!.memories.at(-1);
+    const fact = input.character!.memories.filter(f => /명령을 확정|작업 기록|문서를 보여|접견을 미룸/.test(f.fact)).at(-1) ?? input.character!.memories.at(-1);
     return fact ? `제가 함께한 기록에는 「${fact.fact}」라고 남아 있습니다. 근거는 ${fact.eventId}이며, 그 밖의 일을 추측해 덧붙이지 않겠습니다.` : '제가 함께한 이전 기록은 아직 없습니다. 다른 자리의 대화는 알지 못합니다.';
   }
   if (/문서|보고|서신|장부/.test(text)) {

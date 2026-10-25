@@ -10,7 +10,6 @@ import type { InterpretationProvider, ProviderInput } from './llm/types.ts';
 import { ProviderError } from './llm/types.ts';
 import { interpret, toReading } from './llm/pipeline.ts';
 import { actionVocabulary, validateProposal } from './llm/validator.ts';
-import { visibility } from './compound.ts';
 import { MockLLMProvider } from './provider.ts';
 import type { LLMProvider } from './provider.ts';
 import { ACTION_RULES, DIPLOMACY_RULES, deadlineDuration, ENGAGEMENT_POLICY_LABELS, NAVAL_DRILL, RESTRICTION_LABELS } from './rules.ts';
@@ -18,6 +17,7 @@ import { createInitialWorld } from './world.ts';
 import type { DraftRecord, EventCause, EventRecord, TaskRecord, WorldState } from './world.ts';
 import type { AudienceRequest, CharacterId, TalkRequest, TalkResponse, TalkTurn } from '../shared/contracts.ts';
 import { CHARACTER_IDS, HOME_LOCATIONS, characterInput, offlineReply, remember, unknowable } from './characters.ts';
+import { mayTransmit, providerKnowledge } from './llm/context-policy.ts';
 
 const pad = (value: number) => String(value).padStart(4, '0');
 const INTENT_LABELS = { question: '질문', hypothetical: '가정·검토', discussion: '논의', ambiguous: '확인 질문', unsupported: '미지원' } as const;
@@ -151,14 +151,14 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
       if (doc.readers.includes(id)) return respond('이미 공유된 문서입니다. 다시 공유하거나 관계를 중복 변경하지 않았습니다.');
       doc.readers.push(id);
       this.#record('document-shared', `${name}에게 「${doc.title}」 공유`, null);
-      remember(world, [id], this.#events.at(-1)!.id, `플레이어가 「${doc.title}」 문서를 보여줌`);
+      remember(world, [id], this.#events.at(-1)!.id, `플레이어가 「${doc.title}」 문서를 보여줌`, { documentId: doc.id });
       world.minds[id].respect = Math.min(100, world.minds[id].respect + 1);
       this.#record('relationship', `${name}: 판단 근거를 직접 공유해 존중이 조금 높아짐`, null);
       return respond(`${name}에게 문서를 보여 주었습니다. 열람과 공유는 별도 기록입니다.`);
     }
     world.audience.participants = world.audience.participants.filter(p => p !== id);
     world.characters.find(c => c.id === id)!.location = HOME_LOCATIONS[id];
-    if (request.type === 'defer' && !world.audience.requested.includes(id)) world.audience.requested.push(id);
+    if (request.type === 'defer') world.audience.requested = [...world.audience.requested.filter(p => p !== id), id];
     const fact = `플레이어가 ${name}의 접견을 ${request.type === 'defer' ? '미룸' : '마침'}`;
     this.#record('audience', fact, null);
     remember(world, [id], this.#events.at(-1)!.id, fact);
@@ -174,9 +174,12 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
     if (!ids.includes(request.characterId)) return respond([], undefined, '먼저 해당 인물을 접견에 불러 주십시오.');
     if (ids.some(id => this.#world.tasks.some(t => t.assignee === id && !['completed', 'stopped'].includes(t.stage)))) return respond([], undefined, '참석자가 임무 중입니다. 접견을 다시 구성해 주십시오.');
     const input = characterInput(this.#world, request.characterId, request.text, ids);
+    const localInput = characterInput(this.#world, request.characterId, request.text, ids, true);
+    const localEvidence = /기억|아까|지난|이전|문서|보고|서신|장부/.test(request.text)
+      && JSON.stringify(localInput) !== JSON.stringify(input);
     let reading = this.#readMock(request.text);
-    let answer = offlineReply(input);
-    if (this.#interpretationProvider && !unknowable(request.text)) {
+    let answer = offlineReply(localEvidence ? localInput : input);
+    if (this.#interpretationProvider && !unknowable(request.text) && !localEvidence) {
       try {
         const proposal = await interpret(this.#interpretationProvider, input, this.#timeoutMs);
         if (version !== this.#requestVersion) return respond([], { kind: 'error', code: 'STALE_RESPONSE', input: request.text, reply: '접견이나 입력이 바뀌어 이전 응답을 무시했습니다.' });
@@ -203,7 +206,8 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
       this.#record('talk', `${speaker === 'player' ? '손권' : this.#world.characters.find(c => c.id === speaker)!.name}: ${text}`, null);
       const turn = { eventId: this.#events.at(-1)!.id, speaker, text, participants: [...ids] };
       this.#world.conversation.push(turn); turns.push(turn);
-      remember(this.#world, ids, turn.eventId, speaker === 'player' ? `플레이어가 질문·논의함: ${text.slice(0, 160)}` : `${this.#world.characters.find(c => c.id === speaker)!.name}가 답변함 · 원문은 사건 기록 참조`);
+      remember(this.#world, ids, turn.eventId, speaker === 'player' ? `플레이어가 질문·논의함: ${text.slice(0, 160)}` : `${this.#world.characters.find(c => c.id === speaker)!.name}가 답변함 · 원문은 사건 기록 참조`,
+        { providerExcluded: localEvidence || !mayTransmit(this.#world, {}, request.text) });
     };
     add('player', request.text);
     add(request.characterId, answer);
@@ -225,22 +229,18 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
     const stale = (): CommandResponse => ({ state: this.view(), outcome: { kind: 'error', code: 'STALE_RESPONSE', input: request.text,
       reply: '이전 해석 응답을 무시했습니다. 최신 초안은 보존되었습니다. 필요하면 입력을 다시 보내 주세요.' } });
     try {
-      const knowledge = knowledgeFor(this.#world, 'player');
-      // Interpretation needs only common reports. Player-authorized secret reports
-      // remain in the UI, but are not ambient context for later model requests.
-      const secretTasks = new Set(this.#world.tasks.filter(task => task.plan.conditions.includes('secret')).map(task => task.id));
-      knowledge.documents = knowledge.documents.filter(doc => !doc.taskId || !secretTasks.has(doc.taskId));
+      const knowledge = providerKnowledge(this.#world, 'player');
       const input: ProviderInput = { text: request.text, knowledge,
         context: structuredClone(this.#context), actions: actionVocabulary() };
       if (request.type === 'revise') {
         const prior = this.#world.drafts.find(draft => draft.id === request.draftId)!.text;
-        if (visibility(prior) !== 'secret' && visibility(prior) !== 'ambiguous') input.context.push({ role: 'player', text: prior });
+        if (mayTransmit(this.#world, {}, prior)) input.context.push({ role: 'player', text: prior });
       }
       const proposal = await interpret(this.#interpretationProvider!, input, this.#timeoutMs);
       if (version !== this.#requestVersion) return stale();
       const reading = toReading(proposal);
       const outcome = request.type === 'submit' ? this.#submit(request, reading) : this.#revise(request, reading);
-      if (visibility(request.text) !== 'secret' && visibility(request.text) !== 'ambiguous')
+      if (mayTransmit(this.#world, {}, request.text))
         this.#context.push({ role: 'player', text: request.text }, { role: 'assistant', text: outcome.reply });
       this.#context = this.#context.slice(-6);
       this.#connectionStatus = this.#interpretationProvider!.status;
@@ -375,8 +375,8 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
     draft.taskIds = tasks.map(t => t.id);
     draft.taskId = tasks[0]!.id;
     this.#record('command-confirm', `${draft.id} v${draft.version} 확정 · ${draft.taskIds.join(', ')} 등록 · 소모는 착수 시점`, structuredClone(request));
-    for (const plan of draft.actions) remember(this.#world, [...new Set<CharacterId>(['zhang-hong', plan.assignee])], this.#events.at(-1)!.id,
-      `플레이어가 ${plan.kind} 명령을 확정함${plan.restrictions.length ? ` · ${plan.restrictions.map(r => RESTRICTION_LABELS[r]).join(', ')}` : ''} · 아직 완료 아님`);
+    for (const task of tasks) remember(this.#world, [...new Set<CharacterId>(['zhang-hong', task.assignee])], this.#events.at(-1)!.id,
+      `플레이어가 ${task.action} 명령을 확정함${task.restrictions.length ? ` · ${task.restrictions.map(r => RESTRICTION_LABELS[r]).join(', ')}` : ''} · 당시 아직 완료 아님`, { taskId: task.id });
     return { kind: 'confirmed', draftId: draft.id, taskId: draft.taskId, taskIds: [...draft.taskIds], duplicate: false,
       reply: `확정했습니다. ${tasks.length}개 작업을 등록했습니다. 전달과 결과는 시간이 지나야 보고됩니다.` };
   }
@@ -567,5 +567,11 @@ export class GameEngine<P extends InterpretationProvider | undefined = undefined
       id: `event-${pad(this.#world.revision)}`, atActiveMs, kind, summary, cause,
       fromRevision: previous, toRevision: this.#world.revision,
     });
+    if (cause && 'taskId' in cause && ['task-progress', 'task-delivered', 'task-completed', 'command-recall'].includes(kind)) {
+      const task = this.#world.tasks.find(t => t.id === cause.taskId)!;
+      const status = task.stage === 'stopped' ? '중단' : task.stage === 'completed' ? '완료' : '진행 중';
+      remember(this.#world, [...new Set<CharacterId>(['zhang-hong', task.assignee])], this.#events.at(-1)!.id,
+        `작업 기록: ${summary} · ${status}`, { taskId: task.id });
+    }
   }
 }

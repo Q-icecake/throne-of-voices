@@ -14,12 +14,12 @@ export function audiencePanel(state: PlayerView, busy: boolean, act: (request: A
       onchange: event => { if ((event.target as HTMLInputElement).checked) selected.add(person.id); else selected.delete(person.id); } });
     choices.append(h('div', { class: 'audience-person' },
       h('label', {}, checkbox, `${person.name} · ${person.role}`),
-      h('small', {}, occupied ? '임무 중 · 접견 불가' : state.audience.requested.includes(person.id) ? '접견 요청 · 호출 가능' : '호출 가능'),
+      h('small', {}, occupied ? '임무 중 · 접견 불가' : state.audience.requested.includes(person.id) ? `접견 요청 ${state.audience.requested.indexOf(person.id) + 1}순위 · 호출 가능` : '호출 가능'),
       h('button', { type: 'button', 'data-invite': person.id, disabled: occupied || busy, onclick: () => act({ type: 'invite', participants: [person.id] }) }, '단독 접견'),
       h('button', { type: 'button', 'data-defer': person.id, disabled: busy, onclick: () => act({ type: 'defer', characterId: person.id }) }, '연기'),
       state.audience.participants.includes(person.id) ? h('button', { type: 'button', 'data-dismiss': person.id, disabled: busy, onclick: () => act({ type: 'dismiss', characterId: person.id }) }, '퇴실') : null));
   }
-  return h('div', { class: 'audience-panel' }, h('p', {}, '원하는 인물을 먼저 부를 수 있습니다. 회의는 두세 명을 선택해 여십시오.'),
+  return h('div', { class: 'audience-panel' }, h('p', {}, '연기하면 요청 맨 뒤로 이동합니다. 모두 연기해도 현재 순서대로 접견할 수 있습니다. 회의는 두세 명을 선택해 여십시오.'),
     next ? h('button', { type: 'button', id: 'next-audience', disabled: busy, onclick: () => act({ type: 'invite', participants: [next] }) }, `요청 순서대로 접견 · ${state.characters.find(c => c.id === next)!.name}`) : null, choices,
     h('button', { type: 'button', id: 'start-meeting', disabled: busy, onclick: () => {
       if (selected.size < 2 || selected.size > 3) { notice.textContent = '회의에는 두세 명을 선택해 주십시오.'; return; }

@@ -7,7 +7,8 @@ import { createGameServer } from '../server/http.ts';
 import { GameEngine } from '../server/engine.ts';
 import type { PlayerView } from '../shared/contracts.ts';
 
-const output = 'artifacts/m4';
+const outIndex = process.argv.indexOf('--out');
+const output = outIndex >= 0 ? process.argv[outIndex + 1]! : 'artifacts/m4';
 const api = createGameServer(new GameEngine(), 5280);
 api.listen(3110, '127.0.0.1'); await once(api, 'listening');
 const vite = await createServer({ logLevel: 'error', server: { port: 5280, strictPort: true, proxy: { '/api': 'http://127.0.0.1:3110' } } });
@@ -113,6 +114,54 @@ try {
     assert.equal(await page.locator('[data-invite="zhou-yu"]').isDisabled(), true);
     assert.match(await page.locator('.audience-person').filter({ hasText: '주유' }).innerText(), /임무 중/);
     pass('dismiss/defer, command confirmation, busy audience visibly disabled');
+
+    await page.request.post('http://127.0.0.1:5280/api/test/reset', { data: {} });
+    await page.reload(); await page.waitForSelector('#connection:has-text("서버 연결됨")');
+    await page.click('#tool-audience');
+    await page.click('[data-defer="zhang-zhao"]');
+    await page.waitForSelector('#next-audience:has-text("주유")');
+    assert.deepEqual((await state()).audience.requested, ['zhou-yu', 'lu-su', 'zhang-zhao']);
+    await page.click('#next-audience'); await page.waitForSelector('#panel[hidden]', { state: 'attached' });
+    assert.deepEqual((await state()).audience.participants, ['zhou-yu']);
+    await page.click('#tool-audience');
+    for (const id of ['lu-su', 'zhang-zhao', 'zhou-yu']) {
+      await page.click(`[data-defer="${id}"]`);
+      await page.waitForFunction(id => document.querySelector(`[data-defer="${id}"]`)?.hasAttribute('disabled') === false, id);
+    }
+    assert.deepEqual((await state()).audience.requested, ['lu-su', 'zhang-zhao', 'zhou-yu']);
+    assert.match(await page.locator('#next-audience').innerText(), /노숙/);
+    await page.locator('#next-audience').scrollIntoViewIfNeeded();
+    await layout(); await page.screenshot({ path: `${output}/deferred-${size}.png`, animations: 'disabled' });
+    await page.click('[data-invite="zhang-zhao"]'); await page.waitForSelector('#panel[hidden]', { state: 'attached' });
+    assert.ok(!(await state()).audience.requested.includes('zhang-zhao'));
+    pass('R2a T06 defer reorders next request, all deferred remain callable, direct invite clears queue entry');
+
+    await page.click('#tool-audience');
+    await page.getByLabel('주유 회의 참석').check(); await page.getByLabel('노숙 회의 참석').check();
+    await page.click('#start-meeting'); await page.waitForSelector('#panel[hidden]', { state: 'attached' });
+    assert.equal((await state()).audience.participants.length, 3);
+    assert.equal(await page.locator('.meeting-figure').count(), 2);
+    const positions = await page.locator('.meeting-figure').evaluateAll(figures => figures.map(el => {
+      const r = el.getBoundingClientRect();
+      const tag = el.querySelector('span')!.getBoundingClientRect();
+      return { left: r.left, right: r.right, top: r.top, bottom: r.bottom,
+        tagVisible: tag.left >= 0 && tag.right <= innerWidth && tag.top >= 0 && tag.bottom <= innerHeight,
+        hit: el.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)) };
+    }));
+    assert.ok(positions.every(r => r.left >= 0 && r.right <= viewport.width && r.top >= 0 && r.bottom <= viewport.height && r.hit && r.tagVisible));
+    assert.ok(positions[0]!.right <= positions[1]!.left, 'three-person figures must not overlap');
+    for (const [id, name] of [['lu-su', '노숙'], ['zhou-yu', '주유'], ['zhang-zhao', '장조']]) {
+      await page.getByRole('button', { name: `${name}에게 발언 요청`, exact: true }).click();
+      assert.match(await page.locator('.speech-to').innerText(), new RegExp(name!));
+      assert.match(await page.locator('#zhang-hong-tag').innerText(), new RegExp(name!));
+      await send('전쟁에 대해 어떻게 생각하는가?');
+      const turns = (await state()).conversation.slice(-3);
+      assert.equal(turns[1]!.speaker, id);
+      assert.equal(turns.filter(t => t.speaker !== 'player').length, 2);
+      await layout();
+      await page.screenshot({ path: `${output}/three-person-${id}-${size}.png`, animations: 'disabled' });
+    }
+    pass('R2a three-person layout, visible tags, all three speaker switches and bounded turns');
     assert.deepEqual(errors, []); await page.close();
   }
   await writeFile(`${output}/character-browser-checks.json`, JSON.stringify({ browser: 'installed Edge', externalCalls: 0, checks }, null, 2));
