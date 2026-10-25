@@ -42,7 +42,7 @@ for (const [httpStatus, body, resultCode, message] of [
   assert.equal(await runtime.test(), resultCode);
   const saved = lines(paths.diagnosticsFile); assert.equal(saved.length, 1);
   assert.deepEqual(saved[0], runtime.status().lastDiagnostic);
-  assert.deepEqual(saved[0], { source: 'test', networkError: null, timestamp: saved[0]!.timestamp, provider: 'gemini', callKind: 'connection_test', model: config.model,
+  assert.deepEqual(saved[0], { source: 'test', networkMode: 'auto', route: 'direct', networkError: null, timestamp: saved[0]!.timestamp, provider: 'gemini', callKind: 'connection_test', model: config.model,
     httpStatus, resultCode, googleStatus: httpStatus === 400 ? 'INVALID_ARGUMENT' : httpStatus === 404 ? 'NOT_FOUND' : httpStatus === 503 ? 'UNAVAILABLE' : null,
     googleReason: httpStatus === 400 ? 'INVALID_ARGUMENT' : null, googleMessage: message,
     finishReason: httpStatus === 200 ? resultCode === 'ok' ? 'STOP' : 'MAX_TOKENS' : null,

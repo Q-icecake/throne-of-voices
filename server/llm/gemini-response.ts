@@ -37,7 +37,7 @@ export interface DiagnosticAttempt {
   observe(httpStatus: number, value: unknown): void;
   finish(resultCode: string): void;
 }
-type DiagnosticContext = Pick<LlmDiagnostic, 'callKind' | 'model' | 'retries' | 'dailyCalls' | 'sessionCalls'>;
+type DiagnosticContext = Pick<LlmDiagnostic, 'callKind' | 'model' | 'retries' | 'dailyCalls' | 'sessionCalls'> & Partial<Pick<LlmDiagnostic, 'networkMode' | 'route'>>;
 export const DIAGNOSTIC_MAX_LINES = 500;
 export const DIAGNOSTIC_MAX_BYTES = 1024 * 1024;
 /** Free-form upstream messages can echo arbitrary prompts. Export only recognized
@@ -83,6 +83,7 @@ export class GeminiDiagnostics {
       typeof item === 'string' && allowed.has(item) && !guard.reflects(item) ? item : null;
     const details = Array.isArray(error.details) ? error.details : [];
     const diagnostic: GeminiDiagnostic = { source: this.#source,
+      networkMode: context?.networkMode ?? 'auto', route: context?.route ?? 'direct',
       networkError: httpStatus === null && networkError ? safeNetworkError(networkError, guard) : null,
       timestamp: context?.timestamp ?? new Date().toISOString(),
       callKind: context?.callKind ?? 'connection_test', provider: 'gemini',

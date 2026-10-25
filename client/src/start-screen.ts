@@ -1,6 +1,7 @@
 import './start-screen.css';
 import background from './assets/court-background.svg';
 import type { ConnectionTestResult, LlmStatus } from '../../shared/contracts.ts';
+import { NETWORK_MODE_LABELS, NETWORK_ROUTE_LABELS, networkAdvice } from '../../shared/network.ts';
 
 export const TEST_LABELS: Record<ConnectionTestResult, string> = {
   network: 'Google 서버에 연결하지 못함(네트워크·DNS·방화벽·프록시 확인)', tls: 'TLS/인증서 문제',
@@ -32,10 +33,10 @@ export async function enterStartScreen(): Promise<void> {
         <div class="start-instructions">
           <h2>① 키를 준비하세요</h2>
           <p>Google AI Studio에서 API 키를 만드세요. 주소: <span class="start-address">https://aistudio.google.com/apikey</span><br>주소는 안내용 텍스트이며 앱이 이 주소를 요청하지 않습니다.</p>
-          <p><strong>결제를 연결하지 않은 프로젝트를 권장합니다.</strong> 결제 연결 시 무료 한도 내 사용도 과금될 수 있습니다. 앱 호출 상한은 계정의 과금 제한이 아닙니다.</p>
+          <p><strong>결제를 연결하지 않은 프로젝트를 권장합니다.</strong> 결제 연결 시 무료 한도 내에도 과금될 수 있으며 앱 상한은 과금을 제한하지 않습니다.</p>
           <p>무료 티어 입력은 제품 개선에 쓰일 수 있습니다. <strong>개인정보·다른 사람의 정보를 입력하지 마세요.</strong></p>
           <p>모델 ID는 본인의 콘솔에서 확인한 값을 입력하세요. 앱은 사용 가능한 모델이나 무료 제공을 보장하지 않습니다.</p>
-          <p>키는 로컬 서버 메모리에만 보관합니다. 서버를 끄면 사라지며 켤 때마다 다시 입력합니다. 브라우저·디스크에 저장하지 않습니다.</p>
+          <p>키·입력 프록시는 서버 메모리만 사용(종료 시 삭제). 브라우저·디스크 저장 없음. VPN 끔·TUN·전역: 직접 연결 / 시스템 프록시형: 자동.</p>
           <p id="local-usage" class="start-field-note" role="status" aria-live="polite">로컬 사용량 확인 중…</p>
           <button id="reset-usage" aria-describedby="reset-usage-note">오늘 로컬 카운터 초기화</button>
           <p id="reset-usage-note" class="start-field-note">Google 쪽 실제 사용량은 바뀌지 않습니다. 서버 세션 사용량과 상한은 유지됩니다.</p>
@@ -44,15 +45,15 @@ export async function enterStartScreen(): Promise<void> {
           <h2>② 연결 정보</h2>
           <form id="ai-settings-form" autocomplete="off">
             <label for="ai-model">모델 ID</label><input id="ai-model" name="model" maxlength="200" required autocomplete="off" spellcheck="false" placeholder="콘솔에서 확인한 모델 ID">
-            <label for="ai-key">API 키</label><input id="ai-key" name="key" type="password" maxlength="512" autocomplete="off" spellcheck="false" placeholder="새 키 입력 (저장된 키는 표시하지 않음)">
-            <p id="key-source" class="start-field-note">키 미설정</p>
-            <label for="ai-limit">호출 상한 (UTC 일일 / 서버 세션 각각)</label><input id="ai-limit" name="limit" type="number" min="0" max="10000" step="1" value="30" required>
-            <p class="start-field-note">기본 각 30회 · 0이면 차단 · 시험·실패도 차감</p>
+            <div class="start-proxy-label"><label for="ai-key">API 키</label><p id="key-source" class="start-field-note">키 미설정</p></div><input id="ai-key" name="key" type="password" maxlength="512" autocomplete="off" spellcheck="false" placeholder="새 키 입력 (저장된 키는 표시하지 않음)">
+            <div class="start-network-row"><div><label for="ai-limit">호출 상한 (일일 / 세션)</label><input id="ai-limit" name="limit" type="number" min="0" max="10000" step="1" value="30" required></div>
+            <div><label for="ai-network">연결 방식</label><select id="ai-network" name="networkMode"><option value="auto">자동 (권장)</option><option value="proxy">VPN·프록시 사용</option><option value="direct">직접 연결 (VPN 끔 / TUN·전역 모드)</option></select></div>
+            <div id="proxy-field" hidden><div class="start-proxy-label"><label for="ai-proxy">프록시 주소</label><label title="입력 프록시를 지우고 환경변수·시스템 설정을 자동 감지"><input id="clear-proxy" type="checkbox"> 지우기</label></div><input id="ai-proxy" name="proxyAddress" type="password" maxlength="2048" autocomplete="off" spellcheck="false" placeholder="예시 127.0.0.1:7890 · http:// 생략 가능"></div></div>
+            <p class="start-field-note">UTC 기준 각 30회 · 0은 차단 · 시험·실패도 차감</p>
             <button id="save-settings" type="submit">설정 적용</button>
           </form>
-          <h2>③ 연결 시험</h2>
+          <div class="start-test-row"><h2>③ 연결 시험</h2><button id="test-connection">연결 시험</button><p id="test-result" role="status" aria-live="polite">시험 전</p></div>
           <p class="start-field-note">누를 때만 1회 요청 · 사고·출력 합계 최대 256토큰</p>
-          <button id="test-connection">연결 시험</button><p id="test-result" role="status" aria-live="polite">시험 전</p>
         </div>
       </div>
       <footer class="start-settings-footer"><div><p class="start-address"><span id="diagnostic-location">자세한 진단: &lt;프로젝트&gt;\u005cartifacts\u005cllm-diagnostics.jsonl의 마지막 줄</span><br><span id="untested-note">현재 설정은 시험하지 않았습니다. </span><span id="last-diagnostic" role="status" aria-live="polite">최근 진단 없음 · 이번 서버 세션</span></p><div class="start-actions"><button id="start-ai" class="start-primary" disabled>AI로 시작</button><button id="settings-mock">Mock으로 시작</button><button id="clear-key">키 지우기</button></div></div></footer>
@@ -64,9 +65,10 @@ export async function enterStartScreen(): Promise<void> {
     </section><p id="start-error" class="start-error" role="alert" hidden></p>`;
   document.body.append(root);
   const el = <T extends HTMLElement = HTMLElement>(id: string) => root.querySelector<T>(`#${id}`)!;
-  let status: LlmStatus = { proxyDetected: false, keyConfigured: false, keySource: 'none', model: '', limit: 30, testResult: 'untested', mode: 'mock', dailyCalls: -1, dailyLimit: 30, sessionCalls: 0, sessionLimit: 30 };
+  let status: LlmStatus = { networkMode: 'auto', route: 'direct', proxyDetected: false, keyConfigured: false, keySource: 'none', model: '', limit: 30, testResult: 'untested', mode: 'mock', dailyCalls: -1, dailyLimit: 30, sessionCalls: 0, sessionLimit: 30 };
   let dirty = false, busy = false;
   const model = el<HTMLInputElement>('ai-model'), key = el<HTMLInputElement>('ai-key'), limit = el<HTMLInputElement>('ai-limit');
+  const network = el<HTMLSelectElement>('ai-network'), proxy = el<HTMLInputElement>('ai-proxy'), clearProxy = el<HTMLInputElement>('clear-proxy');
   async function request<T>(path: string, body?: unknown): Promise<T> {
     const response = await fetch(`/api/llm/${path}`, { method: body === undefined ? 'GET' : 'POST', cache: 'no-store',
       ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }), signal: AbortSignal.timeout(path === 'test' ? 18000 : 5000) });
@@ -87,8 +89,13 @@ export async function enterStartScreen(): Promise<void> {
       ? `최근 진단: HTTP ${diagnostic.httpStatus ?? '—'} · ${diagnostic.resultCode} · ${diagnostic.networkError ? [diagnostic.networkError.name, diagnostic.networkError.code].filter(Boolean).join('/') : diagnostic.finishReason ?? '—'} · 토큰(입력/출력/사고) ${diagnostic.inputTokens ?? '—'}/${diagnostic.outputTokens ?? '—'}/${diagnostic.thinkingTokens ?? '—'} · ${diagnostic.latencyMs}ms · 모델 ${diagnosticModel.length > 48 ? diagnosticModel.slice(0, 48) + '…' : diagnosticModel}${diagnostic.googleMessage ? ` · ${diagnostic.googleMessage.slice(0, 80)}` : ''}`
       : '최근 진단 없음 · 이번 서버 세션';
     el('last-diagnostic').textContent += ` · 프록시 환경변수 ${status.proxyDetected ? '감지됨' : '없음'}`;
-    el('untested-note').textContent = status.testResult === 'untested' ? '현재 설정은 시험하지 않았습니다. ' : '';
-    for (const control of root.querySelectorAll<HTMLButtonElement | HTMLInputElement>('button, input')) control.disabled = busy;
+    el('last-diagnostic').textContent += ` · 방식: ${NETWORK_MODE_LABELS[diagnostic?.networkMode ?? status.networkMode]} · 경로: ${NETWORK_ROUTE_LABELS[diagnostic?.route ?? status.route]}`;
+    const advice = networkAdvice(diagnostic?.route ?? status.route, status.networkError);
+    if (status.pacUnsupported) el('last-diagnostic').textContent += ' · PAC 자동 구성 미지원';
+    el('proxy-field').hidden = network.value !== 'proxy';
+    proxy.placeholder = status.manualProxyConfigured ? '입력 프록시 보관 중 · 빈칸은 유지 · 서버 메모리만 사용' : '예시 127.0.0.1:7890 · http:// 생략 가능';
+    el('untested-note').textContent = status.testResult === 'untested' ? '현재 설정은 시험하지 않았습니다. ' : advice ? `${advice} ` : '';
+    for (const control of root.querySelectorAll<HTMLButtonElement | HTMLInputElement | HTMLSelectElement>('button, input, select')) control.disabled = busy;
     el<HTMLButtonElement>('start-ai').disabled = busy || !(model.value.trim() && (key.value || status.keyConfigured));
   }
   function show(page: string) {
@@ -112,19 +119,19 @@ export async function enterStartScreen(): Promise<void> {
   }
   async function save() {
     if (!el<HTMLFormElement>('ai-settings-form').reportValidity()) throw new Error('INVALID_SETTINGS');
-    const payload = { model: model.value.trim(), key: key.value, limit: Number(limit.value) };
+    const payload = { model: model.value.trim(), key: key.value, limit: Number(limit.value), networkMode: network.value, proxyAddress: proxy.value, clearProxy: clearProxy.checked };
     // fetch serializes synchronously; immediately remove the credential from the DOM and payload.
-    const pending = request<LlmStatus>('settings', payload); key.value = ''; payload.key = '';
+    const pending = request<LlmStatus>('settings', payload); key.value = ''; payload.key = ''; proxy.value = ''; payload.proxyAddress = ''; clearProxy.checked = false;
     status = await pending; dirty = false;
   }
-  for (const input of [model, key, limit]) input.addEventListener('input', () => { dirty = true; status.testResult = 'untested'; render(); });
+  for (const input of [model, key, limit, network, proxy, clearProxy]) input.addEventListener('input', () => { dirty = true; status.testResult = 'untested'; status.networkError = null; render(); });
   el('open-settings').onclick = () => show('settings'); el('open-guide').onclick = () => show('guide');
-  root.querySelectorAll<HTMLButtonElement>('[data-home]').forEach(button => { button.onclick = () => { key.value = ''; show('home'); }; });
-  const escape = (event: KeyboardEvent) => { if (event.key === 'Escape' && !busy) { key.value = ''; show('home'); } };
+  root.querySelectorAll<HTMLButtonElement>('[data-home]').forEach(button => { button.onclick = () => { key.value = ''; proxy.value = ''; show('home'); }; });
+  const escape = (event: KeyboardEvent) => { if (event.key === 'Escape' && !busy) { key.value = ''; proxy.value = ''; show('home'); } };
   document.addEventListener('keydown', escape);
   el<HTMLFormElement>('ai-settings-form').onsubmit = event => { event.preventDefault(); void run(save); };
   el('test-connection').onclick = () => void run(async () => { if (dirty) await save(); el('test-result').textContent = '연결 시험 중…'; const result = await request<{ status: LlmStatus }>('test', {}); status = result.status; });
-  el('clear-key').onclick = () => void run(async () => { key.value = ''; status = await request<LlmStatus>('clear', {}); dirty = false; model.value = status.model; limit.value = String(status.limit); });
+  el('clear-key').onclick = () => void run(async () => { key.value = ''; proxy.value = ''; clearProxy.checked = false; status = await request<LlmStatus>('clear', {}); dirty = false; model.value = status.model; limit.value = String(status.limit); network.value = status.networkMode; });
   el('reset-usage').onclick = () => void run(async () => { status = await request<LlmStatus>('reset-usage', { confirm: true }); });
   return await new Promise<void>(resolve => {
     const start = (mode: 'mock' | 'ai') => void run(async () => {
@@ -133,7 +140,7 @@ export async function enterStartScreen(): Promise<void> {
     });
     for (const id of ['start-mock', 'settings-mock', 'guide-mock']) el(id).onclick = () => start('mock');
     el('start-ai').onclick = () => start('ai');
-    void run(async () => { status = await request<LlmStatus>('status'); model.value = status.model; limit.value = String(status.limit); });
+    void run(async () => { status = await request<LlmStatus>('status'); model.value = status.model; limit.value = String(status.limit); network.value = status.networkMode; });
     el('start-title').focus();
   });
 }

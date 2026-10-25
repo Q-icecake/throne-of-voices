@@ -10,6 +10,8 @@ import { decodeGemini, GeminiDiagnostics, readGeminiResponse, thinkingConfig, GA
 import type { SecretGuard } from './secrets.ts';
 import { ProviderError } from './types.ts';
 import type { DiagnosticAttempt } from './gemini-response.ts';
+import { NetworkRouter } from './network-routing.ts';
+import type { NetworkSelection } from './network-routing.ts';
 // Keep the evaluation worktree's old import paths valid while configuration moves out.
 export { geminiConfig, configuredProvider } from './config.ts';
 export { CallBudget } from './budget.ts';
@@ -19,10 +21,12 @@ export class GeminiProvider extends RemoteProvider {
   #model: string;
   #generation: object;
   #diagnostics: GeminiDiagnostics;
+  #network?: NetworkRouter;
   protected override parseErrorCode = 'parse' as const;
   constructor(config: GeminiConfig, transport: typeof fetch = globalThis.fetch, budget?: CallBudget,
-    key = process.env.GEMINI_API_KEY ?? '', diagnostics = new GeminiDiagnostics(budget ? join(dirname(budget.storageFile), 'llm-diagnostics.jsonl') : undefined)) {
+    key = process.env.GEMINI_API_KEY ?? '', diagnostics = new GeminiDiagnostics(budget ? join(dirname(budget.storageFile), 'llm-diagnostics.jsonl') : undefined), network?: NetworkRouter) {
     super(config, key, transport, budget); this.#model = config.model; this.#diagnostics = diagnostics;
+    this.#network = network;
     const maxOutputTokens = config.maxOutputTokens ?? GAME_MAX_TOKENS;
     if (!Number.isSafeInteger(maxOutputTokens) || maxOutputTokens < 256 || maxOutputTokens > 32768 ||
       (config.thinkingMode !== undefined && !['low', 'default'].includes(config.thinkingMode))) throw new ProviderError('auth');
@@ -40,8 +44,9 @@ export class GeminiProvider extends RemoteProvider {
   protected decode(value: unknown): DecodedOutput {
     return decodeGemini(value);
   }
-  protected override beginDiagnostic(input: ProviderInput, retries: number, budget: ReturnType<CallBudget['snapshot']>, guard: SecretGuard) {
-    return this.#diagnostics.begin({ model: this.#model, callKind: input.diagnosticKind ?? (input.character ? 'npc' : 'command'),
+  protected override networkSelection() { return this.#network?.select(); }
+  protected override beginDiagnostic(input: ProviderInput, retries: number, budget: ReturnType<CallBudget['snapshot']>, guard: SecretGuard, selection?: NetworkSelection) {
+    return this.#diagnostics.begin({ ...selection?.metadata(), model: this.#model, callKind: input.diagnosticKind ?? (input.character ? 'npc' : 'command'),
       retries, dailyCalls: budget.dailyCalls, sessionCalls: budget.sessionCalls }, guard);
   }
   protected override readResponse(response: Response, signal: AbortSignal, guard: SecretGuard, diagnostic?: DiagnosticAttempt) {

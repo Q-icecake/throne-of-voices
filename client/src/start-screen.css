@@ -13,7 +13,7 @@
 .start-screen button:hover { background: #4a3828; }
 .start-screen button.start-primary { background: var(--lacquer); border-color: #bd8471; }
 .start-screen button:disabled { opacity: .55; cursor: default; }
-.start-screen :is(button, input):focus-visible { outline: 3px solid #dfc38a; outline-offset: 3px; }
+.start-screen :is(button, input, select):focus-visible { outline: 3px solid #dfc38a; outline-offset: 3px; }
 .start-screen h1:focus { outline: none; }
 .start-screen .start-status { color: #d8c59b; }
 .start-screen .start-footnote { color: #c9c1b3; margin-bottom: 0; }
@@ -21,9 +21,21 @@
 .start-screen :is(.start-settings-grid, .start-guide-grid) { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; }
 .start-screen .start-address { overflow-wrap: anywhere; }
 .start-screen label { display: block; margin-bottom: 3px; }
-.start-screen input { width: 100%; height: 42px; padding: 7px 12px; font: inherit; color: var(--paper); border: 1px solid var(--gold-soft); border-radius: 2px; background: #0d0a08; }
+.start-screen :is(input, select) { width: 100%; min-width: 0; height: 42px; padding: 7px 12px; font: inherit; color: var(--paper); border: 1px solid var(--gold-soft); border-radius: 2px; background: #0d0a08; }
+.start-screen .start-network-row { display: grid; grid-template-columns: 1fr 1.1fr; gap: 12px; }
+.start-screen .start-network-row > div { min-width: 0; }
+.start-screen .start-network-row:has(#proxy-field:not([hidden])) { grid-template-columns: 1fr 1.25fr 1.7fr; }
+.start-screen #clear-proxy { width: 18px; height: 18px; vertical-align: middle; }
+.start-screen .start-proxy-label { display: flex; justify-content: space-between; gap: 12px; }
+.start-screen .start-proxy-label #key-source { margin: 0; }
+.start-screen #ai-key { margin-bottom: 8px; }
+.start-screen .start-test-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.start-screen .start-test-row h2, .start-screen .start-test-row #test-result { margin: 0; }
+.start-screen .start-test-row #test-result { flex-basis: 100%; }
+.start-screen .start-test-row + .start-field-note { margin-top: 4px; }
+.start-screen #proxy-field { margin-bottom: 8px; }
 .start-screen input::placeholder { color: #bcb4a6; }
-.start-screen #ai-key::-ms-reveal { display: none; }
+.start-screen :is(#ai-key, #ai-proxy)::-ms-reveal { display: none; }
 .start-screen .start-field-note { color: #ccc3b2; margin: 3px 0 10px; }
 .start-screen #ai-model { margin-bottom: 10px; }
 .start-screen #ai-settings-form { margin-bottom: 16px; }

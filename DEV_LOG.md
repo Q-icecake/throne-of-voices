@@ -1,5 +1,14 @@
 # Development Log
 
+## 2026-10-25 — 034 V11 / 자동·VPN 프록시·직접 연결
+
+- 기준 `v0.2/real-ai@d9fb1e3`. 자동은 입력→환경변수→읽기 전용 Windows 시스템 프록시→직접 순서로 호출 직전에 하나를 고른다. 수동 proxy/direct 전환, PAC 미지원 표시, 확인된 프록시 포트 거부와 다음 선택 안내를 기존 설정/요약/오류칸에 추가했다. 주소는 password 입력 후 즉시 비우고 서버 private 메모리만 사용한다. 상태/진단은 networkMode·route·안전한 networkError만 공개한다.
+- Node 시작 시 환경 프록시는 요청별 전환에 부족해 허용된 `undici` 8.5.0 ProxyAgent/Agent를 고정 운영 의존성으로 추가했다. 캐시 tarball/레지스트리 메타데이터 SHA-512·lock 일치 확인. Google 요청에만 dispatcher를 지정하며 환경/전역 설정/로컬 API/Vite를 바꾸지 않는다. 화면/환경 팩터리 Gemini는 재시도0, 레거시 직접 생성 Provider의 기존 명시적 재시도 계약은 유지했다.
+- 신규55개, 기존970개 유지: 최종 전체 **1025/1025**, 타입 검사·Vite build 통과. 로컬 가짜 CONNECT·실제 loopback 거부·전역 프록시를 우회하는 직접 dispatcher·주입 Windows 읽기·한 요청 한 시도·비밀 경계 검증. 기존 exact-field 단언에 신규 필드만 추가했다. UI 가시성 검사에 select와 실제 표시 중인 요소를 포함하고 원래 경계/폰트/차단 검사를 유지했다.
+- 최종 `node scripts/verify-all.ts` **20/20, 종료0**(기존19 + network-mode). Edge 1920×1080/1366×768 각각7개 네트워크 장면·16회 가짜 요청, 시작 화면21응답 시나리오/해상도·전체 시각/자동진행/NPC/실제 시작 검사 통과. 대표 PNG 직접 검토. 초기 긴 오류 상태의 카드 넘침을 기존 폼 안에서 조정했고 실패 로그를 보존했다.
+- 실제 로그 SHA-256 `b4147b0b…8c1`, 카운터 `a263494d…447a`가 작업 전 baseline 및 최종20단계 전후 동일. 실제 외부 호출0·키/프록시 값 출력0·확인 팝업0. 증거 `artifacts/network-mode/`, 상세 `.codex-runs/034/report.md`.
+- 한계: pnpm 오프라인 lockfile 정책 검사는 기존 @oxc-project/types 등 캐시 메타데이터 부족으로 완료하지 못했다(정책 우회/외부 요청 없음). 새 undici의 캐시 무결성·엔진·manifest/lock·실제 실행은 확인했다. 실제 VPN·Windows 설정·Google·모델 성공은 라이브 미검증. 원 Git 메타데이터는 쓰기 범위 밖이므로 작업 폴더 안의 독립 commit/bundle/patch를 생성·검증하고 원 브랜치 반영은 리드에게 남긴다. 원격 push/다른 worktree/전역 설정 변경0.
+
 ## 2026-10-25 — 033 V10 / 네트워크 실패 진단·내장 프록시
 
 - 기준 `v0.2/real-ai@6816d50`. HTTP 응답 없는 fetch 예외를 network/timeout/tls로 구분하고 원인 name/code만 allowlist+키 guard 후 JSONL/최근 요약에 기록한다. 원문 메시지·stack·URL·쿼리·헤더는 기록하지 않는다. HTTP 오류/본문 시간 초과·명시적 ProviderError/취소 의미·예산 예약·재시도 상한은 유지한다.

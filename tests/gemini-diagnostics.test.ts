@@ -67,7 +67,7 @@ for (const [name, status, body, expected] of scenarios) test(`031 HTTP connectio
   assert.equal(lines.length, 1); assert.deepEqual(lines, consoleLines);
   const diagnostic = JSON.parse(lines[0]!);
   assert.equal(diagnostic.httpStatus, status);
-  assert.deepEqual(Object.keys(diagnostic).sort(), ['source', 'networkError', 'timestamp', 'callKind', 'provider', 'model', 'httpStatus', 'googleStatus', 'googleReason', 'googleMessage', 'finishReason', 'inputTokens', 'outputTokens', 'thinkingTokens', 'latencyMs', 'retries', 'resultCode', 'dailyCalls', 'sessionCalls'].sort());
+  assert.deepEqual(Object.keys(diagnostic).sort(), ['networkMode', 'route', 'source', 'networkError', 'timestamp', 'callKind', 'provider', 'model', 'httpStatus', 'googleStatus', 'googleReason', 'googleMessage', 'finishReason', 'inputTokens', 'outputTokens', 'thinkingTokens', 'latencyMs', 'retries', 'resultCode', 'dailyCalls', 'sessionCalls'].sort());
   assert.equal(diagnostic.resultCode, expected); assert.equal(diagnostic.callKind, 'connection_test');
   assert.equal(diagnostic.model, config.model); assert.equal(diagnostic.provider, 'gemini');
   assert.equal(diagnostic.dailyCalls, 1); assert.equal(diagnostic.sessionCalls, 1); assert.equal(diagnostic.retries, 0);
@@ -140,7 +140,7 @@ for (const [name, value] of [['plain', key], ['base64', Buffer.from(key).toStrin
   const file = readFileSync(paths.diagnosticsFile, 'utf8');
   assert.equal(file, lines.join('\n') + '\n'); new SecretGuard(key).assertSafe(file); assert.ok(!file.includes(value));
   const diagnostic = JSON.parse(file);
-  assert.deepEqual(diagnostic, { source: 'test', networkError: null, timestamp: diagnostic.timestamp, callKind: 'connection_test', provider: 'gemini', model: config.model,
+  assert.deepEqual(diagnostic, { source: 'test', networkMode: 'auto', route: 'direct', networkError: null, timestamp: diagnostic.timestamp, callKind: 'connection_test', provider: 'gemini', model: config.model,
     latencyMs: diagnostic.latencyMs, retries: 0, resultCode: 'request', dailyCalls: 1, sessionCalls: 1,
     httpStatus: 400, googleStatus: null, googleReason: null, googleMessage: null, finishReason: null,
     inputTokens: null, outputTokens: null, thinkingTokens: null });

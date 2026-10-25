@@ -2,6 +2,7 @@ import type { NetworkError } from '../../shared/contracts.ts';
 import type { DiagnosticAttempt } from './gemini-response.ts';
 import type { SecretGuard } from './secrets.ts';
 import { ProviderError, abortError } from './types.ts';
+import type { NetworkSelection } from './network-routing.ts';
 
 const names = new Set(['Error', 'TypeError', 'SystemError', 'AggregateError', 'AbortError', 'TimeoutError']);
 const timeouts = new Set(['ETIMEDOUT', 'ESOCKETTIMEDOUT', 'UND_ERR_CONNECT_TIMEOUT', 'UND_ERR_HEADERS_TIMEOUT', 'UND_ERR_BODY_TIMEOUT']);
@@ -11,7 +12,7 @@ const tls = new Set(['CERT_HAS_EXPIRED', 'CERT_NOT_YET_VALID', 'CERT_REVOKED', '
   'ERR_TLS_CERT_ALTNAME_INVALID', 'ERR_TLS_CERT_SIGNATURE_ALGORITHM_UNSUPPORTED', 'ERR_SSL_WRONG_VERSION_NUMBER',
   'ERR_SSL_SSLV3_ALERT_HANDSHAKE_FAILURE', 'EPROTO']);
 const codes = new Set(['ENOTFOUND', 'EAI_AGAIN', 'ECONNREFUSED', 'ECONNRESET', 'ENETUNREACH', 'EHOSTUNREACH',
-  'EPIPE', 'UND_ERR_SOCKET', ...timeouts, ...tls]);
+  'EPIPE', 'UND_ERR_SOCKET', 'PROXY_NOT_CONFIGURED', 'PROXY_CONFIG_INVALID', ...timeouts, ...tls]);
 const record = (value: unknown): Record<string, unknown> => value !== null && typeof value === 'object' ? value as Record<string, unknown> : {};
 
 /** Never retain arbitrary messages, stacks, URLs, headers, or unknown error strings. */
@@ -37,16 +38,17 @@ export function networkFailure(error: unknown) {
 
 export function safeNetworkError(error: NetworkError, guard: Pick<SecretGuard, 'reflects'>): NetworkError {
   return { name: error.name && names.has(error.name) && !guard.reflects(error.name) ? error.name : null,
-    code: error.code && codes.has(error.code) && !guard.reflects(error.code) ? error.code : null };
+    code: error.code && codes.has(error.code) && !guard.reflects(error.code) ? error.code : null,
+    ...(error.proxyRefused === true ? { proxyRefused: true } : {}) };
 }
 
 /** Classification is limited to the transport call: HTTP/parse/internal failures keep their own codes. */
-export async function fetchWithDiagnostics(transport: typeof fetch, url: string, init: RequestInit, diagnostic?: DiagnosticAttempt) {
-  try { return await transport(url, init); }
+export async function fetchWithDiagnostics(transport: typeof fetch, url: string, init: RequestInit, diagnostic?: DiagnosticAttempt, selection?: NetworkSelection) {
+  try { return await (selection ? selection.fetch(transport, url, init) : transport(url, init)); }
   catch (error) {
     if (error instanceof ProviderError) throw error;
     const failure = networkFailure(error);
-    diagnostic?.network(failure.error);
+    diagnostic?.network({ ...failure.error, ...(selection?.proxyRefused(error) ? { proxyRefused: true } : {}) });
     if (init.signal?.aborted) throw abortError(init.signal);
     throw new ProviderError(failure.result);
   }

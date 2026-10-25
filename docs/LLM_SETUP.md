@@ -1,6 +1,33 @@
 # LLM 연결 설정 (v0.2)
 
+## VPN 켬 / 끔과 연결 방식 (034)
+
+VPN 켬: `AI 연결 설정` → `자동 (권장)` → `설정 적용` → `연결 시험` 한 번. 시스템 프록시형이 아니거나 감지되지 않으면 아래 표를 따른다.
+VPN 끔: `직접 연결` → `설정 적용` → `연결 시험` 한 번. 자동도 가능하지만 꺼진 VPN의 프록시 설정이 남아 있으면 직접 연결을 선택한다.
+
+| 현재 환경 | 권장 선택 | 확인할 점 |
+| --- | --- | --- |
+| 시스템 프록시형 VPN 켬 | 자동 또는 VPN·프록시 사용 | Windows의 활성 HTTP/HTTPS 프록시를 읽는다. 감지되지 않으면 주소를 직접 입력한다. |
+| 전역/TUN 모드 VPN 켬 | 직접 연결 또는 자동 | OS가 경로를 처리하므로 별도 프록시 주소가 필요 없다. 오래된 프록시가 감지되면 직접 연결. |
+| VPN 끔 | 직접 연결 또는 자동 | 직접 연결은 남아 있는 환경/시스템/입력 프록시를 모두 우회한다. |
+
+자동은 **호출 직전** 입력 프록시 → `HTTPS_PROXY`/`https_proxy` → `HTTP_PROXY`/`http_proxy` → 활성 Windows 시스템 프록시 → 직접 연결 순서로 하나만 선택한다. 먼저 연결 시험을 하거나 실패 후 다른 경로로 자동 전환하지 않는다. 수동 `VPN·프록시 사용`의 빈칸은 보관 중인 입력값 또는 자동 감지 값을 사용한다. 아무 프록시도 없으면 `PROXY_NOT_CONFIGURED`로 차단한다. 잘못된 감지 주소는 `PROXY_CONFIG_INVALID`로 차단하며 조용히 직접 연결하지 않는다. 설정이 없어 전송 전에 차단되어도 예약된 시험은 로컬 카운터에 포함된다.
+
+주소 입력은 `VPN·프록시 사용`에서 표시된다. **예시** `127.0.0.1:7890`은 형식 예시일 뿐이며 실제 포트는 VPN 앱에서 확인한다. 로컬 HTTP 프록시를 권장하고 `http://`는 생략할 수 있다. HTTP/HTTPS만 지원하며 SOCKS/PAC는 지원하지 않는다. Windows `HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings`의 `ProxyEnable`, `ProxyServer`, `AutoConfigURL`만 읽고 바꾸지 않는다. `http=...;https=...` 형식은 HTTPS 항목을 우선한다. PAC가 있으면 기존 진단 요약에 **PAC 자동 구성 미지원**을 표시하며 스크립트를 가져오거나 실행하지 않는다. 레지스트리를 읽을 수 없으면 시스템 프록시는 없는 것으로 취급한다.
+
+입력 주소는 키처럼 password 필드로 가리고 제출 직후 브라우저에서 지운다. 서버 메모리에만 보관하며 상태·로그·디스크·브라우저 저장소에 주소/포트/인증정보를 쓰지 않는다. 빈칸으로 다른 설정을 적용하면 보관된 입력 프록시를 유지한다. `지우기`를 체크해 적용하면 환경/시스템 감지로 돌아간다. `키 지우기`는 입력 프록시도 지운다. 서버 종료 후에는 다시 입력한다. 직접 연결 동안에는 보관된 주소를 사용하지 않는다.
+
+`GET /api/llm/status`의 `networkMode`는 `auto/proxy/direct`, `route`는 `direct/env-proxy/system-proxy/manual-proxy` 종류만 반환한다. 같은 필드를 진단 JSONL에도 기록한다. 상태의 현재 선택과 `lastDiagnostic`의 마지막 시도 경로는 설정 변경 후 다를 수 있다. 실패의 `networkError`는 허용된 name/code만 기록하며, **실제로 선택한 프록시의 주소·포트와 ECONNREFUSED 원인이 일치할 때만** `proxyRefused: true`로 구분한다. 이 경우 화면은 VPN 꺼짐/프록시 미실행 가능성과 다음 선택을 안내한다. 주소나 원문 예외는 표시하지 않는다.
+
+화면의 연결 시험·명령·대화는 사용자 조작당 최대 한 번만 전송한다. 환경 설정으로 생성하는 Gemini Provider도 재시도는 0으로 고정한다. 실패하면 입력·초안을 보존하고 현재 경로와 다음 선택을 제시하며 사용자가 설정을 바꾼 뒤 다시 누른다. `직접 연결`은 Node의 전역 환경 프록시보다 요청별 명시적 직접 dispatcher를 우선하므로 서버 재시작 없이 전환된다. 이 경로 선택은 **Google 요청에만** 적용하며 로컬 API/Vite와 호환 Provider의 정책을 바꾸지 않는다. `NO_PROXY`는 이 Google 전용 우선순위를 변경하지 않는다.
+
+V10의 `--use-env-proxy`는 시작 시 환경 프록시를 지원하지만 요청별 시스템/입력 프록시와 직접 연결 전환에는 부족하다. 이를 위해 Node fetch 기반 패키지 **`undici` 8.5.0**의 `ProxyAgent`/`Agent`를 런타임 의존성으로 고정하고 `pnpm-lock.yaml`의 SHA-512를 갱신했다. 전역 dispatcher나 환경변수를 변경하지 않는다. 이번 설치는 캐시의 tarball을 오프라인으로 읽었으며 외부 API 호출은 없었다. 서버 재시작 후 이 버전의 `run.ps1 install`로 의존성을 설치할 수 있다. 실제 VPN/Google/API 키/모델 성공은 라이브 미검증이다.
+
+오프라인 검증: `node --test tests/network-mode.test.ts`, `node scripts/verify-network-mode.ts`, `node scripts/verify-all.ts`. 가짜 transport·주입된 Windows 읽기·로컬 가짜 CONNECT 프록시만 사용한다. 설정 화면 두 해상도와 결과는 `artifacts/network-mode/`에 남긴다.
+
 ## HTTP 상태 없이 실패할 때 (033)
+
+아래는 V10의 시작 시 환경 프록시 점검 절차다. V11 설정 화면에서는 위의 연결 방식을 우선 사용하며, Node 자체의 프록시 지원과 앱의 Windows 감지는 별개다.
 
 `httpStatus: null`은 Google HTTP 응답을 받지 못했다는 뜻이다. 약 10초 뒤 `fetch failed`라면 DNS·방화벽·VPN/프록시·TLS·연결 제한시간을 먼저 살펴본다. Google에 도달했는지, 과금되었는지는 이 기록만으로 확정할 수 없다. 브라우저의 AI Studio 요청 수는 이 앱의 서버 호출 성공 증거가 아니다.
 

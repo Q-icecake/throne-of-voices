@@ -11,6 +11,7 @@ import { createServer } from 'vite';
 import { createGameServer } from '../server/http.ts';
 import { SecretGuard } from '../server/llm/secrets.ts';
 import { listenForFetch } from './test-server.ts';
+import { networkAdvice } from '../shared/network.ts';
 
 const output = 'artifacts/start-screen'; await mkdir(output, { recursive: true });
 const usageOutput = 'artifacts/usage-counter'; await mkdir(usageOutput, { recursive: true });
@@ -54,12 +55,12 @@ const evidence: unknown[] = [];
 async function measure(page: Page, scene: string, size: string) {
   const result = await page.evaluate(() => {
     const section = document.querySelector<HTMLElement>('[data-start-page]:not([hidden])')!;
-    const elements = [...section.querySelectorAll<HTMLElement>('button, input, p, li, label, h1, h2')];
+    const elements = [...section.querySelectorAll<HTMLElement>('button, input, select, p, li, label, h1, h2')].filter(el => el.getClientRects().length);
     const rect = section.getBoundingClientRect();
     return { pageScroll: document.documentElement.scrollHeight > innerHeight || document.documentElement.scrollWidth > innerWidth,
       cardFits: rect.top >= 0 && rect.bottom <= innerHeight,
       minFont: Math.min(...elements.map(el => parseFloat(getComputedStyle(el).fontSize))),
-      controls: [...section.querySelectorAll<HTMLElement>('button, input')].map(el => {
+      controls: [...section.querySelectorAll<HTMLElement>('button, input, select')].filter(el => el.getClientRects().length).map(el => {
         const r = el.getBoundingClientRect(), hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
         return { id: el.id || el.textContent, fits: r.x >= 0 && r.y >= 0 && r.right <= innerWidth && r.bottom <= innerHeight, unblocked: el === hit || el.contains(hit) };
       }),
@@ -144,10 +145,13 @@ try {
       ['truncated', '응답이 잘림(출력 한도·사고 토큰)'], ['thinking', '응답 없음(사고만 반환 또는 빈 응답)'], ...networkCases] as const) {
       reply = response; const beforeCall = calls;
       await page.click('#test-connection'); await page.locator('#test-connection:not([disabled])').waitFor();
-      assert.equal(await page.locator('#test-result').textContent(), label); assert.equal(calls, beforeCall + 1);
+      assert.equal(calls, beforeCall + 1);
       guard.assertSafe(await page.content()); guard.assertSafe(await page.evaluate(() => JSON.stringify(localStorage)));
       const status = await (await page.request.get(base + '/api/llm/status')).json();
       const diagnostic = status.lastDiagnostic;
+      const advice = networkAdvice(diagnostic.route, status.networkError);
+      assert.equal(await page.locator('#test-result').textContent(), label);
+      if (advice) assert.equal(await page.locator('#untested-note').textContent(), `${advice} `);
       const summary = await page.locator('#last-diagnostic').innerText();
       assert.equal(diagnostic.model, 'offline-model'); assert.equal(diagnostic.callKind, 'connection_test');
       assert.equal(diagnostic.retries, 0); assert.equal(diagnostic.resultCode, status.testResult);

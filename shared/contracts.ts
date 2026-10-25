@@ -231,6 +231,11 @@ export interface TalkResponse {
 export type ConnectionTestResult = 'daily_limit' | 'session_limit' | 'untested' | 'ok' | 'auth' | 'model' | 'rate_limited' | 'timeout' | 'schema' | 'server' | 'budget' | 'stale' |
   'truncated' | 'empty' | 'request' | 'google_server' | 'parse' | 'network' | 'tls';
 export interface LlmStatus {
+  networkMode: NetworkMode;
+  route: NetworkRoute;
+  networkError?: NetworkError | null;
+  pacUnsupported?: boolean;
+  manualProxyConfigured?: boolean;
   proxyDetected: boolean;
   lastDiagnostic?: LlmDiagnostic | null;
   dailyCalls: number;
@@ -246,6 +251,8 @@ export interface LlmStatus {
 }
 /** Only sanitized metadata; never request/response text or credentials. */
 export interface LlmDiagnostic {
+  networkMode: NetworkMode;
+  route: NetworkRoute;
   source: 'live' | 'test';
   networkError: NetworkError | null;
   timestamp: string;
@@ -266,4 +273,6 @@ export interface LlmDiagnostic {
   dailyCalls: number;
   sessionCalls: number;
 }
-export interface NetworkError { name: string | null; code: string | null }
+export type NetworkMode = 'auto' | 'proxy' | 'direct';
+export type NetworkRoute = 'direct' | 'env-proxy' | 'system-proxy' | 'manual-proxy';
+export interface NetworkError { name: string | null; code: string | null; proxyRefused?: boolean }

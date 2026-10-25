@@ -2,6 +2,7 @@ import type { InterpretationProvider } from './types.ts';
 import { GeminiProvider } from './gemini.ts';
 import { OpenAICompatibleProvider } from './openai-compatible.ts';
 import type { ThinkingMode } from './gemini-response.ts';
+import { NetworkRouter } from './network-routing.ts';
 
 export interface ProviderConfig {
   model: string;
@@ -57,7 +58,7 @@ export function configuredProvider(env: NodeJS.ProcessEnv = process.env, transpo
   const config = gemini ? geminiConfig(env) : providerConfig(env, env.OPENAI_COMPAT_MODEL_ID ?? '');
   if (!config) return mock('AI 설정 오류, Mock 사용 중');
   try {
-    const provider = gemini ? new GeminiProvider(config, transport, undefined, key) :
+    const provider = gemini ? new GeminiProvider({ ...config, retries: 0 }, transport, undefined, key, undefined, new NetworkRouter(env)) :
       new OpenAICompatibleProvider({ ...config, baseUrl: env.OPENAI_COMPAT_BASE_URL ?? '' }, transport, undefined, key);
     return { provider, status: provider.status, timeoutMs: config.timeoutMs };
   } catch { return mock('AI 설정 오류, Mock 사용 중'); }

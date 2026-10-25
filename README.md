@@ -80,6 +80,8 @@ LLM은 행동을 제안할 뿐이다. 엔진이 원문 조건·담당·자원·�
 
 ## 라이브 AI (이번 단계에서는 실행하지 않음)
 
+AI 연결 설정은 **자동(권장) / VPN·프록시 / 직접 연결**을 지원한다. 자동은 입력 주소·환경변수·Windows 시스템 프록시·직접 순서로 호출 직전에 하나를 선택하며 자동 재시도는 없다. VPN 끔/TUN·전역 모드는 직접 연결을 사용할 수 있다. 주소는 password 입력 후 서버 메모리에만 보관한다. 요청별 전환이 시작 시 Node 내장 환경 프록시만으로는 부족해 `undici` **8.5.0**의 `ProxyAgent`/`Agent`를 고정 런타임 의존성으로 추가했다. Google 요청에만 적용하며 전역 설정은 바꾸지 않는다. [VPN 사용법 표와 오류 안내](docs/LLM_SETUP.md), 오프라인 검증 `node scripts/verify-network-mode.ts`를 참고한다.
+
 실제 Gemini 호출은 코드가 있으나 **라이브 미검증**이다. 키가 없는 지금은 `eval-llm.ts`도 실행하지 않는다. 추후 사용자가 외부 호출을 승인하고 계정의 무료/유료 여부·모델 접근·한도를 확인한 환경에서만 서버 환경변수로 `LLM_PROVIDER=gemini`, `GEMINI_API_KEY`, `GEMINI_MODEL_ID`, `LLM_TIMEOUT_MS`(최대 15000), `LLM_RETRIES`(기본 0), `LLM_DAILY_CALL_LIMIT`, `LLM_SESSION_CALL_LIMIT`를 설정한다. 두 호출 한도의 기본 0은 호출 차단이다. 키는 파일·브라우저·명령 로그에 넣지 않는다.
 
 승인된 환경에서 `tests/fixtures/llm-eval.json`의 30문장을 먼저 검토한 뒤 `node scripts/eval-llm.ts --live`를 실행한다. 결과 `artifacts/m2/live-eval.json`의 의도·행동·제한·지연과 원문의 조건을 사람이 대조한다. 현재 평가기의 성공 판정은 조건 배열 전부를 자동 대조하지 않으므로 이 결과만으로 일반 의미 보존을 승인하면 안 된다. 실패 시 추가 호출을 중단하며 유료/다른 모델로 자동 전환하지 않는다. 재시도도 한도에 포함한다. 상세 설정과 일일 사용량 잠금은 [Provider 설명](server/llm/README.md)을 따른다.

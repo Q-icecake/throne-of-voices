@@ -10,6 +10,8 @@ HTTP 경로는 두 방식 모두 await한다. M0 `mock-probe`는 별도 시험 �
 
 ## 서버 설정
 
+V11 화면 설정의 `network-routing.ts`는 자동/프록시/직접 모드와 Google 요청별 dispatcher를 관리한다. 시작 시 `--use-env-proxy`만으로는 런타임 전환과 Windows 시스템 프록시 선택이 부족하므로 `undici` 8.5.0을 고정 **운영 의존성**으로 추가했다. ProxyAgent와 명시적 직접 Agent만 쓰며 전역 dispatcher는 바꾸지 않는다. Windows 읽기는 주입 가능하고 읽기 전용이며 PAC를 실행하지 않는다. 주소는 private 메모리 필드, 공개 상태/진단은 `networkMode`/`route` 종류와 안전한 `networkError`만 갖는다. 화면 및 configuredProvider의 Gemini는 재시도 0; 명시적으로 직접 생성하는 레거시 Provider/평가기의 재시도 계약은 유지한다. [설정 문서](../../docs/LLM_SETUP.md)의 034 절을 따른다.
+
 | 환경변수 | 의미 / 기본값 |
 | --- | --- |
 | `LLM_PROVIDER` | `mock` (기본), `gemini`, `openai-compatible` |

@@ -12,6 +12,7 @@ import { PROVIDER_MESSAGES } from './llm/types.ts';
 import { captureFailure } from './llm/failure-context.ts';
 import { CHARACTER_IDS } from './characters.ts';
 import type { AudienceRequest, CharacterId } from '../shared/contracts.ts';
+import { networkAdvice } from '../shared/network.ts';
 
 class HttpError extends Error {
   status: number;
@@ -116,6 +117,9 @@ export function createGameServer(engine?: GameEngine | GameEngine<Interpretation
     if (result.outcome?.kind === 'error' && result.outcome.code !== 'STALE_RESPONSE') {
       failureCode = code ?? 'schema';
       failureMessage = detail ?? PROVIDER_MESSAGES[failureCode];
+      const status = runtime.status();
+      const advice = networkAdvice(status.lastDiagnostic?.route ?? status.route, status.networkError);
+      if (advice) failureMessage += ` ${advice}`;
       // Keep legacy outcome.code for existing clients/eval. providerCode is the neutral wire contract.
       return { ...result, outcome: { ...result.outcome, providerCode: failureCode,
         reply: `[${failureCode}] ${failureMessage ?? PROVIDER_MESSAGES[failureCode]} 입력과 초안은 보존되었습니다. Mock으로 전환하지 않았습니다.` } };
@@ -150,10 +154,13 @@ export function createGameServer(engine?: GameEngine | GameEngine<Interpretation
         const body = await readObject(request);
         switch (path) {
           case '/api/llm/settings': {
-            if (!exactKeys(body, ['model', 'key', 'limit']) || typeof body.model !== 'string' || !/^[a-zA-Z0-9._-]{1,200}$/.test(body.model) ||
+            const extended = exactKeys(body, ['model', 'key', 'limit', 'networkMode', 'proxyAddress', 'clearProxy']);
+            if ((!exactKeys(body, ['model', 'key', 'limit']) && !extended) || typeof body.model !== 'string' || !/^[a-zA-Z0-9._-]{1,200}$/.test(body.model) ||
               typeof body.key !== 'string' || body.key.length > 512 || /[\s\x00-\x1f\x7f]/.test(body.key) ||
+              extended && (!['auto', 'proxy', 'direct'].includes(String(body.networkMode)) || typeof body.proxyAddress !== 'string' || typeof body.clearProxy !== 'boolean') ||
               typeof body.limit !== 'number' || !Number.isSafeInteger(body.limit) || body.limit < 0 || body.limit > 10000) throw new HttpError(400, 'INVALID_SETTINGS');
-            try { runtime.configure(body.model, body.key, body.limit); } catch { throw new HttpError(400, 'INVALID_SETTINGS'); }
+            try { runtime.configure(body.model, body.key, body.limit, extended ? body.networkMode as 'auto' | 'proxy' | 'direct' : undefined,
+              extended ? body.proxyAddress as string : '', extended && body.clearProxy === true); } catch { throw new HttpError(400, 'INVALID_SETTINGS'); }
             replaceGame(); return json(response, 200, runtime.status());
           }
           case '/api/llm/test':
