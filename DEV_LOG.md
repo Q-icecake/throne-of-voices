@@ -1,5 +1,13 @@
 # Development Log
 
+## 2026-10-25 — 021 V1·V2 통합 마무리
+
+- `v0.2/real-ai` HEAD `807acce` + 병합 대상 `5982f9f`: V1/V2 로그 양쪽을 보존했고 본문의 충돌 표식은 없다. bridge 생산 코드 한 파일만 중립 `configuredProvider`/`providerConfig`/`CallBudget` 경로로 연결하고 양 공급자의 실패 usage를 구분했다. factory에 budget 주입 인수가 없어 선택된 어댑터의 공통 생성자로 평가 budget을 주입한다. 서버/UI/shared/의존성 변경 없음.
+- 실패 재현 **48/49**: 실제 원인은 옛 import가 아니라 가짜 키 `fake-test-only`와 모델 `test-only`의 `testonly` 조각 중첩으로 V1 반사 방지가 생성자를 거절한 것이다. 모델만 `eval-model`로 교체, 기존 단언 유지. 양 어댑터의 회계/일·세션·재시도·호출·토큰·비용·미상 사용량 중단/성공/설정 거절 4개 시험 추가, 평가 **53/53** 및 전체 **357/357**, 타입 검사·빌드 통과.
+- 요구된 CLI 3개를 무키 allowlist 환경에서 실행: 기본 종료 0/외부 0회, Mock **47/80→48/80**, gold **80/80→75/80**(둘 다 종료 1). `E029/E039/E049/E087/E089`는 담당자 정규식의 분절 침범·확답 금지 표현 누락·토론 의도 오판으로 모두 검증기 과잉 거부/미흡으로 판정. `docs/EVAL.md`에 사례별 근거, `artifacts/eval/integration-021/`에 로그/요약/원응답 대조 보존. 정답 수정 0, 개발/최종 80/80 유지, 최종 채점 안 함.
+- 전체 `node scripts/verify-all.ts` **17/17 통과, exit 0**: unit 357/357·type·build·콘텐츠·playthrough 12/12·soak 12/12·guide 10/10·Edge 1920×1080/1366×768 scenes 42/42·visual 16/16·R1 6/6·M3 10/10·M4 20/20·LLM UI 12/12·실제 자동 시계 M5 18/18·R3 4/4·comparison 68쌍·실행기. 결과 `.codex-runs/v02-integrate-report.md`, `artifacts/eval/integration-021/{verify-all.log,verification.json}`. 대표 1920 초기/복합 초안·1366 단일 초안/AI 오류 화면 직접 확인, 새 레이아웃 문제 없음. `git diff HEAD -- client server shared`는 비어 있다.
+- 제출: 사용자 요청 우선으로 범위 내 `git add`를 실제 시도했으나 외부 worktree `index.lock: Permission denied`(exit 128). 커밋 미생성, 인덱스 `DEV_LOG.md` 미해결 상태도 권한 때문에 해제하지 못했다. 텍스트는 두 기록을 보존한 해결 상태다. 전역 설정·권한 우회·원격 push·확인 팝업 없음. 제출 로그/검토 패치/해시는 `artifacts/eval/integration-021/`; 쓰기 가능한 환경에서 병합 커밋 필요. 실제 API 0회, 라이브 품질/비용/최종 점수/사람의 재미 미검증.
+
 ## 2026-10-25 — 019 V1 / v0.2 Provider 기반 중립화
 
 - `config.ts`·`budget.ts`로 설정/예산을 분리하고 기본 Mock 및 기존 Gemini export 경로를 보존했다. Gemini/OpenAI 호환 어댑터는 공통 예약·총 deadline·실패 계측·반사 방지를 사용한다. Chat Completions JSON Schema를 선택하고 공급자 REST 형식은 어댑터에 둔다. 기본 모델/호환 주소/키 없음, 호출 상한 기본 0, 추가 의존성·UI 디자인 변경·평가 소유 경로 변경 없음.
@@ -9,6 +17,16 @@
 - Edge headless 1920×1080·1366×768: scenes 42/42, visual 16/16, R1 6/6, M3 10/10, M4 20/20, LLM UI 12/12, 실제 자동 시계 M5 18/18, R3 4/4, 실행기·콘텐츠·playthrough·soak·guide 통과. Mock 초기 화면과 AI 오류 화면 직접 확인, M5 이전/현재 화면 점유율 차이 0%p. 스크린샷 `artifacts/m6/scenes/`, `artifacts/m6/llm-ui/`.
 - `docs/LLM_SETUP.md`에 PowerShell SecureString·현재 셸/영구 설정·해제/Mock 복귀·보수적 1회 점검·무료 한도/결제 확인·원문 전송 정책·계측 한계·사용자 라이브 절차를 정리했다. 라이브 LLM 호출 **0회**. 실제 모델 접근성·호환 strict schema·한국어 품질·가격/무료 한도·실제 토큰/지연은 라이브 미검증이다. 일반 DLP/현재 입력 삭제/기억 토큰 상한은 이번 범위가 아니다.
 - 제출: 사용자 요청에 따라 범위 내 파일 `git add`를 시도했으나 외부 worktree 메타데이터의 `index.lock: Permission denied`(exit 128)로 실패했다. 커밋 미생성, HEAD `ed3ef6b`, 변경은 현재 작업 트리에 남겼다. 오류 `artifacts/v02-provider/git-submission.log`, 전체 패치·해시 및 역적용 읽기 검사 결과는 같은 폴더에 보존한다. 원격 push·다른 worktree 수정·전역 설정·확인 팝업·권한 우회 없음.
+
+## 2026-10-25 — 020 V2 평가 장치
+
+- `scripts/eval/`에 독립 필드 채점·원응답/검증 후 분리·Mock/scripted/live 실행기·공급자 bridge를 추가하고 기존 진입점을 얇게 바꿨다. 서버/UI/기존 시험과 30개 legacy fixture는 변경하지 않았다. 새 의존성 없음.
+- 새 사례는 명령 120개(개발/최종 각각 60), NPC 40개(4인 각각 10, 개발/최종 각각 20). 필드 완전 정답·부정/공개범위/기한/담당자/최대 3행동/같은 절/표현 변형, 공유 전후/참석자 변경 짝을 포함한다. 기본 실행은 개발만 읽고 최종은 구조·태그 검사 외 채점하지 않았다. 작성자 합성 세트이므로 외부 블라인드 평가로 주장하지 않는다.
+- 기준 전체 시험 227/227, 최종 전체 시험 **276/276**(기존 227 + 평가 자가 시험 49), 타입 검사·Vite 빌드 통과. 고정 오답 8종은 각각 지정된 오류 코드로 검출했다. 중간 태그 불균형과 PowerShell 파이프의 한글 인코딩 손상은 수정하고 UTF-8/해당 오류 코드 검사를 보강했다. 초기 실패 로그는 `artifacts/eval/*initial*`, 최종은 `full-tests.log`, `self-tests.log`, `typecheck.log`, `build.log`에 보존했다.
+- 실제 `node scripts/eval-llm.ts` 무옵션은 종료 0·외부 호출 0회. `--mock` 80개: 원응답 47/80, 검증 후 48/80, 안전 규칙 위반 7/3; 정답 `--scripted` 80개: 80/80 → 75/80; 오답 `--scripted` 80개: 72/80 → 67/80. 세 실행 모두 완료했으나 품질 불일치를 나타내는 **종료 1**이다. 0으로 포장하지 않는다. JSON/요약 MD/사람 평가 CSV·JSON은 `artifacts/eval/2026-10-25T07-17-34-*`에 저장했다.
+- 정답 후단 불일치 `E029/E039/E049/E087/E089`는 기존 검증기가 command/discussion을 ambiguous로 바꾼 결과다. 서버 변경 금지 범위를 지키며 후속 소유자에게 전달한다. Mock 점수는 언어 모델 품질이 아니며 NPC 화면의 추가 보호/실제 실행 안전성과도 구분한다.
+- 실패 HTTP·네트워크·재시도의 사용량/지연/오류·예약/호출 수를 관측하며 누락 사용량은 null이다. 호출/토큰/금액 예산과 재시도 중단은 가짜 transport로 확인했다. 금액/토큰은 관측 후 다음 호출 중단이므로 마지막 한 호출의 초과 가능성을 문서화했다. `docs/EVAL.md`에 무키/라이브 준비·해석·사람 1~5점 평가·변수 단가 비용·모델 보조 설계만 기록했다.
+- 실제 외부 API **0회**, 라이브·최종 세트 점수·실제 모델 품질/비용/지연은 미검증. UI 변경이 없어 스크린샷은 해당 없음. Git은 `v0.2/eval`, HEAD `ed3ef6b`; 메타데이터가 허용 쓰기 범위 밖이며 승인 정책도 확장 불가여서 **커밋 미완료**다. add/commit/push·전역 설정 변경·팝업 없이 변경을 보존했다. 인계 `.codex-runs/v02-eval-report.md`, 검토 패치/해시 `artifacts/eval/changes.patch`, `submission-manifest.json`; 리드가 쓰기 가능한 환경에서 검토 후 커밋해야 한다.
 
 ## 2026-10-25 — 017 R3 최종 리뷰 수정
 

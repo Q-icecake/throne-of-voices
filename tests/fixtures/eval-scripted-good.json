@@ -1,0 +1,1428 @@
+{
+  "version": 1,
+  "split": "dev",
+  "responses": {
+    "E001": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "conditions": [],
+          "restrictions": [],
+          "deadline": null
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E003": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "conditions": [],
+          "restrictions": [
+            "no-first-strike"
+          ],
+          "deadline": null
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E005": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "conditions": [
+            "secret"
+          ],
+          "restrictions": [],
+          "deadline": null
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E007": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "conditions": [],
+          "restrictions": [],
+          "deadline": "12분 이내"
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E009": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "conditions": [],
+          "restrictions": [],
+          "deadline": null
+        },
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "conditions": [],
+          "restrictions": [],
+          "deadline": null
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E011": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "conditions": [],
+          "restrictions": [],
+          "deadline": null
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E013": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "conditions": [
+            "secret"
+          ],
+          "restrictions": [
+            "no-first-strike"
+          ],
+          "deadline": null
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E015": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "conditions": [],
+          "restrictions": [
+            "no-first-strike"
+          ],
+          "deadline": "7분 이내"
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E017": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "conditions": [
+            "public"
+          ],
+          "restrictions": [],
+          "deadline": "40분 이내"
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E019": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "conditions": [],
+          "restrictions": [],
+          "deadline": null
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E021": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "conditions": [],
+          "restrictions": [
+            "no-firm-answer"
+          ],
+          "deadline": null
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E023": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "conditions": [
+            "message:검토하겠소"
+          ],
+          "restrictions": [],
+          "deadline": null
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E025": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "conditions": [
+            "secret"
+          ],
+          "restrictions": [
+            "no-firm-answer"
+          ],
+          "deadline": null
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E027": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "conditions": [
+            "message:기다려 주시오"
+          ],
+          "restrictions": [],
+          "deadline": "15분 이내"
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E029": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "conditions": [],
+          "restrictions": [
+            "no-firm-answer"
+          ],
+          "deadline": null
+        },
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "conditions": [],
+          "restrictions": [],
+          "deadline": null
+        },
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "conditions": [],
+          "restrictions": [],
+          "deadline": null
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E031": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "conditions": [],
+          "restrictions": [
+            "no-firm-answer"
+          ],
+          "deadline": null
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E033": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "conditions": [
+            "secret",
+            "message:검토 중이오"
+          ],
+          "restrictions": [],
+          "deadline": null
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E035": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "conditions": [],
+          "restrictions": [
+            "no-firm-answer"
+          ],
+          "deadline": null
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E037": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "conditions": [
+            "secret",
+            "message:생각할 시간을 주시오"
+          ],
+          "restrictions": [],
+          "deadline": "9분 이내"
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E039": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "hold-reply",
+          "target": "cao-cao-envoy",
+          "assignee": "zhang-hong",
+          "conditions": [],
+          "restrictions": [
+            "no-firm-answer"
+          ],
+          "deadline": null
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E041": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "conditions": [],
+          "restrictions": [],
+          "deadline": null
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E043": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "conditions": [],
+          "restrictions": [
+            "no-war-promise"
+          ],
+          "deadline": null
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E045": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "conditions": [
+            "secret"
+          ],
+          "restrictions": [],
+          "deadline": null
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E047": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "conditions": [],
+          "restrictions": [],
+          "deadline": "11분 이내"
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E049": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "conditions": [],
+          "restrictions": [],
+          "deadline": null
+        },
+        {
+          "kind": "naval-drill",
+          "target": "jiangdong-navy",
+          "assignee": "zhou-yu",
+          "conditions": [
+            "after:0"
+          ],
+          "restrictions": [],
+          "deadline": null
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E051": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "conditions": [],
+          "restrictions": [],
+          "deadline": null
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E053": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "conditions": [
+            "secret"
+          ],
+          "restrictions": [
+            "no-war-promise"
+          ],
+          "deadline": null
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E055": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "conditions": [],
+          "restrictions": [
+            "no-war-promise"
+          ],
+          "deadline": "8분 이내"
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E057": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "conditions": [
+            "public"
+          ],
+          "restrictions": [],
+          "deadline": "35분 이내"
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E059": {
+      "intent": "command",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [
+        {
+          "kind": "sound-out",
+          "target": "liu-bei",
+          "assignee": "lu-su",
+          "conditions": [],
+          "restrictions": [],
+          "deadline": null
+        }
+      ],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E061": {
+      "intent": "question",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E063": {
+      "intent": "question",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E065": {
+      "intent": "question",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E067": {
+      "intent": "question",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E069": {
+      "intent": "question",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E071": {
+      "intent": "question",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E073": {
+      "intent": "question",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E075": {
+      "intent": "question",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E077": {
+      "intent": "discussion",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E079": {
+      "intent": "discussion",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E081": {
+      "intent": "discussion",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E083": {
+      "intent": "discussion",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E085": {
+      "intent": "discussion",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E087": {
+      "intent": "discussion",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E089": {
+      "intent": "discussion",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E091": {
+      "intent": "ambiguous",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [
+        "어떤 대상과 범위를 지정하시겠습니까?"
+      ],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E093": {
+      "intent": "ambiguous",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [
+        "어떤 대상과 범위를 지정하시겠습니까?"
+      ],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E095": {
+      "intent": "ambiguous",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [
+        "어떤 대상과 범위를 지정하시겠습니까?"
+      ],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E097": {
+      "intent": "ambiguous",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [
+        "어떤 대상과 범위를 지정하시겠습니까?"
+      ],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E099": {
+      "intent": "ambiguous",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [
+        "어떤 대상과 범위를 지정하시겠습니까?"
+      ],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E101": {
+      "intent": "ambiguous",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [
+        "어떤 대상과 범위를 지정하시겠습니까?"
+      ],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E103": {
+      "intent": "ambiguous",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [
+        "어떤 대상과 범위를 지정하시겠습니까?"
+      ],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E105": {
+      "intent": "ambiguous",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [
+        "어떤 대상과 범위를 지정하시겠습니까?"
+      ],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E107": {
+      "intent": "unsupported",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [
+        "어떤 대상과 범위를 지정하시겠습니까?"
+      ],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E109": {
+      "intent": "unsupported",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [
+        "어떤 대상과 범위를 지정하시겠습니까?"
+      ],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E111": {
+      "intent": "unsupported",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [
+        "어떤 대상과 범위를 지정하시겠습니까?"
+      ],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E113": {
+      "intent": "unsupported",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [
+        "어떤 대상과 범위를 지정하시겠습니까?"
+      ],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E115": {
+      "intent": "unsupported",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [
+        "어떤 대상과 범위를 지정하시겠습니까?"
+      ],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E117": {
+      "intent": "unsupported",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [
+        "어떤 대상과 범위를 지정하시겠습니까?"
+      ],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "E119": {
+      "intent": "unsupported",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [
+        "어떤 대상과 범위를 지정하시겠습니까?"
+      ],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "N-zhang-hong-01": {
+      "intent": "question",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "N-zhang-hong-02": {
+      "intent": "question",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "N-zhang-hong-03": {
+      "intent": "question",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "N-zhang-hong-04": {
+      "intent": "question",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "N-zhang-hong-05": {
+      "intent": "question",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "N-zhang-zhao-01": {
+      "intent": "question",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "N-zhang-zhao-02": {
+      "intent": "question",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "N-zhang-zhao-03": {
+      "intent": "question",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "N-zhang-zhao-04": {
+      "intent": "question",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "N-zhang-zhao-05": {
+      "intent": "question",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "N-zhou-yu-01": {
+      "intent": "question",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "N-zhou-yu-02": {
+      "intent": "question",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "N-zhou-yu-03": {
+      "intent": "question",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "N-zhou-yu-04": {
+      "intent": "question",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "N-zhou-yu-05": {
+      "intent": "question",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "N-lu-su-01": {
+      "intent": "question",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "N-lu-su-02": {
+      "intent": "question",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "N-lu-su-03": {
+      "intent": "question",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "N-lu-su-04": {
+      "intent": "question",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    },
+    "N-lu-su-05": {
+      "intent": "question",
+      "dialogue": "확인된 근거와 제 의견을 구분하겠습니다. 결정은 주군께 맡기겠습니다.",
+      "proposedActions": [],
+      "unresolvedQuestions": [],
+      "referencedKnowledgeIds": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "externalCalls": 0,
+        "costUsd": null
+      }
+    }
+  }
+}
