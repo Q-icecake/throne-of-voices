@@ -14,6 +14,22 @@
 | 기획·범위 | `PROTOTYPE_SPEC.md`, `DEVELOPMENT_PLAN.md`, `VISUAL_DIRECTION.md`, `OPENING_SCENARIO.md` |
 | 작업 일지 | `DEV_LOG.md` (오래된 순서대로 쌓인 기록, 상세 근거) |
 
+## 0. 어느 폴더에서 일하나 · 새 Claude 세션 시작
+
+- **정본(앞으로 작업할 곳): `F:\Main\Throne-of-Voices`** — 2026-10-26 GitHub 비공개 저장소 `Q-icecake/throne-of-voices`(origin)에서 clone한 사본.
+- 예전 위치 `C:\Users\q_ice\OneDrive\Main\claude_code\Throne of Voices`는 통합 작업을 한 원본이다. 같은 커밋까지 들어 있지만 **앞으로는 수정하지 않는다**(두 곳에서 고치면 갈라진다). 필요하면 `git pull`로만 맞춘다.
+- 다른 PC나 USB: `git clone https://github.com/Q-icecake/throne-of-voices.git` 후 [docs/USB_PORTABILITY.md](docs/USB_PORTABILITY.md)의 "이어서 작업하기"를 따른다.
+
+새 Claude 창에서 아래를 그대로 붙여 넣으면 이어서 작업할 수 있다:
+
+```text
+Throne of Voices 프로젝트를 이어서 작업한다. 작업 폴더는 F:\Main\Throne-of-Voices (git main, origin = github.com/Q-icecake/throne-of-voices, 비공개).
+먼저 HANDOFF.md 전체를 읽고, 그다음 docs/ARCHITECTURE.md를 읽어라. 세부가 필요하면 HANDOFF.md 표의 문서를 따른다.
+규칙: 한국어로 답한다. API 키는 환경변수나 화면 입력으로만 다루고 파일·커밋·채팅에 쓰지 않는다. 대규모 구현은 Codex에 위임하고 Claude는 계획·검토·통합을 맡는다(사용자 기본 분업). 커밋은 해도 되지만 push 전에는 알려 준다.
+시작 확인: .\run.ps1 install → .\run.ps1 typecheck → .\run.ps1 test (1138개 통과가 기준).
+지금 할 일: HANDOFF.md 5절의 EXAONE 결과 채우기와 모델 비교, 그다음 6절 "남은 문제 / 다음 단계" 1번부터.
+```
+
 ## 1. 이 프로젝트는 무엇인가
 
 208년 적벽 전야, 손권이 되어 한국어 문장으로 신하(장굉·장조·주유·노숙)에게 지시하는 **첫 15분 프로토타입**. 브라우저 화면(궁정 장면 + 명령창) + 로컬 Node 서버. 규칙 엔진이 상태를 결정하고, LLM은 "명령을 해석해 행동을 제안"하거나 "NPC 대사를 쓰는" 역할만 한다. LLM이 게임 상태를 직접 바꾸지 못한다(서버 validator와 엔진이 막는다).
@@ -102,7 +118,17 @@ node scripts/eval/compare.ts <결과폴더1> <결과폴더2> --out artifacts/oll
 - Mock: 원응답 47/80 → 검증 후 51/80 (Mock은 언어 모델이 아님).
 - 정답 scripted replay: 80/80 (validator 수정 후).
 - Gemini 첫 라이브 실행: 18회 시도, 통과 11/18, HTTP 429로 중단. 원인 분석은 EVAL.md 036절.
-- **Ollama 모델 비교(qwen3:4b / qwen3:8b / exaone3.5:7.8b)는 통합 시점에 진행 중이었고, 결과는 이 문서에 포함되지 않았다.** `eval-llm --provider ollama --split dev`가 이 PC에서 돌고 있었다. 끝나면 결과 폴더를 `compare.ts`로 비교한다.
+- 실제 모델 dev 80건 결과 (요약 원본: [docs/eval-results/](docs/eval-results/)):
+
+| 모델 | 실행 건수 | 모델 원본 통과 | 검증 후 통과 | 모델 원본 안전 위반 | 지연 p50 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Gemini 3.5 Flash-Lite | 18/20 (429로 중단) | — (v2 형식) | 11/18 | 0/18 | 2.3초 |
+| Ollama qwen3:4b | 80/80 | 0/80 | 6/80 | 79/80 | 10.7초 |
+| Ollama qwen3:8b | 80/80 | 16/80 | 24/80 | 50/80 | 18.6초 |
+| Ollama exaone3.5:7.8b | **2026-10-26 새벽 실행 중** | | | | |
+
+  읽는 법: "안전 위반"은 모델이 낸 원본 제안의 위반이며, 검증 후(validator 통과 후) 위반은 모든 실행에서 0이다. 즉 게임은 안전하지만 로컬 소형 모델은 해석을 많이 틀린다. 현재까지는 Gemini가 정확도·속도 모두 가장 낫다.
+- EXAONE 평가는 옛 작업 폴더 `C:\Users\q_ice\dispatch-work\throne-v02`에서 돌았으며 결과는 그 폴더의 `artifacts/eval/<시각>-live-<pid>/`에 생긴다. 끝나면 summary.md를 `docs/eval-results/`로 복사하고 위 표를 채운 뒤, `node scripts/eval/compare.ts <폴더들> --out artifacts/ollama-comparison.md`로 비교표를 만든다.
 
 ## 6. 남은 문제 / 다음 단계
 
@@ -128,5 +154,5 @@ node scripts/eval/compare.ts <결과폴더1> <결과폴더2> --out artifacts/oll
 - 브랜치는 `main` 하나로 정리됨. 통합 직전의 모든 브랜치 끝점을 태그로 남겼다: `backup/main-before-consolidation`, `backup/integrate-visual-assets`, `backup/content-m5-materials`, `backup/v0.2-eval`, `backup/v0.2-validator`, `backup/v0.2-npc`, `backup/v0.2-start-screen`, `backup/v0.2-real-ai`, `backup/ollama-bundle-4fc4b63`.
 - `backup/ollama-bundle-4fc4b63`은 Codex가 원본 git에 쓰지 못해 번들 파일로만 남았던 커밋이다. 코드는 main(V15)과 동일하고 `.codex-runs/038/` 보고서만 더 있다.
 - 되돌리기: `git reset --hard backup/main-before-consolidation` (통합 이전 상태).
-- 원격(remote)은 설정하지 않았고 push하지 않았다.
+- 원격: `origin = https://github.com/Q-icecake/throne-of-voices.git` (비공개). main과 `backup/*` 태그를 push했다. 인증은 Windows Git Credential Manager의 저장된 로그인을 쓴다.
 - 과거 작업 폴더(`C:\Users\q_ice\dispatch-work\throne-*`)는 git worktree였고 지금 main에 모두 포함되어 있어 더는 필요 없다. 정리 방법은 [docs/USB_PORTABILITY.md](docs/USB_PORTABILITY.md) 끝에 있다.
