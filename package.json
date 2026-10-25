@@ -1,0 +1,23 @@
+{
+  "name": "throne-of-voices",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@11.25.0",
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.ts",
+    "server": "node server/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/*.test.ts",
+    "build": "tsc --noEmit && vite build",
+    "snapshot": "node scripts/snapshot.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.1",
+    "typescript": "~5.9.3",
+    "vite": "^8.3.3"
+  }
+}

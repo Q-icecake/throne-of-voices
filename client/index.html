@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#202a29" />
+    <link rel="icon" href="data:," />
+    <title>Throne of Voices · M0 실행 시험</title>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div><p class="eyebrow">THRONE OF VOICES</p><h1>적벽 전야</h1><p class="subtitle">손권의 집무실 · 실행 환경 프로토타입</p></div>
+        <span class="badge">M0 · MOCK 시험 모드</span>
+      </header>
+      <p class="notice">실제 AI 호출 없음 · 명령 실행 없음 · 역사 자료와 지도는 시험용 재구성입니다.</p>
+      <p id="connection" role="status">로컬 서버에 연결하는 중…</p>
+      <div class="layout">
+        <section class="map-panel" aria-labelledby="map-heading">
+          <div class="section-title"><h2 id="map-heading">강동 주변 개념도</h2><span>축척 없음</span></div>
+          <svg viewBox="0 0 720 350" role="img" aria-labelledby="map-title map-description">
+            <title id="map-title">집무실의 시험용 지도</title>
+            <desc id="map-description">형주와 강동, 두 지역 사이의 장강을 표시한 개념도. 병력이나 실시간 위치 정보는 포함하지 않습니다.</desc>
+            <defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#c2b79a" stroke-width="0.5" /></pattern></defs>
+            <rect width="720" height="350" fill="#e9dfc5" />
+            <rect width="720" height="350" fill="url(#grid)" />
+            <path d="M-20 130 C100 100 160 240 280 190 S480 120 565 210 S700 240 760 200" stroke="#90aaa6" stroke-width="37" fill="none" />
+            <path d="M-20 130 C100 100 160 240 280 190 S480 120 565 210 S700 240 760 200" stroke="#c6d6ce" stroke-width="2" fill="none" />
+            <g fill="#4e6052" opacity="0.3"><path d="M60 68l25-32 25 32 23-24 24 24z"/><path d="M455 88l25-32 25 32 23-24 24 24z"/><path d="M170 315l25-32 25 32 23-24 24 24z"/></g>
+            <g fill="#34413b" font-family="serif"><text x="148" y="130" font-size="28">형주</text><text x="500" y="290" font-size="28">강동</text><text x="337" y="175" font-size="18" letter-spacing="8">장강</text></g>
+            <circle cx="490" cy="280" r="5" fill="#9b4c37" />
+            <text x="25" y="326" fill="#686653" font-size="13">시험용 지리 배경 · 관측된 병력 표시 없음</text>
+          </svg>
+          <div id="characters" class="characters" aria-label="등장인물 시험용 표기"></div>
+          <p class="muted">인물 호출·접견·대화는 다음 개발 단계에서 연결됩니다.</p>
+        </section>
+        <section class="paper" aria-labelledby="document-heading">
+          <p class="eyebrow">공개된 문서</p><h2 id="document-heading">문서를 불러오는 중</h2>
+          <p id="document-body"></p><dl id="document-metadata"></dl>
+          <span class="stamp">시험 자료</span>
+        </section>
+      </div>
+      <section class="test-panel" aria-labelledby="test-heading">
+        <div class="section-title"><h2 id="test-heading">실행 기반 점검</h2><span>가짜 시계 · 수동 전진</span></div>
+        <div class="clock-grid">
+          <div><span>활성 시간</span><strong id="active-time">0.0초</strong></div>
+          <div><span>보류 시간</span><strong id="held-time">0.0초</strong></div>
+          <div><span>상태 버전</span><strong id="revision">0</strong></div>
+        </div>
+        <p id="pause-status">보류 사유 없음</p>
+        <div class="controls">
+          <button id="advance" disabled>시험 시계 +5초</button>
+          <button id="pause" aria-pressed="false" disabled>수동 보류</button>
+          <button id="reset" class="quiet" disabled>초기 상태로 재시작</button>
+          <button id="refresh" class="quiet">상태 다시 읽기</button>
+        </div>
+        <form id="probe-form">
+          <label for="probe-input">Mock 입력 경로 시험 <span class="muted">· 자연어 해석 기능은 아직 없습니다</span></label>
+          <div class="input-row"><textarea id="probe-input" rows="2" maxlength="2000" placeholder="시험할 문장을 입력하세요. 게임 상태는 바뀌지 않습니다."></textarea><button id="probe-submit" type="submit" disabled>Mock 응답 확인</button></div>
+          <p class="muted">Enter는 줄바꿈입니다. 한글 입력을 마친 뒤 버튼으로 전송하세요.</p>
+        </form>
+        <p id="mock-result" class="mock-result" role="status">아직 Mock 요청을 보내지 않았습니다.</p>
+        <p id="error" role="alert" hidden></p>
+        <details id="diagnostics"><summary>공개 스냅샷과 로그</summary>
+          <p class="muted">플레이어 공개 데이터만 내보냅니다. 내부 상태는 로컬 시험 도구에서 확인합니다.</p>
+          <div class="controls"><button id="snapshot" disabled>공개 스냅샷 저장</button><button id="logs" disabled>공개 로그 저장</button></div>
+          <pre id="snapshot-preview"></pre>
+        </details>
+      </section>
+      <footer>M0 — 실행·시험 기반 <span>15분 시나리오와 전략 명령은 아직 구현되지 않았습니다.</span></footer>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

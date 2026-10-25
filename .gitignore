@@ -1,0 +1,9 @@
+node_modules/
+dist/
+artifacts/
+.env
+.env.*
+*.log
+# Third-party reference screenshots (CK3): design reference only, never commit or ship
+references/*.png
+references/*.jpg
