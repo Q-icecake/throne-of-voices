@@ -1,0 +1,1939 @@
+{
+  "version": 1,
+  "status": "자동 플레이용 설계 데이터 · 실행 결과 아님",
+  "basis": "f187315; docs/COMMANDS.md",
+  "clock": "단계 atActiveMs는 절대 목표; advance 호출은 양수 60000ms 이하로 분할; 입력·확인 동안 시간을 소비하지 않음",
+  "boundaryChecks": [
+    {
+      "id": "PB01",
+      "check": "플레이어 응답·브라우저·Provider 입력에서 숨은 병력·내면·다른 인물의 비공개 문서가 제외되는지 확인"
+    },
+    {
+      "id": "PB02",
+      "check": "열람 허용과 실제 보유를 구분; 인물별 requiredKnowledgeIds 전부 충족, 열람·접견·회의만으로 공유하지 않음"
+    },
+    {
+      "id": "PB03",
+      "check": "비밀 작업의 보고·원문 이력을 권한 없는 인물과 후속 Provider에 전달하지 않음; 현재 제출한 원문 전달은 별도"
+    },
+    {
+      "id": "PB04",
+      "check": "taskId·sourceEventId·수신자와 실제 진행 일치; 초안·대사로 비용·출발·완료를 생성하지 않음"
+    },
+    {
+      "id": "PB05",
+      "check": "지도에는 받은 보고의 관측 시점·불확실성만; 숨은 실시간 위치나 사후 최신 정보로 대체하지 않음"
+    },
+    {
+      "id": "PB06",
+      "check": "이미 답한 요청 재생성·중복 소모·강제 접견·자동 패배 없음; 화면·입력·초안 유지"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "S01",
+      "title": "기본 동선과 선택 회의",
+      "status": "시험 설계 · M4/M5 통합 자동 플레이 미실행",
+      "setup": "f187315의 초기 명령·자원 fixture를 보존하고 M5 사건만 연결한 미래 하네스; 세션별 초기화",
+      "steps": [
+        {
+          "atActiveMs": 0,
+          "input": {
+            "kind": "조작",
+            "text": "동일 초기 상태로 세션 시작; 화면과 입력 준비 완료"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "활성 시계 시작; 평상 문서 두 개만 도착",
+          "eventIds": [
+            "T01"
+          ],
+          "documentIds": [
+            "D-supply",
+            "D-courier"
+          ],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 65000,
+          "input": {
+            "kind": "조작",
+            "text": "60000ms 이하 단위로 활성 시계를 65000ms까지 전진"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "급보·서신·건의문·군사 보고와 두 접견 요청 도착; 자동 접견 없음",
+          "eventIds": [
+            "T02",
+            "T03",
+            "T04",
+            "T05",
+            "T06",
+            "T07"
+          ],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 70000,
+          "input": {
+            "kind": "조작",
+            "text": "장조 접견 수락 후 퇴실; 주유 접견 수락"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "두 사람은 개별 지식만 사용",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": [
+            "first-audience"
+          ]
+        },
+        {
+          "atActiveMs": 75000,
+          "input": {
+            "kind": "문장",
+            "text": "장조와 주유를 함께 불러 의견을 듣자."
+          },
+          "provider": {
+            "mock": "Provider 필요",
+            "scripted": "Provider 필요",
+            "note": "ScriptedProvider는 문장을 해석하지 않고 주입된 응답만 재생함. 대화는 M4 연결, 사건은 M5 연결 필요.",
+            "evidence": "docs/COMMANDS.md; server/mock-interpreter.ts; tests/fixtures/scripted-provider.ts"
+          },
+          "expected": "회의 호출용 M4 어댑터 필요; 현재 Mock은 실행 불가",
+          "eventIds": [
+            "T08"
+          ],
+          "documentIds": [],
+          "dialogueTags": [
+            "opposing-view"
+          ]
+        },
+        {
+          "atActiveMs": 80000,
+          "input": {
+            "kind": "조작",
+            "text": "회의 종료 후 노숙 접견 요청"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "접견 가능 여부 확인; 자동 파견 없음",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": [
+            "first-audience"
+          ]
+        },
+        {
+          "atActiveMs": 90000,
+          "input": {
+            "kind": "문장",
+            "text": "조조에게는 당장 확답하지 말고 시간을 벌어. 노숙은 유비에게 비밀리에 연락하고, 주유는 수군을 준비시키되 먼저 공격하지는 마."
+          },
+          "provider": {
+            "mock": "명령 지원",
+            "scripted": "Provider 필요",
+            "note": "ScriptedProvider는 문장을 해석하지 않고 주입된 응답만 재생함. 대화는 M4 연결, 사건은 M5 연결 필요.",
+            "evidence": "docs/COMMANDS.md; server/mock-interpreter.ts; tests/fixtures/scripted-provider.ts"
+          },
+          "expected": "세 행동 초안; secret와 no-first-strike 유지; 아직 실행 없음",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 90000,
+          "input": {
+            "kind": "조작",
+            "text": "반환된 초안 ID와 버전을 확인"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "서버 검사 후 세 작업 등록; 노숙 명령은 비밀",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 150000,
+          "input": {
+            "kind": "조작",
+            "text": "활성 시계를 150000ms까지 전진하고 권한 있는 진행 보고 열람"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "실제 전달·정비·타진 결과만 표시; 즉시 동맹 없음",
+          "eventIds": [
+            "T13",
+            "T14"
+          ],
+          "documentIds": [],
+          "dialogueTags": []
+        }
+      ],
+      "expectedEventOrder": [
+        "T01",
+        "T02",
+        "T03",
+        "T04",
+        "T05",
+        "T06",
+        "T07",
+        "T08",
+        "T13",
+        "T14"
+      ],
+      "orderMeaning": "목록에 적힌 ID만 추린 최초 발생 순서. T13의 각 진행은 단계별 원인 기록으로 별도 확인하며 누락·추가 보고도 검사한다.",
+      "forbidden": [
+        "계획을 냈는데 T09·T10 강제 발생",
+        "권한 없는 회의 참가자에게 비밀 타진 원문·회신 전달",
+        "동맹·참전 자동 확정"
+      ],
+      "boundaryIds": [
+        "PB01",
+        "PB02",
+        "PB03",
+        "PB04",
+        "PB06"
+      ]
+    },
+    {
+      "id": "S02",
+      "title": "주유 먼저",
+      "status": "시험 설계 · M4/M5 통합 자동 플레이 미실행",
+      "setup": "f187315의 초기 명령·자원 fixture를 보존하고 M5 사건만 연결한 미래 하네스; 세션별 초기화",
+      "steps": [
+        {
+          "atActiveMs": 0,
+          "input": {
+            "kind": "조작",
+            "text": "동일 초기 상태로 세션 시작; 화면과 입력 준비 완료"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "활성 시계 시작; 평상 문서 두 개만 도착",
+          "eventIds": [
+            "T01"
+          ],
+          "documentIds": [
+            "D-supply",
+            "D-courier"
+          ],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 5000,
+          "input": {
+            "kind": "조작",
+            "text": "주유를 직접 호출"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "주유가 접견 가능하면 입실; 미도착 보고를 플레이어에게 자동 배포하지 않음",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": [
+            "first-audience"
+          ]
+        },
+        {
+          "atActiveMs": 10000,
+          "input": {
+            "kind": "문장",
+            "text": "무엇을 준비해야 하나?"
+          },
+          "provider": {
+            "mock": "질문 분류만",
+            "scripted": "Provider 필요",
+            "note": "ScriptedProvider는 문장을 해석하지 않고 주입된 응답만 재생함. 대화는 M4 연결, 사건은 M5 연결 필요.",
+            "evidence": "docs/COMMANDS.md; server/mock-interpreter.ts; tests/fixtures/scripted-provider.ts"
+          },
+          "expected": "현재 Mock은 질문으로 분류하나 작성 대사를 답하지 않음; M4 대화 또는 Provider 필요",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": [
+            "information-request"
+          ]
+        },
+        {
+          "atActiveMs": 65000,
+          "input": {
+            "kind": "조작",
+            "text": "주유 접견을 마치고 활성 시계를 65000ms까지 전진"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "T06은 독립 도착; 이미 접견한 주유의 T07은 취소; 장조 요청은 남음",
+          "eventIds": [
+            "T02",
+            "T03",
+            "T04",
+            "T05",
+            "T06"
+          ],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 70000,
+          "input": {
+            "kind": "문장",
+            "text": "주유에게 수군을 정비하라고 전해. 먼저 공격하지는 마."
+          },
+          "provider": {
+            "mock": "명령 지원",
+            "scripted": "Provider 필요",
+            "note": "ScriptedProvider는 문장을 해석하지 않고 주입된 응답만 재생함. 대화는 M4 연결, 사건은 M5 연결 필요.",
+            "evidence": "docs/COMMANDS.md; server/mock-interpreter.ts; tests/fixtures/scripted-provider.ts"
+          },
+          "expected": "naval-drill과 no-first-strike 초안",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 70000,
+          "input": {
+            "kind": "조작",
+            "text": "초안 확인"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "정비 작업 등록",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 110000,
+          "input": {
+            "kind": "조작",
+            "text": "시계 전진 후 완료 보고 열람"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "실제 작업의 준비도 변경과 보고만 표시",
+          "eventIds": [
+            "T13",
+            "T14"
+          ],
+          "documentIds": [],
+          "dialogueTags": []
+        }
+      ],
+      "expectedEventOrder": [
+        "T01",
+        "T02",
+        "T03",
+        "T04",
+        "T05",
+        "T06",
+        "T13",
+        "T14"
+      ],
+      "orderMeaning": "목록에 적힌 ID만 추린 최초 발생 순서. T13의 각 진행은 단계별 원인 기록으로 별도 확인하며 누락·추가 보고도 검사한다.",
+      "forbidden": [
+        "T07 중복 접견 요청",
+        "장조 접견 전에는 주유 접견 불가",
+        "노숙 출발 보고"
+      ],
+      "boundaryIds": [
+        "PB01",
+        "PB02",
+        "PB04",
+        "PB05"
+      ]
+    },
+    {
+      "id": "S03",
+      "title": "첫 2분 안에 유비 접촉",
+      "status": "시험 설계 · M4/M5 통합 자동 플레이 미실행",
+      "setup": "f187315의 초기 명령·자원 fixture를 보존하고 M5 사건만 연결한 미래 하네스; 세션별 초기화",
+      "steps": [
+        {
+          "atActiveMs": 0,
+          "input": {
+            "kind": "조작",
+            "text": "동일 초기 상태로 세션 시작; 화면과 입력 준비 완료"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "활성 시계 시작; 평상 문서 두 개만 도착",
+          "eventIds": [
+            "T01"
+          ],
+          "documentIds": [
+            "D-supply",
+            "D-courier"
+          ],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 10000,
+          "input": {
+            "kind": "문장",
+            "text": "노숙은 유비에게 비밀리에 연락해. 참전은 약속하지 말고."
+          },
+          "provider": {
+            "mock": "명령 지원",
+            "scripted": "Provider 필요",
+            "note": "ScriptedProvider는 문장을 해석하지 않고 주입된 응답만 재생함. 대화는 M4 연결, 사건은 M5 연결 필요.",
+            "evidence": "docs/COMMANDS.md; server/mock-interpreter.ts; tests/fixtures/scripted-provider.ts"
+          },
+          "expected": "secret와 no-war-promise를 가진 sound-out 초안; 접견 선행 요구 없음",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 10000,
+          "input": {
+            "kind": "조작",
+            "text": "초안 확인"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "타진 작업 등록; 아직 노숙 출발 보고 없음",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 15000,
+          "input": {
+            "kind": "조작",
+            "text": "시계를 15000ms까지 전진"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "명 전달·준비 단계; 출발은 아직 아님",
+          "eventIds": [
+            "T13"
+          ],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 25000,
+          "input": {
+            "kind": "조작",
+            "text": "시계를 25000ms까지 전진하고 보고 열람"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "급보와 별개로 타진 출발 증거 존재; 같은 시각 T02를 먼저 처리",
+          "eventIds": [
+            "T02",
+            "T13",
+            "T14"
+          ],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 70000,
+          "input": {
+            "kind": "조작",
+            "text": "시계를 70000ms까지 전진"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "서신·건의문·주유 보고는 계속 도착; 타진 회신은 고정 추가 논의 요청",
+          "eventIds": [
+            "T03",
+            "T04",
+            "T05",
+            "T06",
+            "T07",
+            "T13"
+          ],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 240000,
+          "input": {
+            "kind": "조작",
+            "text": "시계 전진; 노숙을 강제로 부르지 않고 진행"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "이미 계획·작업이 있으므로 T09·T10 생략",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": []
+        }
+      ],
+      "expectedEventOrder": [
+        "T01",
+        "T13",
+        "T02",
+        "T14",
+        "T03",
+        "T04",
+        "T05",
+        "T06",
+        "T07"
+      ],
+      "orderMeaning": "목록에 적힌 ID만 추린 최초 발생 순서. T13의 각 진행은 단계별 원인 기록으로 별도 확인하며 누락·추가 보고도 검사한다.",
+      "forbidden": [
+        "25000ms 이전 출발 보고",
+        "접견·급보를 기다리라는 실행 차단",
+        "T10 암시와 자동 노숙 입실",
+        "공개 Provider 입력에 비밀 보고 첨부"
+      ],
+      "boundaryIds": [
+        "PB01",
+        "PB03",
+        "PB04",
+        "PB06"
+      ]
+    },
+    {
+      "id": "S04",
+      "title": "노숙과 회의 생략",
+      "status": "시험 설계 · M4/M5 통합 자동 플레이 미실행",
+      "setup": "f187315의 초기 명령·자원 fixture를 보존하고 M5 사건만 연결한 미래 하네스; 세션별 초기화",
+      "steps": [
+        {
+          "atActiveMs": 0,
+          "input": {
+            "kind": "조작",
+            "text": "동일 초기 상태로 세션 시작; 화면과 입력 준비 완료"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "활성 시계 시작; 평상 문서 두 개만 도착",
+          "eventIds": [
+            "T01"
+          ],
+          "documentIds": [
+            "D-supply",
+            "D-courier"
+          ],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 65000,
+          "input": {
+            "kind": "조작",
+            "text": "60000ms 이하 단위로 활성 시계를 65000ms까지 전진"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "급보·서신·건의문·군사 보고와 두 접견 요청 도착; 자동 접견 없음",
+          "eventIds": [
+            "T02",
+            "T03",
+            "T04",
+            "T05",
+            "T06",
+            "T07"
+          ],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 80000,
+          "input": {
+            "kind": "문장",
+            "text": "주유에게 수군을 정비하라고 전해. 먼저 공격하지는 마."
+          },
+          "provider": {
+            "mock": "명령 지원",
+            "scripted": "Provider 필요",
+            "note": "ScriptedProvider는 문장을 해석하지 않고 주입된 응답만 재생함. 대화는 M4 연결, 사건은 M5 연결 필요.",
+            "evidence": "docs/COMMANDS.md; server/mock-interpreter.ts; tests/fixtures/scripted-provider.ts"
+          },
+          "expected": "단일 정비 초안만 생성",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 80000,
+          "input": {
+            "kind": "조작",
+            "text": "초안 확인"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "정비 등록",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 120000,
+          "input": {
+            "kind": "조작",
+            "text": "시계 전진 후 정비 보고 열람"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "실제 정비 후속 반응으로 첫 결단 관찰 가능",
+          "eventIds": [
+            "T13",
+            "T14"
+          ],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 240000,
+          "input": {
+            "kind": "조작",
+            "text": "노숙 접견·회의 없이 시계 전진"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "단순 명령도 유효; 추가 전략 강요 없음",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": []
+        }
+      ],
+      "expectedEventOrder": [
+        "T01",
+        "T02",
+        "T03",
+        "T04",
+        "T05",
+        "T06",
+        "T07",
+        "T13",
+        "T14"
+      ],
+      "orderMeaning": "목록에 적힌 ID만 추린 최초 발생 순서. T13의 각 진행은 단계별 원인 기록으로 별도 확인하며 누락·추가 보고도 검사한다.",
+      "forbidden": [
+        "T08·T10 강제 실행",
+        "유비 접촉을 안 했는데 노숙 출발·회신",
+        "유비 동맹 없음을 실패로 판정"
+      ],
+      "boundaryIds": [
+        "PB01",
+        "PB04",
+        "PB06"
+      ]
+    },
+    {
+      "id": "S05",
+      "title": "아무 결정도 안 함",
+      "status": "시험 설계 · M4/M5 통합 자동 플레이 미실행",
+      "setup": "f187315의 초기 명령·자원 fixture를 보존하고 M5 사건만 연결한 미래 하네스; 세션별 초기화",
+      "steps": [
+        {
+          "atActiveMs": 0,
+          "input": {
+            "kind": "조작",
+            "text": "동일 초기 상태로 세션 시작; 화면과 입력 준비 완료"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "활성 시계 시작; 평상 문서 두 개만 도착",
+          "eventIds": [
+            "T01"
+          ],
+          "documentIds": [
+            "D-supply",
+            "D-courier"
+          ],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 65000,
+          "input": {
+            "kind": "조작",
+            "text": "60000ms 이하 단위로 활성 시계를 65000ms까지 전진"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "급보·서신·건의문·군사 보고와 두 접견 요청 도착; 자동 접견 없음",
+          "eventIds": [
+            "T02",
+            "T03",
+            "T04",
+            "T05",
+            "T06",
+            "T07"
+          ],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 300000,
+          "input": {
+            "kind": "조작",
+            "text": "입력·초안·접견 없이 60000ms 이하 단위로 시계 전진"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "유효한 미답 요청에 T11 한 번; 사전 논의가 없으므로 T09·T10 없음",
+          "eventIds": [
+            "T11"
+          ],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 480000,
+          "input": {
+            "kind": "조작",
+            "text": "시계 전진"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "실제로 남은 사안만 요약",
+          "eventIds": [
+            "T12"
+          ],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 900000,
+          "input": {
+            "kind": "조작",
+            "text": "계속 기다리기"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "무결정 관찰 결과 기록; 종료·패배 강요 없음",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": []
+        }
+      ],
+      "expectedEventOrder": [
+        "T01",
+        "T02",
+        "T03",
+        "T04",
+        "T05",
+        "T06",
+        "T07",
+        "T11",
+        "T12"
+      ],
+      "orderMeaning": "목록에 적힌 ID만 추린 최초 발생 순서. T13의 각 진행은 단계별 원인 기록으로 별도 확인하며 누락·추가 보고도 검사한다.",
+      "forbidden": [
+        "T08·T09·T10 자동 발생",
+        "T13·T14 발생",
+        "자원 소모·노숙 출발·자동 패배",
+        "T11 반복"
+      ],
+      "boundaryIds": [
+        "PB01",
+        "PB04",
+        "PB06"
+      ]
+    },
+    {
+      "id": "S06",
+      "title": "이미 답한 뒤 T11 시점 도달",
+      "status": "시험 설계 · M4/M5 통합 자동 플레이 미실행",
+      "setup": "f187315의 초기 명령·자원 fixture를 보존하고 M5 사건만 연결한 미래 하네스; 세션별 초기화",
+      "steps": [
+        {
+          "atActiveMs": 0,
+          "input": {
+            "kind": "조작",
+            "text": "동일 초기 상태로 세션 시작; 화면과 입력 준비 완료"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "활성 시계 시작; 평상 문서 두 개만 도착",
+          "eventIds": [
+            "T01"
+          ],
+          "documentIds": [
+            "D-supply",
+            "D-courier"
+          ],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 65000,
+          "input": {
+            "kind": "조작",
+            "text": "60000ms 이하 단위로 활성 시계를 65000ms까지 전진"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "급보·서신·건의문·군사 보고와 두 접견 요청 도착; 자동 접견 없음",
+          "eventIds": [
+            "T02",
+            "T03",
+            "T04",
+            "T05",
+            "T06",
+            "T07"
+          ],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 70000,
+          "input": {
+            "kind": "문장",
+            "text": "조조에게 \"논의 후 답하겠다\"라고 회신해."
+          },
+          "provider": {
+            "mock": "명령 지원",
+            "scripted": "Provider 필요",
+            "note": "ScriptedProvider는 문장을 해석하지 않고 주입된 응답만 재생함. 대화는 M4 연결, 사건은 M5 연결 필요.",
+            "evidence": "docs/COMMANDS.md; server/mock-interpreter.ts; tests/fixtures/scripted-provider.ts"
+          },
+          "expected": "따옴표 원문 전언을 가진 hold-reply 초안",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 70000,
+          "input": {
+            "kind": "조작",
+            "text": "초안 확인 후 80000ms까지 전진하고 결과 열람"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "회신 작업 완료; 기존 cao-cao-envoy 요청 answered",
+          "eventIds": [
+            "T13",
+            "T14"
+          ],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 300000,
+          "input": {
+            "kind": "조작",
+            "text": "T11 하한까지 시계 전진"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "answered를 다시 확인하여 예정 T11 취소",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 480000,
+          "input": {
+            "kind": "조작",
+            "text": "시계 전진"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "미답 요청·미결 초안이 없으므로 T12도 취소",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": []
+        }
+      ],
+      "expectedEventOrder": [
+        "T01",
+        "T02",
+        "T03",
+        "T04",
+        "T05",
+        "T06",
+        "T07",
+        "T13",
+        "T14"
+      ],
+      "orderMeaning": "목록에 적힌 ID만 추린 최초 발생 순서. T13의 각 진행은 단계별 원인 기록으로 별도 확인하며 누락·추가 보고도 검사한다.",
+      "forbidden": [
+        "T11 발화",
+        "요청을 pending으로 되돌리기",
+        "T12에 답한 조조 사안 포함",
+        "회신 문구를 항복·동맹으로 확장"
+      ],
+      "boundaryIds": [
+        "PB01",
+        "PB04",
+        "PB06"
+      ]
+    },
+    {
+      "id": "S07",
+      "title": "같은 입력 재현과 중복 확인",
+      "status": "시험 설계 · M4/M5 통합 자동 플레이 미실행",
+      "setup": "f187315의 초기 명령·자원 fixture를 보존하고 M5 사건만 연결한 미래 하네스; 세션별 초기화",
+      "steps": [
+        {
+          "atActiveMs": 0,
+          "input": {
+            "kind": "조작",
+            "text": "동일 초기 상태로 세션 시작; 화면과 입력 준비 완료"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "활성 시계 시작; 평상 문서 두 개만 도착",
+          "eventIds": [
+            "T01"
+          ],
+          "documentIds": [
+            "D-supply",
+            "D-courier"
+          ],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 65000,
+          "input": {
+            "kind": "조작",
+            "text": "60000ms 이하 단위로 활성 시계를 65000ms까지 전진"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "급보·서신·건의문·군사 보고와 두 접견 요청 도착; 자동 접견 없음",
+          "eventIds": [
+            "T02",
+            "T03",
+            "T04",
+            "T05",
+            "T06",
+            "T07"
+          ],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 80000,
+          "input": {
+            "kind": "문장",
+            "text": "주유에게 수군을 정비하라고 전해. 먼저 공격하지는 마."
+          },
+          "provider": {
+            "mock": "명령 지원",
+            "scripted": "Provider 필요",
+            "note": "ScriptedProvider는 문장을 해석하지 않고 주입된 응답만 재생함. 대화는 M4 연결, 사건은 M5 연결 필요.",
+            "evidence": "docs/COMMANDS.md; server/mock-interpreter.ts; tests/fixtures/scripted-provider.ts"
+          },
+          "expected": "정비 초안 생성",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 80000,
+          "input": {
+            "kind": "조작",
+            "text": "같은 초안 ID·버전으로 확인 두 번"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "같은 taskId 반환; 작업 하나",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 120000,
+          "input": {
+            "kind": "조작",
+            "text": "시계 전진 후 완료 보고 열람"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "군량 소모와 준비도 증가는 작업당 한 번",
+          "eventIds": [
+            "T13",
+            "T14"
+          ],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 120000,
+          "input": {
+            "kind": "조작",
+            "text": "전체 세션 초기화 뒤 이 시나리오의 초기화 전 단계들을 동일하게 한 번 재실행"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "실행 1·2의 사건 순서·활성 시각·문서·지식·작업·비용·대사 ID 비교; 초기화로 활성 시각은 0부터 재시작",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": []
+        }
+      ],
+      "expectedEventOrder": [
+        "T01",
+        "T02",
+        "T03",
+        "T04",
+        "T05",
+        "T06",
+        "T07",
+        "T13",
+        "T14"
+      ],
+      "orderMeaning": "목록에 적힌 ID만 추린 최초 발생 순서. T13의 각 진행은 단계별 원인 기록으로 별도 확인하며 누락·추가 보고도 검사한다.",
+      "forbidden": [
+        "중복 확인으로 추가 작업·추가 소모",
+        "초기화 뒤 이전 사건·대사 선택 인덱스 잔존",
+        "재현 차이를 임의 삭제해 비교 통과"
+      ],
+      "boundaryIds": [
+        "PB01",
+        "PB02",
+        "PB04",
+        "PB06"
+      ],
+      "replay": {
+        "runs": 2,
+        "compare": [
+          "사건 ID·원인·순서·활성 시각",
+          "작업 종류·조건·상태·소모 횟수",
+          "공개 문서·인물별 지식 ID",
+          "대사 ID·선택 인덱스"
+        ],
+        "normalization": "전송 요청 ID·벽시계 로깅 시각만 별도 비교 제외; taskId가 비결정적이면 생성 순서로 일대일 대응하고 모든 참조도 함께 변환"
+      }
+    },
+    {
+      "id": "S08",
+      "title": "문서 열람 후 대화와 명시적 공유",
+      "status": "시험 설계 · M4/M5 통합 자동 플레이 미실행",
+      "setup": "f187315의 초기 명령·자원 fixture를 보존하고 M5 사건만 연결한 미래 하네스; 세션별 초기화",
+      "steps": [
+        {
+          "atActiveMs": 0,
+          "input": {
+            "kind": "조작",
+            "text": "동일 초기 상태로 세션 시작; 화면과 입력 준비 완료"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "활성 시계 시작; 평상 문서 두 개만 도착",
+          "eventIds": [
+            "T01"
+          ],
+          "documentIds": [
+            "D-supply",
+            "D-courier"
+          ],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 65000,
+          "input": {
+            "kind": "조작",
+            "text": "60000ms 이하 단위로 활성 시계를 65000ms까지 전진"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "급보·서신·건의문·군사 보고와 두 접견 요청 도착; 자동 접견 없음",
+          "eventIds": [
+            "T02",
+            "T03",
+            "T04",
+            "T05",
+            "T06",
+            "T07"
+          ],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 70000,
+          "input": {
+            "kind": "조작",
+            "text": "손권이 형주 급보를 열람"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "플레이어 열람만 기록; 노숙은 K-jingzhou를 얻지 않음",
+          "eventIds": [],
+          "documentIds": [
+            "D-jingzhou"
+          ],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 71000,
+          "input": {
+            "kind": "조작",
+            "text": "노숙 접견 후 급보 질문 대사를 요청"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "K-jingzhou 없는 dispatch-question·after-document 대사 선택 금지",
+          "eventIds": [],
+          "documentIds": [
+            "D-jingzhou"
+          ],
+          "dialogueTags": [
+            "dispatch-question"
+          ]
+        },
+        {
+          "atActiveMs": 72000,
+          "input": {
+            "kind": "조작",
+            "text": "열람 권한이 있는 노숙에게 형주 급보를 명시적으로 공유"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "서버가 권한과 전달을 확인한 뒤 노숙에게 K-jingzhou 부여",
+          "eventIds": [],
+          "documentIds": [
+            "D-jingzhou"
+          ],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 73000,
+          "input": {
+            "kind": "문장",
+            "text": "이 급보에서 확실히 알 수 있는 것은 무엇인가?"
+          },
+          "provider": {
+            "mock": "질문 분류만",
+            "scripted": "Provider 필요",
+            "note": "ScriptedProvider는 문장을 해석하지 않고 주입된 응답만 재생함. 대화는 M4 연결, 사건은 M5 연결 필요.",
+            "evidence": "docs/COMMANDS.md; server/mock-interpreter.ts; tests/fixtures/scripted-provider.ts"
+          },
+          "expected": "현재 Mock은 의미 있는 답변 불가; M4 연결 후 노숙의 지식 충족 대사만 선택",
+          "eventIds": [],
+          "documentIds": [
+            "D-jingzhou"
+          ],
+          "dialogueTags": [
+            "after-document"
+          ]
+        },
+        {
+          "atActiveMs": 74000,
+          "input": {
+            "kind": "조작",
+            "text": "장조 건의문을 열고 노숙에게 공유 시도"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "고정 허용 목록 밖인 노숙에게 D-zhangzhao 공유는 거부; 내용·지식 미전달",
+          "eventIds": [],
+          "documentIds": [
+            "D-zhangzhao"
+          ],
+          "dialogueTags": []
+        }
+      ],
+      "expectedEventOrder": [
+        "T01",
+        "T02",
+        "T03",
+        "T04",
+        "T05",
+        "T06",
+        "T07"
+      ],
+      "orderMeaning": "목록에 적힌 ID만 추린 최초 발생 순서. T13의 각 진행은 단계별 원인 기록으로 별도 확인하며 누락·추가 보고도 검사한다.",
+      "forbidden": [
+        "열람·접견만으로 노숙에게 급보 전달",
+        "허용 목록 밖의 건의문 노출",
+        "문서 열람 뒤 타진 자동 시작"
+      ],
+      "boundaryIds": [
+        "PB01",
+        "PB02",
+        "PB03",
+        "PB05"
+      ]
+    },
+    {
+      "id": "S09",
+      "title": "접견 연기와 무시",
+      "status": "시험 설계 · M4/M5 통합 자동 플레이 미실행",
+      "setup": "f187315의 초기 명령·자원 fixture를 보존하고 M5 사건만 연결한 미래 하네스; 세션별 초기화",
+      "steps": [
+        {
+          "atActiveMs": 0,
+          "input": {
+            "kind": "조작",
+            "text": "동일 초기 상태로 세션 시작; 화면과 입력 준비 완료"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "활성 시계 시작; 평상 문서 두 개만 도착",
+          "eventIds": [
+            "T01"
+          ],
+          "documentIds": [
+            "D-supply",
+            "D-courier"
+          ],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 65000,
+          "input": {
+            "kind": "조작",
+            "text": "60000ms 이하 단위로 활성 시계를 65000ms까지 전진"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "급보·서신·건의문·군사 보고와 두 접견 요청 도착; 자동 접견 없음",
+          "eventIds": [
+            "T02",
+            "T03",
+            "T04",
+            "T05",
+            "T06",
+            "T07"
+          ],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 70000,
+          "input": {
+            "kind": "조작",
+            "text": "장조 요청을 연기하고 주유 요청은 무시"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "연기 상태 기록; 장조에게 실제 전달됐을 때만 연기 반응 가능",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": [
+            "audience-deferred"
+          ]
+        },
+        {
+          "atActiveMs": 300000,
+          "input": {
+            "kind": "조작",
+            "text": "요청 알림을 열지 않고 시계 전진"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "두 문서는 유지; 강제 입실·반복 요청 없음; 조조 미답 요청 T11 가능",
+          "eventIds": [
+            "T11"
+          ],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 310000,
+          "input": {
+            "kind": "조작",
+            "text": "주유 직접 호출"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "현재 접견 가능 여부에 따라 접견; 무시했다고 영구 차단하지 않음",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": [
+            "first-audience"
+          ]
+        }
+      ],
+      "expectedEventOrder": [
+        "T01",
+        "T02",
+        "T03",
+        "T04",
+        "T05",
+        "T06",
+        "T07",
+        "T11"
+      ],
+      "orderMeaning": "목록에 적힌 ID만 추린 최초 발생 순서. T13의 각 진행은 단계별 원인 기록으로 별도 확인하며 누락·추가 보고도 검사한다.",
+      "forbidden": [
+        "T05·T07 반복",
+        "무시를 동의·거절·명령으로 추정",
+        "장조 접견 전 주유 호출 차단",
+        "입력·현재 문서 강제 교체"
+      ],
+      "boundaryIds": [
+        "PB01",
+        "PB02",
+        "PB04",
+        "PB06"
+      ]
+    },
+    {
+      "id": "S10",
+      "title": "보류 기한 뒤 재촉 한 번",
+      "status": "시험 설계 · M4/M5 통합 자동 플레이 미실행",
+      "setup": "f187315의 초기 명령·자원 fixture를 보존하고 M5 사건만 연결한 미래 하네스; 세션별 초기화",
+      "steps": [
+        {
+          "atActiveMs": 0,
+          "input": {
+            "kind": "조작",
+            "text": "동일 초기 상태로 세션 시작; 화면과 입력 준비 완료"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "활성 시계 시작; 평상 문서 두 개만 도착",
+          "eventIds": [
+            "T01"
+          ],
+          "documentIds": [
+            "D-supply",
+            "D-courier"
+          ],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 65000,
+          "input": {
+            "kind": "조작",
+            "text": "60000ms 이하 단위로 활성 시계를 65000ms까지 전진"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "급보·서신·건의문·군사 보고와 두 접견 요청 도착; 자동 접견 없음",
+          "eventIds": [
+            "T02",
+            "T03",
+            "T04",
+            "T05",
+            "T06",
+            "T07"
+          ],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 70000,
+          "input": {
+            "kind": "문장",
+            "text": "조조에게는 당장 확답하지 말고 5분 이내 시간을 벌어."
+          },
+          "provider": {
+            "mock": "명령 지원",
+            "scripted": "Provider 필요",
+            "note": "ScriptedProvider는 문장을 해석하지 않고 주입된 응답만 재생함. 대화는 M4 연결, 사건은 M5 연결 필요.",
+            "evidence": "docs/COMMANDS.md; server/mock-interpreter.ts; tests/fixtures/scripted-provider.ts"
+          },
+          "expected": "기한은 초안 작성 활성 시각 + 300000ms = 370000ms",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 70000,
+          "input": {
+            "kind": "조작",
+            "text": "초안 확인 후 80000ms까지 전진하고 보고 열람"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "held 상태와 heldUntilMs=370000; 실행 증거 생성",
+          "eventIds": [
+            "T13",
+            "T14"
+          ],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 300000,
+          "input": {
+            "kind": "조작",
+            "text": "T11 기본 하한까지 전진"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "보류 기한 전이므로 T11 없음",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 369999,
+          "input": {
+            "kind": "조작",
+            "text": "369999ms까지 전진"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "아직 T11 없음",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 370000,
+          "input": {
+            "kind": "조작",
+            "text": "1ms 전진"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "유효한 미답 요청에 T11 정확히 한 번",
+          "eventIds": [
+            "T11"
+          ],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 480000,
+          "input": {
+            "kind": "조작",
+            "text": "60000ms 이하 단위로 전진"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "남은 사안만 T12에 포함; T11 반복 없음",
+          "eventIds": [
+            "T12"
+          ],
+          "documentIds": [],
+          "dialogueTags": []
+        }
+      ],
+      "expectedEventOrder": [
+        "T01",
+        "T02",
+        "T03",
+        "T04",
+        "T05",
+        "T06",
+        "T07",
+        "T13",
+        "T14",
+        "T11",
+        "T12"
+      ],
+      "orderMeaning": "목록에 적힌 ID만 추린 최초 발생 순서. T13의 각 진행은 단계별 원인 기록으로 별도 확인하며 누락·추가 보고도 검사한다.",
+      "forbidden": [
+        "보류 중 T11 조기 발화",
+        "기한 도달을 answered·항복으로 처리",
+        "같은 요청에 T11 재발화"
+      ],
+      "boundaryIds": [
+        "PB01",
+        "PB04",
+        "PB06"
+      ]
+    },
+    {
+      "id": "S11",
+      "title": "활성 시간과 도움 조건",
+      "status": "시험 설계 · M4/M5 통합 자동 플레이 미실행",
+      "setup": "f187315의 초기 명령·자원 fixture를 보존하고 M5 사건만 연결한 미래 하네스; 세션별 초기화",
+      "steps": [
+        {
+          "atActiveMs": 0,
+          "input": {
+            "kind": "조작",
+            "text": "동일 초기 상태로 세션 시작; 화면과 입력 준비 완료"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "활성 시계 시작; 평상 문서 두 개만 도착",
+          "eventIds": [
+            "T01"
+          ],
+          "documentIds": [
+            "D-supply",
+            "D-courier"
+          ],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 24999,
+          "input": {
+            "kind": "조작",
+            "text": "24999ms까지 전진 후 입력 중·AI 대기·명령 확인·명시적 일시정지 각각을 켜고 벽시간 60000ms 전진"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "각 보류 사유 동안 activeMs=24999 유지; elapsedMs만 증가; 각 사유 해제 뒤 다음 사유 시험",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 25000,
+          "input": {
+            "kind": "조작",
+            "text": "모든 보류 사유 해제 후 1ms 전진"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "T02 정확히 한 번; 입력 내용과 초점 유지",
+          "eventIds": [
+            "T02"
+          ],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 65000,
+          "input": {
+            "kind": "조작",
+            "text": "시계 전진"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "나머지 고정 사건 정상 발생",
+          "eventIds": [
+            "T03",
+            "T04",
+            "T05",
+            "T06",
+            "T07"
+          ],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 70000,
+          "input": {
+            "kind": "문장",
+            "text": "판단할 자료가 부족한데 무엇부터 살펴볼까?"
+          },
+          "provider": {
+            "mock": "질문 분류만",
+            "scripted": "Provider 필요",
+            "note": "ScriptedProvider는 문장을 해석하지 않고 주입된 응답만 재생함. 대화는 M4 연결, 사건은 M5 연결 필요.",
+            "evidence": "docs/COMMANDS.md; server/mock-interpreter.ts; tests/fixtures/scripted-provider.ts"
+          },
+          "expected": "M4 논의·도움 요청 이력만 생성; 명령·계획 없음",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 130000,
+          "input": {
+            "kind": "조작",
+            "text": "대화 종료 뒤 무입력 활성 60000ms 전진"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "이전 논의와 막힘 조건이 있어 T09 한 번",
+          "eventIds": [
+            "T09"
+          ],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 180000,
+          "input": {
+            "kind": "문장",
+            "text": "다른 외교 의견을 들을 사람은 누구인가?"
+          },
+          "provider": {
+            "mock": "질문 분류만",
+            "scripted": "Provider 필요",
+            "note": "ScriptedProvider는 문장을 해석하지 않고 주입된 응답만 재생함. 대화는 M4 연결, 사건은 M5 연결 필요.",
+            "evidence": "docs/COMMANDS.md; server/mock-interpreter.ts; tests/fixtures/scripted-provider.ts"
+          },
+          "expected": "M4에서 도움 요청으로 기록된 경우만 T10; 자동 접견·출발 없음",
+          "eventIds": [
+            "T10"
+          ],
+          "documentIds": [],
+          "dialogueTags": [
+            "lusu-hint"
+          ]
+        }
+      ],
+      "expectedEventOrder": [
+        "T01",
+        "T02",
+        "T03",
+        "T04",
+        "T05",
+        "T06",
+        "T07",
+        "T09",
+        "T10"
+      ],
+      "orderMeaning": "목록에 적힌 ID만 추린 최초 발생 순서. T13의 각 진행은 단계별 원인 기록으로 별도 확인하며 누락·추가 보고도 검사한다.",
+      "forbidden": [
+        "벽시간만으로 T02 도착",
+        "힌트로 초안·작업·접견 자동 생성",
+        "T09·T10 반복",
+        "대기 중 사용자 입력 소실"
+      ],
+      "boundaryIds": [
+        "PB01",
+        "PB02",
+        "PB04",
+        "PB06"
+      ]
+    },
+    {
+      "id": "S12",
+      "title": "확인하지 않은 초안과 취소",
+      "status": "시험 설계 · M4/M5 통합 자동 플레이 미실행",
+      "setup": "f187315의 초기 명령·자원 fixture를 보존하고 M5 사건만 연결한 미래 하네스; 세션별 초기화",
+      "steps": [
+        {
+          "atActiveMs": 0,
+          "input": {
+            "kind": "조작",
+            "text": "동일 초기 상태로 세션 시작; 화면과 입력 준비 완료"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "활성 시계 시작; 평상 문서 두 개만 도착",
+          "eventIds": [
+            "T01"
+          ],
+          "documentIds": [
+            "D-supply",
+            "D-courier"
+          ],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 65000,
+          "input": {
+            "kind": "조작",
+            "text": "60000ms 이하 단위로 활성 시계를 65000ms까지 전진"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "급보·서신·건의문·군사 보고와 두 접견 요청 도착; 자동 접견 없음",
+          "eventIds": [
+            "T02",
+            "T03",
+            "T04",
+            "T05",
+            "T06",
+            "T07"
+          ],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 70000,
+          "input": {
+            "kind": "문장",
+            "text": "노숙은 유비에게 비밀리에 연락해."
+          },
+          "provider": {
+            "mock": "명령 지원",
+            "scripted": "Provider 필요",
+            "note": "ScriptedProvider는 문장을 해석하지 않고 주입된 응답만 재생함. 대화는 M4 연결, 사건은 M5 연결 필요.",
+            "evidence": "docs/COMMANDS.md; server/mock-interpreter.ts; tests/fixtures/scripted-provider.ts"
+          },
+          "expected": "비밀 타진 초안만 생성",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 70000,
+          "input": {
+            "kind": "조작",
+            "text": "명령 확인 패널을 닫고 초안 취소"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "닫기는 실행·취소 아님; 별도 취소 조작으로 cancelled",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": []
+        },
+        {
+          "atActiveMs": 240000,
+          "input": {
+            "kind": "조작",
+            "text": "시계 전진"
+          },
+          "provider": {
+            "mock": "해당 없음",
+            "scripted": "해당 없음",
+            "note": "UI 또는 시험 하네스 조작; 문장 해석과 구분",
+            "evidence": "docs/COMMANDS.md; server/clock.ts"
+          },
+          "expected": "비용·타진 진행·출발 보고 없음; 취소했던 계획만으로 노숙을 부르지 않음",
+          "eventIds": [],
+          "documentIds": [],
+          "dialogueTags": []
+        }
+      ],
+      "expectedEventOrder": [
+        "T01",
+        "T02",
+        "T03",
+        "T04",
+        "T05",
+        "T06",
+        "T07"
+      ],
+      "orderMeaning": "목록에 적힌 ID만 추린 최초 발생 순서. T13의 각 진행은 단계별 원인 기록으로 별도 확인하며 누락·추가 보고도 검사한다.",
+      "forbidden": [
+        "T13·T14 발생",
+        "노숙 출발·회신",
+        "군량 소모",
+        "패널 닫기만으로 실행"
+      ],
+      "boundaryIds": [
+        "PB01",
+        "PB03",
+        "PB04",
+        "PB06"
+      ]
+    }
+  ]
+}

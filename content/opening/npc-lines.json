@@ -1,0 +1,1283 @@
+{
+  "version": 1,
+  "status": "작성 대사 풀 · 자연스러움과 역사 정확성 미검증",
+  "selection": "조건을 만족하는 대사만 선택; 재현 시험에서는 인물·태그별 순환 인덱스를 고정하고 세션 초기화 때 되돌림",
+  "lines": [
+    {
+      "id": "L-zhang-hong-first-audience-1",
+      "characterId": "zhang-hong",
+      "tag": "first-audience",
+      "text": "먼저 살피실 문서나 만나실 사람이 있으면 말씀해 주십시오. 저는 확인한 내용을 모아 드리되, 결정을 앞서 내리지는 않겠습니다.",
+      "requiredKnowledgeIds": [
+        "K-office",
+        "K-zhanghong-role"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-hong-first-audience-2",
+      "characterId": "zhang-hong",
+      "tag": "first-audience",
+      "text": "오늘 접수한 자료부터 정리해 두겠습니다. 어느 일을 먼저 보실지는 주군께서 정하시면 됩니다.",
+      "requiredKnowledgeIds": [
+        "K-office",
+        "K-zhanghong-role"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-hong-dispatch-question-1",
+      "characterId": "zhang-hong",
+      "tag": "dispatch-question",
+      "text": "급보는 전령이 길에서 들은 말을 옮긴 것입니다. 남쪽의 움직임이 있다는 소식은 왔으나, 부대의 위치와 규모까지 확인된 것은 아닙니다.",
+      "requiredKnowledgeIds": [
+        "K-jingzhou"
+      ],
+      "documentIds": [
+        "D-jingzhou"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-hong-dispatch-question-2",
+      "characterId": "zhang-hong",
+      "tag": "dispatch-question",
+      "text": "보고가 도착한 때와 현지에서 일이 일어난 때는 다릅니다. 이 글만으로 지금의 형세를 확정하기는 어렵습니다.",
+      "requiredKnowledgeIds": [
+        "K-jingzhou"
+      ],
+      "documentIds": [
+        "D-jingzhou"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-hong-information-request-1",
+      "characterId": "zhang-hong",
+      "tag": "information-request",
+      "text": "궁금하신 지역과 확인할 내용을 나누어 말씀해 주십시오. 가진 문서로 알 수 있는 부분부터 살펴보겠습니다.",
+      "requiredKnowledgeIds": [
+        "K-office"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-hong-information-request-2",
+      "characterId": "zhang-hong",
+      "tag": "information-request",
+      "text": "어느 보고의 근거를 더 보고 싶으신지 알려 주십시오. 기록이 없는 대목은 모른다고 말씀드리겠습니다.",
+      "requiredKnowledgeIds": [
+        "K-office"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-hong-opposing-view-1",
+      "characterId": "zhang-hong",
+      "tag": "opposing-view",
+      "text": "한 가지 견해만으로 결정하기에는 빠진 근거가 있을 수 있습니다. 다른 의견을 듣는 일과 그 의견을 따르는 일은 구분하셔도 됩니다.",
+      "requiredKnowledgeIds": [
+        "K-zhanghong-role"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-hong-opposing-view-2",
+      "characterId": "zhang-hong",
+      "tag": "opposing-view",
+      "text": "그 방안에서 아직 확인하지 못한 조건을 짚어 보아도 되겠습니까. 선택을 바꾸시라는 뜻이 아니라 판단에 필요한 빈틈을 살피려는 것입니다.",
+      "requiredKnowledgeIds": [
+        "K-zhanghong-role"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-hong-risk-explanation-1",
+      "characterId": "zhang-hong",
+      "tag": "risk-explanation",
+      "text": "문서를 늦게 받았다고 해서 그 소식이 가장 최근 일이라는 뜻은 아닙니다. 발신 시각이 빠진 보고는 그 한계를 남겨 두고 판단하셔야 합니다.",
+      "requiredKnowledgeIds": [
+        "K-courier"
+      ],
+      "documentIds": [
+        "D-courier"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-hong-risk-explanation-2",
+      "characterId": "zhang-hong",
+      "tag": "risk-explanation",
+      "text": "전령이 가져온 말에는 이동하는 동안의 빈 시간이 있습니다. 그사이 형세가 바뀌었는지는 이 기록만으로 알 수 없습니다.",
+      "requiredKnowledgeIds": [
+        "K-courier"
+      ],
+      "documentIds": [
+        "D-courier"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-hong-clarify-order-1",
+      "characterId": "zhang-hong",
+      "tag": "clarify-order",
+      "text": "누구에게 어떤 말을 전할지 정해 주십시오. 확인하기 전에는 사람을 보내지 않겠습니다.",
+      "requiredKnowledgeIds": [
+        "K-office"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-hong-clarify-order-2",
+      "characterId": "zhang-hong",
+      "tag": "clarify-order",
+      "text": "살펴보라는 뜻인지, 실제로 일을 시작하라는 뜻인지 여쭙겠습니다. 실행할 지시라면 범위를 적어 다시 확인받겠습니다.",
+      "requiredKnowledgeIds": [
+        "K-office"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-hong-after-document-1",
+      "characterId": "zhang-hong",
+      "tag": "after-document",
+      "text": "이 서신은 조조 측의 주장을 전한 글입니다. 적힌 기세와 실제 형세가 같은지는 따로 살펴야 합니다.",
+      "requiredKnowledgeIds": [
+        "K-cao-request"
+      ],
+      "documentIds": [
+        "D-cao-letter"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-hong-after-document-2",
+      "characterId": "zhang-hong",
+      "tag": "after-document",
+      "text": "서신을 받았다는 사실과 그 요구에 동의한다는 뜻은 다릅니다. 답변을 보내실지는 주군의 별도 지시를 기다리겠습니다.",
+      "requiredKnowledgeIds": [
+        "K-cao-request"
+      ],
+      "documentIds": [
+        "D-cao-letter"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-hong-audience-deferred-1",
+      "characterId": "zhang-hong",
+      "tag": "audience-deferred",
+      "text": "지금 접견하기 어려우시면 다른 일을 먼저 보셔도 됩니다. 다시 부르실 때에는 그때의 전달 가능 여부를 확인하겠습니다.",
+      "requiredKnowledgeIds": [
+        "K-office"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-hong-audience-deferred-2",
+      "characterId": "zhang-hong",
+      "tag": "audience-deferred",
+      "text": "접견을 미루셨다고 해서 아직 듣지 않은 의견을 결정으로 적지는 않겠습니다. 필요하실 때 다시 말씀해 주십시오.",
+      "requiredKnowledgeIds": [
+        "K-office"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-hong-weak-hint-1",
+      "characterId": "zhang-hong",
+      "tag": "weak-hint",
+      "text": "판단할 근거가 부족하시면 문서 한 장의 출처부터 살펴보셔도 됩니다. 지금 바로 큰 결정을 내리실 필요는 없습니다.",
+      "requiredKnowledgeIds": [
+        "K-office"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-hong-weak-hint-2",
+      "characterId": "zhang-hong",
+      "tag": "weak-hint",
+      "text": "어느 점이 가장 불확실한지 먼저 짚어 주셔도 됩니다. 그 부분을 아는 사람에게 의견을 구하는 길이 있습니다.",
+      "requiredKnowledgeIds": [
+        "K-office"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-hong-lusu-hint-1",
+      "characterId": "zhang-hong",
+      "tag": "lusu-hint",
+      "text": "외교 쪽의 다른 의견이 필요하시면 노숙을 불러 보실 수 있습니다. 그 의견을 듣는다고 곧바로 사절을 보내는 것은 아닙니다.",
+      "requiredKnowledgeIds": [
+        "K-lusu-option"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-hong-lusu-hint-2",
+      "characterId": "zhang-hong",
+      "tag": "lusu-hint",
+      "text": "노숙에게도 의견을 청할 수 있습니다. 만나실지, 지금 생각하신 방안을 먼저 살피실지는 주군께서 정하시면 됩니다.",
+      "requiredKnowledgeIds": [
+        "K-lusu-option"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-zhao-first-audience-1",
+      "characterId": "zhang-zhao",
+      "tag": "first-audience",
+      "text": "군사를 일으킨 뒤 감당해야 할 일을 먼저 말씀드리고 싶습니다. 교섭할 여지를 남기는 것도 관할과 사람들을 지키기 위한 판단입니다.",
+      "requiredKnowledgeIds": [
+        "K-zhangzhao-risk"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-zhao-first-audience-2",
+      "characterId": "zhang-zhao",
+      "tag": "first-audience",
+      "text": "전쟁을 피할 길이 있는지 살펴보자는 말씀을 드리러 왔습니다. 상대의 요구를 모른 채 모든 조건을 받아들이자는 뜻은 아닙니다.",
+      "requiredKnowledgeIds": [
+        "K-zhangzhao-risk"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-zhao-dispatch-question-1",
+      "characterId": "zhang-zhao",
+      "tag": "dispatch-question",
+      "text": "전령의 급보에는 아직 확인하지 못한 곳이 많습니다. 저는 그 불확실함 때문에라도 장기전을 감당할 수 있는지 먼저 따져 보아야 한다고 생각합니다.",
+      "requiredKnowledgeIds": [
+        "K-jingzhou",
+        "K-zhangzhao-risk"
+      ],
+      "documentIds": [
+        "D-jingzhou"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-zhao-dispatch-question-2",
+      "characterId": "zhang-zhao",
+      "tag": "dispatch-question",
+      "text": "형주 소식만으로 패배를 단정할 수는 없습니다. 다만 준비가 부족한 채 싸움이 길어질 경우의 손실도 판단에서 빼서는 안 됩니다.",
+      "requiredKnowledgeIds": [
+        "K-jingzhou",
+        "K-zhangzhao-risk"
+      ],
+      "documentIds": [
+        "D-jingzhou"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-zhao-information-request-1",
+      "characterId": "zhang-zhao",
+      "tag": "information-request",
+      "text": "창고와 운송 기록을 확인할 수 있다면 버틸 여지를 논하기 쉬워집니다. 제가 받지 못한 기록의 수량은 여기서 말할 수 없습니다.",
+      "requiredKnowledgeIds": [
+        "K-zhangzhao-risk"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-zhao-information-request-2",
+      "characterId": "zhang-zhao",
+      "tag": "information-request",
+      "text": "상대가 실제로 무엇을 요구하는지 확인할 자료가 필요합니다. 그 조건을 모른 채 교섭의 이익과 손실을 다 알 수는 없습니다.",
+      "requiredKnowledgeIds": [
+        "K-zhangzhao-risk"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-zhao-opposing-view-1",
+      "characterId": "zhang-zhao",
+      "tag": "opposing-view",
+      "text": "싸울 뜻을 세우더라도 패한 뒤 잃을 관할과 교섭의 여지는 따져야 합니다. 저의 우려는 용기의 많고 적음보다 감당할 손실에 있습니다.",
+      "requiredKnowledgeIds": [
+        "K-zhangzhao-risk"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-zhao-opposing-view-2",
+      "characterId": "zhang-zhao",
+      "tag": "opposing-view",
+      "text": "버틸 수 있다는 판단에는 필요한 물자와 기간의 근거가 따라야 합니다. 그 근거가 충분하다면 제 견해도 다시 살펴보겠습니다.",
+      "requiredKnowledgeIds": [
+        "K-zhangzhao-risk"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-zhao-risk-explanation-1",
+      "characterId": "zhang-zhao",
+      "tag": "risk-explanation",
+      "text": "전쟁이 길어지면 운송과 농사에 부담이 쌓일 수 있습니다. 패한 뒤에는 지금보다 불리한 조건을 받아야 할 위험도 있습니다.",
+      "requiredKnowledgeIds": [
+        "K-zhangzhao-risk"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-zhao-risk-explanation-2",
+      "characterId": "zhang-zhao",
+      "tag": "risk-explanation",
+      "text": "타협에도 대가가 따르고 싸움에도 대가가 따릅니다. 어느 쪽이든 지킬 수 있는 범위와 잃을 수 있는 것을 함께 보아야 합니다.",
+      "requiredKnowledgeIds": [
+        "K-zhangzhao-risk"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-zhao-clarify-order-1",
+      "characterId": "zhang-zhao",
+      "tag": "clarify-order",
+      "text": "상대의 조건을 알아보라는 뜻인지, 어떤 조건을 받아들이라는 뜻인지 구분해 주십시오. 확인되지 않은 뜻까지 전하지는 않겠습니다.",
+      "requiredKnowledgeIds": [
+        "K-office"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-zhao-clarify-order-2",
+      "characterId": "zhang-zhao",
+      "tag": "clarify-order",
+      "text": "제게 의견을 더 정리하라는 말씀입니까, 다른 사람에게 전할 문안을 쓰라는 말씀입니까. 보내는 일이 필요하다면 내용부터 확인받겠습니다.",
+      "requiredKnowledgeIds": [
+        "K-office"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-zhao-after-document-1",
+      "characterId": "zhang-zhao",
+      "tag": "after-document",
+      "text": "건의문은 교섭을 열어 둘 이유를 적은 것입니다. 전쟁의 결과를 미리 안다는 뜻으로 읽지는 말아 주십시오.",
+      "requiredKnowledgeIds": [
+        "K-zhangzhao-note"
+      ],
+      "documentIds": [
+        "D-zhangzhao"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-zhao-after-document-2",
+      "characterId": "zhang-zhao",
+      "tag": "after-document",
+      "text": "제가 적은 것은 장기전과 패전의 부담입니다. 다른 자료에서 준비 조건이 확인된다면 함께 놓고 판단해 주십시오.",
+      "requiredKnowledgeIds": [
+        "K-zhangzhao-note"
+      ],
+      "documentIds": [
+        "D-zhangzhao"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-zhao-audience-deferred-1",
+      "characterId": "zhang-zhao",
+      "tag": "audience-deferred",
+      "text": "먼저 보실 일이 있다면 접견을 미루셔도 됩니다. 아직 말씀드리지 못한 의견을 동의로 여기지는 말아 주십시오.",
+      "requiredKnowledgeIds": [
+        "K-office"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhang-zhao-audience-deferred-2",
+      "characterId": "zhang-zhao",
+      "tag": "audience-deferred",
+      "text": "다른 견해를 먼저 들으셔도 좋습니다. 다시 부르시면 그때 제가 아는 범위에서 말씀드리겠습니다.",
+      "requiredKnowledgeIds": [
+        "K-office"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhou-yu-first-audience-1",
+      "characterId": "zhou-yu",
+      "tag": "first-audience",
+      "text": "군사의 수와 실제로 움직일 수 있는 힘을 나누어 살펴야 합니다. 우리 쪽 준비도 확인하지 않고 승리를 약속드릴 수는 없습니다.",
+      "requiredKnowledgeIds": [
+        "K-zhouyu-conditions"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhou-yu-first-audience-2",
+      "characterId": "zhou-yu",
+      "tag": "first-audience",
+      "text": "강 위에서 대응하려면 배와 인원, 보급이 함께 맞아야 합니다. 필요한 준비부터 말씀드리겠습니다.",
+      "requiredKnowledgeIds": [
+        "K-zhouyu-conditions"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhou-yu-dispatch-question-1",
+      "characterId": "zhou-yu",
+      "tag": "dispatch-question",
+      "text": "급보에는 적의 부대별 움직임을 확인할 자료가 없습니다. 수가 많다는 말만으로 수상에서 쓸 수 있는 힘까지 알 수는 없습니다.",
+      "requiredKnowledgeIds": [
+        "K-jingzhou",
+        "K-zhouyu-conditions"
+      ],
+      "documentIds": [
+        "D-jingzhou"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhou-yu-dispatch-question-2",
+      "characterId": "zhou-yu",
+      "tag": "dispatch-question",
+      "text": "이 전령의 말만으로 적의 진로를 확정하지는 않겠습니다. 우리 준비와 확인된 지형 조건을 따로 놓고 살펴야 합니다.",
+      "requiredKnowledgeIds": [
+        "K-jingzhou",
+        "K-zhouyu-conditions"
+      ],
+      "documentIds": [
+        "D-jingzhou"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhou-yu-information-request-1",
+      "characterId": "zhou-yu",
+      "tag": "information-request",
+      "text": "제가 살핀 곳의 준비와 아직 확인하지 못한 곳을 나누어 말씀드릴 수 있습니다. 전체 수군이 같은 상태라고 보지는 말아 주십시오.",
+      "requiredKnowledgeIds": [
+        "K-zhouyu-report"
+      ],
+      "documentIds": [
+        "D-zhouyu"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhou-yu-information-request-2",
+      "characterId": "zhou-yu",
+      "tag": "information-request",
+      "text": "보고에 적힌 점검 범위부터 살펴주십시오. 다른 부대나 적의 현재 상태는 이 자료로 답할 수 없습니다.",
+      "requiredKnowledgeIds": [
+        "K-zhouyu-report"
+      ],
+      "documentIds": [
+        "D-zhouyu"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhou-yu-opposing-view-1",
+      "characterId": "zhou-yu",
+      "tag": "opposing-view",
+      "text": "상대의 숫자에 관한 전언만으로 대응할 여지를 버릴 필요는 없습니다. 다만 정비와 보급이 따르지 않으면 그 여지도 줄어듭니다.",
+      "requiredKnowledgeIds": [
+        "K-zhouyu-conditions"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhou-yu-opposing-view-2",
+      "characterId": "zhou-yu",
+      "tag": "opposing-view",
+      "text": "교섭을 논의하더라도 우리 준비를 확인할 이유는 남습니다. 준비를 살피는 일과 먼저 교전을 여는 일은 구분해야 합니다.",
+      "requiredKnowledgeIds": [
+        "K-zhouyu-conditions"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhou-yu-risk-explanation-1",
+      "characterId": "zhou-yu",
+      "tag": "risk-explanation",
+      "text": "배만 손보고 물자와 인원을 살피지 않으면 실제 운용에 빈틈이 생길 수 있습니다. 필요한 조건을 확인하기 전에는 대응 범위를 넓게 약속하지 않겠습니다.",
+      "requiredKnowledgeIds": [
+        "K-zhouyu-conditions"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhou-yu-risk-explanation-2",
+      "characterId": "zhou-yu",
+      "tag": "risk-explanation",
+      "text": "준비가 나아진다고 해서 적의 움직임까지 알게 되는 것은 아닙니다. 정비의 성과와 교전의 결과를 같은 말로 보고해서는 안 됩니다.",
+      "requiredKnowledgeIds": [
+        "K-zhouyu-conditions"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhou-yu-clarify-order-1",
+      "characterId": "zhou-yu",
+      "tag": "clarify-order",
+      "text": "배와 인원을 정비하라는 뜻인지, 실제로 교전을 시작하라는 뜻인지 확인해 주십시오. 두 일을 같은 명령으로 받아들이지 않겠습니다.",
+      "requiredKnowledgeIds": [
+        "K-office"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhou-yu-clarify-order-2",
+      "characterId": "zhou-yu",
+      "tag": "clarify-order",
+      "text": "준비할 범위와 지켜야 할 제한을 말씀해 주십시오. 먼저 공격하지 말라는 조건이 있다면 명령에 분명히 남겨야 합니다.",
+      "requiredKnowledgeIds": [
+        "K-office"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhou-yu-after-document-1",
+      "characterId": "zhou-yu",
+      "tag": "after-document",
+      "text": "보고에는 제가 확인한 준비 조건만 적었습니다. 아직 점검하지 못한 곳까지 갖추어졌다는 뜻은 아닙니다.",
+      "requiredKnowledgeIds": [
+        "K-zhouyu-report"
+      ],
+      "documentIds": [
+        "D-zhouyu"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhou-yu-after-document-2",
+      "characterId": "zhou-yu",
+      "tag": "after-document",
+      "text": "이 글은 필요한 준비를 밝힌 것입니다. 정비 지시가 실제로 등록되고 진행되었는지는 별도 기록으로 확인하셔야 합니다.",
+      "requiredKnowledgeIds": [
+        "K-zhouyu-report"
+      ],
+      "documentIds": [
+        "D-zhouyu"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhou-yu-audience-deferred-1",
+      "characterId": "zhou-yu",
+      "tag": "audience-deferred",
+      "text": "다른 일을 먼저 살피셔도 됩니다. 접견이 미뤄진 것을 군사 행동의 허락으로 받아들이지는 않겠습니다.",
+      "requiredKnowledgeIds": [
+        "K-office"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-zhou-yu-audience-deferred-2",
+      "characterId": "zhou-yu",
+      "tag": "audience-deferred",
+      "text": "지금 만나기 어려우시면 다시 부르실 때 말씀드리겠습니다. 그사이 실행할 일이 있다면 접견과 별도로 지시를 확인받아야 합니다.",
+      "requiredKnowledgeIds": [
+        "K-office"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-lu-su-first-audience-1",
+      "characterId": "lu-su",
+      "tag": "first-audience",
+      "text": "유비 측의 의중을 알아볼 여지가 있는지 살펴볼 수는 있습니다. 아직 답을 받지 않았으니 협력이 성립한다고 말씀드릴 수는 없습니다.",
+      "requiredKnowledgeIds": [
+        "K-lusu-contact"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-lu-su-first-audience-2",
+      "characterId": "lu-su",
+      "tag": "first-audience",
+      "text": "접촉의 가치는 상대가 무엇을 원하고 감당할 수 있는지 알아보는 데 있습니다. 만나는 일과 약속하는 일은 나누어 결정하실 수 있습니다.",
+      "requiredKnowledgeIds": [
+        "K-lusu-contact"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-lu-su-dispatch-question-1",
+      "characterId": "lu-su",
+      "tag": "dispatch-question",
+      "text": "급보에는 유비 측의 현재 위치가 확정되어 있지 않습니다. 연락을 생각하신다면 닿을 수 있는 길과 전할 범위를 먼저 살펴야 합니다.",
+      "requiredKnowledgeIds": [
+        "K-jingzhou",
+        "K-lusu-contact"
+      ],
+      "documentIds": [
+        "D-jingzhou"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-lu-su-dispatch-question-2",
+      "characterId": "lu-su",
+      "tag": "dispatch-question",
+      "text": "이 소식만으로 상대가 협력할 뜻이 있다고 볼 수는 없습니다. 의중을 알아보는 일도 거절될 수 있다는 전제에서 판단하셔야 합니다.",
+      "requiredKnowledgeIds": [
+        "K-jingzhou",
+        "K-lusu-contact"
+      ],
+      "documentIds": [
+        "D-jingzhou"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-lu-su-information-request-1",
+      "characterId": "lu-su",
+      "tag": "information-request",
+      "text": "알아보고 싶은 것이 상대의 요구인지, 연락할 길인지 정해 주십시오. 전할 범위를 좁히면 불필요한 약속을 피하는 데 도움이 됩니다.",
+      "requiredKnowledgeIds": [
+        "K-lusu-contact"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-lu-su-information-request-2",
+      "characterId": "lu-su",
+      "tag": "information-request",
+      "text": "접촉을 검토하시는 것이라면 무엇을 묻고 무엇을 약속하지 않을지 나누어 주십시오. 상대의 답은 실제로 전언이 돌아와야 알 수 있습니다.",
+      "requiredKnowledgeIds": [
+        "K-lusu-contact"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-lu-su-opposing-view-1",
+      "characterId": "lu-su",
+      "tag": "opposing-view",
+      "text": "접촉의 이익이 위험보다 작다고 판단하시면 보내지 않으셔도 됩니다. 상대의 의중을 알아보는 방안은 가능한 길 가운데 하나입니다.",
+      "requiredKnowledgeIds": [
+        "K-lusu-contact"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-lu-su-opposing-view-2",
+      "characterId": "lu-su",
+      "tag": "opposing-view",
+      "text": "교섭을 열어 두는 일이 곧 참전 약속이어야 할 이유는 없습니다. 다만 상대가 그런 약속을 요구할 가능성까지 없다고 할 수는 없습니다.",
+      "requiredKnowledgeIds": [
+        "K-lusu-contact"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-lu-su-risk-explanation-1",
+      "characterId": "lu-su",
+      "tag": "risk-explanation",
+      "text": "전언이 거절되거나 접촉 사실이 밖으로 알려질 위험이 있습니다. 비밀로 지시하더라도 안전을 보장할 수는 없습니다.",
+      "requiredKnowledgeIds": [
+        "K-lusu-contact"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-lu-su-risk-explanation-2",
+      "characterId": "lu-su",
+      "tag": "risk-explanation",
+      "text": "탐문하는 말이 상대에게 약속처럼 받아들여지지 않도록 범위를 정해야 합니다. 답변을 얻는 일과 조건에 동의하는 일은 따로 확인해 주십시오.",
+      "requiredKnowledgeIds": [
+        "K-lusu-contact"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-lu-su-clarify-order-1",
+      "characterId": "lu-su",
+      "tag": "clarify-order",
+      "text": "의중만 알아보라는 뜻인지 조건을 제시하라는 뜻인지 여쭙겠습니다. 참전을 약속하지 말아야 한다면 그 제한도 분명히 적어 주십시오.",
+      "requiredKnowledgeIds": [
+        "K-office",
+        "K-lusu-contact"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-lu-su-clarify-order-2",
+      "characterId": "lu-su",
+      "tag": "clarify-order",
+      "text": "누구에게 어떤 내용을 전하고 어디까지 답할 수 있는지 정해 주십시오. 확인 전에는 출발한 것으로 보고하지 않겠습니다.",
+      "requiredKnowledgeIds": [
+        "K-office",
+        "K-lusu-contact"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-lu-su-after-document-1",
+      "characterId": "lu-su",
+      "tag": "after-document",
+      "text": "전령의 글에는 유비 측의 이동에 관한 간접 소식만 있습니다. 이 문서를 읽었다고 연락이 닿거나 협력이 이루어진 것은 아닙니다.",
+      "requiredKnowledgeIds": [
+        "K-jingzhou",
+        "K-lusu-contact"
+      ],
+      "documentIds": [
+        "D-jingzhou"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-lu-su-after-document-2",
+      "characterId": "lu-su",
+      "tag": "after-document",
+      "text": "현재 위치를 알 수 없다는 한계부터 남겨 두어야 합니다. 접촉을 지시하실지는 이 보고와 별도로 결정하실 일입니다.",
+      "requiredKnowledgeIds": [
+        "K-jingzhou",
+        "K-lusu-contact"
+      ],
+      "documentIds": [
+        "D-jingzhou"
+      ],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-lu-su-audience-deferred-1",
+      "characterId": "lu-su",
+      "tag": "audience-deferred",
+      "text": "지금은 만나지 않으셔도 됩니다. 다시 부르실 때 전달 가능한 상황인지 확인하겠습니다.",
+      "requiredKnowledgeIds": [
+        "K-office"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    },
+    {
+      "id": "L-lu-su-audience-deferred-2",
+      "characterId": "lu-su",
+      "tag": "audience-deferred",
+      "text": "접견을 미룬 것을 출발 명령으로 여기지는 않겠습니다. 따로 맡기실 일이 생기면 그 내용을 확인해 주십시오.",
+      "requiredKnowledgeIds": [
+        "K-office"
+      ],
+      "documentIds": [],
+      "classification": "게임 재구성",
+      "sourceUnverified": true,
+      "historicalNoteIds": [
+        "C01",
+        "C04"
+      ],
+      "availability": "서버가 현재 접견·전달 가능 상태와 필요한 지식을 모두 확인한 경우만 사용",
+      "effects": "없음 · 발언은 명령 실행이나 정보 공유가 아님"
+    }
+  ]
+}

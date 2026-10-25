@@ -1,0 +1,417 @@
+{
+  "version": 1,
+  "status": "설계용 데이터 모양 초안 · 서버 계약 아님",
+  "sources": [
+    "PROTOTYPE_SPEC.md 6장",
+    "SCENE_PLAN_v0.1.md 10장"
+  ],
+  "events": [
+    {
+      "id": "T01",
+      "title": "정무 개시와 평상 문서",
+      "trigger": {
+        "clock": "활성 시간",
+        "kind": "고정 하한",
+        "activeMs": 0,
+        "note": "전제 미충족이면 대기; 취소 조건은 발화 직전 재검사"
+      },
+      "prerequisites": [
+        "화면 로딩과 입력 준비 완료"
+      ],
+      "onceScope": "세션 1회",
+      "cancelOrReplace": [
+        "초기화 때만 새 세션으로 재설정"
+      ],
+      "freedom": "처음부터 지도·자료·질문 사용 가능",
+      "documentIds": [
+        "D-supply",
+        "D-courier"
+      ],
+      "dialogueTags": [
+        "first-audience"
+      ],
+      "knowledgeIds": [
+        "K-supply",
+        "K-courier"
+      ],
+      "classification": "게임 재구성"
+    },
+    {
+      "id": "T02",
+      "title": "형주 급보 도착",
+      "trigger": {
+        "clock": "활성 시간",
+        "kind": "고정 하한",
+        "activeMs": 25000,
+        "note": "전제 미충족이면 대기; 취소 조건은 발화 직전 재검사"
+      },
+      "prerequisites": [
+        "T01 발생",
+        "전령 도착 기록 생성 가능"
+      ],
+      "onceScope": "세션 1회",
+      "cancelOrReplace": [
+        "접견·명령 여부로 취소하지 않음",
+        "재전송 요청은 같은 도착 기록 반환"
+      ],
+      "freedom": "구두 한 줄과 문서 알림만 표시; 입력·열린 패널·초점 유지",
+      "documentIds": [
+        "D-jingzhou"
+      ],
+      "dialogueTags": [
+        "dispatch-question"
+      ],
+      "knowledgeIds": [
+        "K-jingzhou"
+      ],
+      "classification": "게임 재구성"
+    },
+    {
+      "id": "T03",
+      "title": "조조 측 서신 도착",
+      "trigger": {
+        "clock": "활성 시간",
+        "kind": "고정 하한",
+        "activeMs": 40000,
+        "note": "전제 미충족이면 대기; 취소 조건은 발화 직전 재검사"
+      },
+      "prerequisites": [
+        "T01 발생"
+      ],
+      "onceScope": "세션 1회",
+      "cancelOrReplace": [
+        "기존 요청이 answered라면 과거 수신 자료만 기록하고 요청을 다시 pending으로 만들지 않음"
+      ],
+      "freedom": "답변 초안·접견·문서 열기를 강제하지 않음",
+      "documentIds": [
+        "D-cao-letter"
+      ],
+      "dialogueTags": [
+        "after-document"
+      ],
+      "knowledgeIds": [
+        "K-cao-request"
+      ],
+      "classification": "게임 재구성"
+    },
+    {
+      "id": "T04",
+      "title": "장조의 건의문 도착",
+      "trigger": {
+        "clock": "활성 시간",
+        "kind": "고정 하한",
+        "activeMs": 45000,
+        "note": "전제 미충족이면 대기; 취소 조건은 발화 직전 재검사"
+      },
+      "prerequisites": [
+        "T02 발생",
+        "35000ms 이후 장조에게 급보의 별도 전달본이 수신된 기록",
+        "작성 완료 기록"
+      ],
+      "onceScope": "세션 1회",
+      "cancelOrReplace": [
+        "별도 전달이 지연되면 수신 뒤 작성·전달 완료까지 대기",
+        "접견을 거절해도 문서는 유지"
+      ],
+      "freedom": "별도 전달은 플레이어 열람과 무관; 주유 접견을 막지 않음",
+      "documentIds": [
+        "D-jingzhou",
+        "D-zhangzhao"
+      ],
+      "dialogueTags": [
+        "after-document"
+      ],
+      "knowledgeIds": [
+        "K-jingzhou",
+        "K-zhangzhao-note"
+      ],
+      "classification": "게임 재구성"
+    },
+    {
+      "id": "T05",
+      "title": "장조 접견 요청",
+      "trigger": {
+        "clock": "활성 시간",
+        "kind": "고정 하한",
+        "activeMs": 50000,
+        "note": "전제 미충족이면 대기; 취소 조건은 발화 직전 재검사"
+      },
+      "prerequisites": [
+        "T04 발생",
+        "장조 접견 가능",
+        "현재 장조 접견 중이 아니며 이전에 접견하지 않음"
+      ],
+      "onceScope": "세션 1회",
+      "cancelOrReplace": [
+        "이미 접견했거나 현재 접견 중이면 취소",
+        "연기·거절·무시는 새 요청을 만들지 않음"
+      ],
+      "freedom": "응답하지 않아도 후속 사건은 계속; 자동 입실 없음",
+      "documentIds": [
+        "D-zhangzhao"
+      ],
+      "dialogueTags": [
+        "first-audience",
+        "audience-deferred"
+      ],
+      "knowledgeIds": [],
+      "classification": "게임 재구성"
+    },
+    {
+      "id": "T06",
+      "title": "주유의 독립 군사 보고",
+      "trigger": {
+        "clock": "활성 시간",
+        "kind": "고정 하한",
+        "activeMs": 60000,
+        "note": "전제 미충족이면 대기; 취소 조건은 발화 직전 재검사"
+      },
+      "prerequisites": [
+        "개시 때 작성된 제한된 점검 보고의 전달 완료"
+      ],
+      "onceScope": "세션 1회",
+      "cancelOrReplace": [
+        "주유가 파견·작업 중이어도 이미 발송한 보고는 도착",
+        "정비가 먼저 완료되어도 과거 관측 시점 유지"
+      ],
+      "freedom": "장조 접견·건의문 열람과 독립; 보고를 최신 상태로 덮어쓰지 않음",
+      "documentIds": [
+        "D-zhouyu"
+      ],
+      "dialogueTags": [
+        "information-request",
+        "after-document"
+      ],
+      "knowledgeIds": [
+        "K-zhouyu-report"
+      ],
+      "classification": "게임 재구성"
+    },
+    {
+      "id": "T07",
+      "title": "주유 접견 요청",
+      "trigger": {
+        "clock": "활성 시간",
+        "kind": "고정 하한",
+        "activeMs": 65000,
+        "note": "전제 미충족이면 대기; 취소 조건은 발화 직전 재검사"
+      },
+      "prerequisites": [
+        "T06 발생",
+        "주유 접견 가능",
+        "현재 주유 접견 중이 아니며 이전에 접견하지 않음"
+      ],
+      "onceScope": "세션 1회",
+      "cancelOrReplace": [
+        "이미 접견했으면 취소",
+        "다른 작업 중이면 접견 가능해질 때까지 대기",
+        "연기·거절 뒤 자동 재촉 없음"
+      ],
+      "freedom": "장조를 만나지 않아도 주유를 직접 먼저 호출 가능",
+      "documentIds": [
+        "D-zhouyu"
+      ],
+      "dialogueTags": [
+        "first-audience",
+        "audience-deferred"
+      ],
+      "knowledgeIds": [],
+      "classification": "게임 재구성"
+    },
+    {
+      "id": "T08",
+      "title": "선택적 공동 회의",
+      "trigger": {
+        "clock": "활성 시간",
+        "kind": "사용자 요청",
+        "activeMs": null,
+        "note": "호출과 참가 가능 여부를 서버가 승인한 시각"
+      },
+      "prerequisites": [
+        "플레이어가 명시적으로 회의 요청",
+        "참가자별 접견 가능 상태",
+        "발언별 지식 확인"
+      ],
+      "onceScope": "승인된 회의 요청 ID당 1회",
+      "cancelOrReplace": [
+        "취소·참가 불가면 회의 미생성; 가능한 참가자와 다시 조정",
+        "중복 요청 ID는 같은 결과"
+      ],
+      "freedom": "회의 생략 가능; 참가만으로 문서 공유 없음",
+      "documentIds": [],
+      "dialogueTags": [
+        "opposing-view",
+        "risk-explanation"
+      ],
+      "knowledgeIds": [],
+      "classification": "게임 재구성"
+    },
+    {
+      "id": "T09",
+      "title": "장굉의 약한 도움",
+      "trigger": {
+        "clock": "활성 시간",
+        "kind": "고정 하한",
+        "activeMs": 120000,
+        "note": "전제 미충족이면 대기; 취소 조건은 발화 직전 재검사"
+      },
+      "prerequisites": [
+        "이전 논의 기록 존재",
+        "도움 요청 또는 논의 뒤 활성 무입력 60000ms",
+        "유효한 초안·확인된 전략 지시·명시한 계획 없음"
+      ],
+      "onceScope": "세션 1회",
+      "cancelOrReplace": [
+        "계획을 냈거나 도움을 거절하면 취소",
+        "대화·입력·확인 대기 중이면 시계 보류"
+      ],
+      "freedom": "특정 전략을 지정하지 않는 짧은 힌트; 입력권 유지",
+      "documentIds": [],
+      "dialogueTags": [
+        "weak-hint"
+      ],
+      "knowledgeIds": [
+        "K-office"
+      ],
+      "classification": "게임 재구성"
+    },
+    {
+      "id": "T10",
+      "title": "노숙의 존재 암시",
+      "trigger": {
+        "clock": "활성 시간",
+        "kind": "고정 하한",
+        "activeMs": 180000,
+        "note": "전제 미충족이면 대기; 취소 조건은 발화 직전 재검사"
+      },
+      "prerequisites": [
+        "기존 논의 뒤 플레이어가 다른 외교 의견에 도움 요청",
+        "노숙을 아직 만나지 않음",
+        "유비 타진 초안·작업·독자적 계획 없음"
+      ],
+      "onceScope": "세션 1회",
+      "cancelOrReplace": [
+        "노숙을 만났거나 접촉 계획·작업이 있으면 취소",
+        "이미 파견된 노숙을 즉시 입실시키지 않음"
+      ],
+      "freedom": "암시는 접견이나 출발을 실행하지 않음; 생략해도 진행",
+      "documentIds": [],
+      "dialogueTags": [
+        "lusu-hint"
+      ],
+      "knowledgeIds": [
+        "K-lusu-option"
+      ],
+      "classification": "게임 재구성"
+    },
+    {
+      "id": "T11",
+      "title": "조조 측 답변 재촉",
+      "trigger": {
+        "clock": "활성 시간",
+        "kind": "조건부 기한",
+        "activeMs": 300000,
+        "note": "max(요청 성립 시각 + 300000, heldUntilMs); 이번 개시 fixture의 요청 성립은 0ms. T03은 같은 요청의 서신 전달이며 기한을 재설정하지 않음."
+      },
+      "prerequisites": [
+        "유효한 cao-cao-envoy 요청 존재",
+        "pending 또는 held 상태",
+        "T03 수신",
+        "보류 중이면 heldUntilMs 경과"
+      ],
+      "onceScope": "요청 ID당 1회",
+      "cancelOrReplace": [
+        "answered면 예정된 재촉 취소",
+        "기한 전 재보류하면 새 heldUntilMs로 지연",
+        "새 요청으로 위장해 재촉을 반복하지 않음"
+      ],
+      "freedom": "이미 해결된 문제를 재생성하지 않음; 보류 만료가 항복·선전포고를 뜻하지 않음",
+      "documentIds": [
+        "D-cao-letter"
+      ],
+      "dialogueTags": [
+        "after-document"
+      ],
+      "knowledgeIds": [
+        "K-cao-request"
+      ],
+      "classification": "게임 재구성"
+    },
+    {
+      "id": "T12",
+      "title": "실제로 남은 사안 요약",
+      "trigger": {
+        "clock": "활성 시간",
+        "kind": "고정 하한",
+        "activeMs": 480000,
+        "note": "전제 미충족이면 대기; 취소 조건은 발화 직전 재검사"
+      },
+      "prerequisites": [
+        "미처리 요청 또는 미결 사용자 초안이 현재 존재"
+      ],
+      "onceScope": "세션 1회",
+      "cancelOrReplace": [
+        "미결 사안이 없으면 취소",
+        "답한 조조 요청과 완료 작업은 제외",
+        "공유 권한 없는 비밀 사안은 해당 수신자용 요약에서 제외"
+      ],
+      "freedom": "요약은 자동 명령·자동 패배가 아님; 장기 무결정도 유효한 시험 결과",
+      "documentIds": [],
+      "dialogueTags": [
+        "information-request"
+      ],
+      "knowledgeIds": [],
+      "classification": "게임 재구성"
+    },
+    {
+      "id": "T13",
+      "title": "명령에서 비롯된 후속 반응",
+      "trigger": {
+        "clock": "활성 시간",
+        "kind": "엔진 기록",
+        "activeMs": null,
+        "note": "확인된 작업의 실제 진행·완료·지연·충돌 기록 시각"
+      },
+      "prerequisites": [
+        "원인 taskId와 sourceEventId 존재",
+        "실제 기록과 수신자 권한 검사",
+        "초안 작성만으로는 발생 불가"
+      ],
+      "onceScope": "sourceEventId와 수신자별 1회",
+      "cancelOrReplace": [
+        "중복 기록은 재출력하지 않음",
+        "중단한 작업의 이후 출발·완료를 만들지 않음",
+        "출발 이후 회수 미지원이면 기존 작업은 계속하며 완료 취소를 꾸미지 않음"
+      ],
+      "freedom": "유비 접촉을 안 했으면 노숙 출발 보고 없음; 원인에 맞는 작업만 반응",
+      "documentIds": [],
+      "dialogueTags": [],
+      "knowledgeIds": [],
+      "classification": "게임 재구성"
+    },
+    {
+      "id": "T14",
+      "title": "첫 결단의 결과 관찰 지표",
+      "trigger": {
+        "clock": "활성 시간",
+        "kind": "엔진 기록",
+        "activeMs": null,
+        "note": "전략 지시 확인·실행 시작 증거·그 이후 후속 반응이 모두 존재한 시각"
+      },
+      "prerequisites": [
+        "확인된 지시 존재",
+        "실행 시작 증거 존재",
+        "그 작업의 시작 이후 진행 또는 완료 T13을 플레이어가 관찰"
+      ],
+      "onceScope": "세션 1회",
+      "cancelOrReplace": [
+        "초안·수신 이전·무결정만으로 발생 불가"
+      ],
+      "freedom": "승리·정답 판정이나 화면 강제 종료가 아닌 관찰 지표",
+      "documentIds": [],
+      "dialogueTags": [],
+      "knowledgeIds": [],
+      "classification": "게임 재구성"
+    }
+  ]
+}
