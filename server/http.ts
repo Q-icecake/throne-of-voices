@@ -3,6 +3,8 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { PAUSE_REASONS } from '../shared/contracts.ts';
 import type { CommandRequest, PauseReason, TestAction } from '../shared/contracts.ts';
 import { GameEngine } from './engine.ts';
+import { configuredProvider } from './llm/gemini.ts';
+import type { InterpretationProvider } from './llm/types.ts';
 
 class HttpError extends Error {
   status: number;
@@ -76,7 +78,12 @@ export function parseCommand(value: Record<string, unknown>): CommandRequest {
 }
 
 /** `webPort` is the local Vite port whose pages may call the API (default: the dev server). */
-export function createGameServer(engine = new GameEngine(), webPort = 5173) {
+export function createGameServer(engine?: GameEngine | GameEngine<InterpretationProvider | undefined>, webPort = 5173) {
+  if (!engine) {
+    const config = configuredProvider();
+    engine = new GameEngine(undefined, undefined, config.provider, config.timeoutMs, config.status);
+  }
+  const game = engine;
   const allowedOrigins = [`http://127.0.0.1:${webPort}`, `http://localhost:${webPort}`];
   const server = createServer(async (request, response) => {
     try {
@@ -90,7 +97,7 @@ export function createGameServer(engine = new GameEngine(), webPort = 5173) {
       const path = new URL(request.url ?? '/', 'http://127.0.0.1').pathname;
       if (request.method === 'GET') {
         switch (path) {
-          case '/api/health': return json(response, 200, { milestone: 'M1', mode: 'mock', clock: 'manual-fake', externalCalls: 0 });
+          case '/api/health': return json(response, 200, { milestone: 'M2', mode: game.view().mode, clock: 'manual-fake', interpretation: game.view().interpretation });
           case '/api/state': return json(response, 200, engine.view());
           case '/api/test/snapshot': return json(response, 200, engine.publicSnapshot());
           case '/api/test/logs': return json(response, 200, engine.logs());
@@ -108,7 +115,7 @@ export function createGameServer(engine = new GameEngine(), webPort = 5173) {
       }
       if (request.method === 'POST' && path === '/api/command') {
         const command = parseCommand(await readObject(request));
-        return json(response, 200, engine.command(command));
+        return json(response, 200, await game.command(command));
       }
       json(response, 404, { error: 'NOT_FOUND' });
     } catch (error) {

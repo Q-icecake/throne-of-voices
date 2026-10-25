@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#140f0b" />
     <link rel="icon" href="data:," />
-    <title>Throne of Voices · 적벽 전야 (M1 시험판)</title>
+    <title>Throne of Voices · 적벽 전야 (M2 시험판)</title>
   </head>
   <body>
     <div id="stage" class="stage" data-scene="S0" data-panel="none">
@@ -30,7 +30,7 @@
       <header class="hud hud-status" aria-label="현재 상황">
         <p class="place"><span class="place-name">강동 · 정무청</span><span class="place-time">건안 13년 (208)</span></p>
         <p class="status-line">
-          <span class="chip chip-mock" title="실제 AI 호출 없음. 명령 해석은 정해진 시험 문장만 인식합니다.">MOCK 시험 모드</span>
+          <span id="interpretation-status" class="chip chip-mock" title="AI 미연결, Mock 사용 중">MOCK 시험 모드</span>
           <span id="pause-chip" class="chip chip-pause" hidden>일시정지</span>
           <span id="connection" class="connection" role="status">연결 중…</span>
         </p>
@@ -52,7 +52,7 @@
         <div class="panel-body" id="panel-body"></div>
       </aside>
 
-      <section class="hud speech" aria-label="장굉에게 말하기">
+      <section id="speech" class="hud speech" aria-label="장굉에게 말하기">
         <p class="reply" id="reply" role="status" aria-live="polite" hidden></p>
         <form id="speech-form" class="speech-form">
           <label for="speech-input" class="speech-target"><span class="speech-to">장굉에게</span></label>
@@ -68,7 +68,7 @@
           <button type="button" class="panel-close" id="dev-close">닫기</button>
         </div>
         <div class="dev-body">
-          <p class="dev-note">M1 시험판 · 실제 AI 호출 없음 · 시계는 버튼을 누를 때만 흐릅니다. 지도·문서·인물은 시험용 재구성이며 아트는 임시입니다.</p>
+          <p class="dev-note">M2 시험판 · 해석 출처와 연결 상태는 상단에 표시합니다. 시계는 버튼을 누를 때만 흐릅니다. 지도·문서·인물은 시험용 재구성이며 아트는 임시입니다.</p>
           <div class="clock-grid">
             <div><span>활성 시간</span><strong id="active-time">0.0초</strong></div>
             <div><span>보류 시간</span><strong id="held-time">0.0초</strong></div>

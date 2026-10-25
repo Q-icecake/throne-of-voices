@@ -121,6 +121,7 @@ button, textarea { font: inherit; color: inherit; }
 /* ---------- speech (bottom band) ---------- */
 .speech { left: 50%; bottom: 18px; transform: translateX(-50%); width: min(880px, calc(100vw - 40px)); }
 .reply {
+  max-height: 140px; overflow-y: auto;
   margin: 0 auto 10px; max-width: 760px; padding: 9px 18px; font-size: 16px; line-height: 1.6;
   background: rgba(14, 10, 8, .8); border-top: 1px solid var(--panel-edge); color: #f0e7d2; text-align: center;
 }
@@ -146,7 +147,7 @@ button, textarea { font: inherit; color: inherit; }
 .speech-submit:hover:not(:disabled) { background: #8a3529; }
 .speech-submit:disabled { opacity: .5; cursor: default; }
 .speech-submit:focus-visible { outline: 2px solid #f2d893; outline-offset: -4px; }
-.error { margin: 8px 0 0; padding: 8px 12px; font-size: 14px; color: #ffcfbe; background: rgba(40, 14, 10, .9); border: 1px solid #b4735e; }
+.error { margin: 8px 0 0; padding: 8px 12px; font-size: 16px; color: #ffcfbe; background: rgba(40, 14, 10, .9); border: 1px solid #b4735e; }
 
 /* ---------- panels (foreground materials) ---------- */
 .panel {
@@ -156,6 +157,8 @@ button, textarea { font: inherit; color: inherit; }
   animation: panel-in var(--t) var(--ease);
 }
 .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 18px; border-bottom: 1px solid rgba(180, 154, 99, .25); }
+.stage[data-interpretation="ai"] .panel { bottom: max(150px, var(--speech-clearance, 150px)); }
+.stage[data-interpretation="ai"][data-panel="map"] .panel { bottom: auto; max-height: calc(100vh - 102px - var(--speech-clearance, 150px)); }
 .panel-head h2 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: 20px; letter-spacing: .08em; color: #f1e6c8; }
 .panel-close { padding: 4px 12px; cursor: pointer; background: transparent; border: 1px solid rgba(180, 154, 99, .45); font-size: 14px; }
 .panel-close:hover { border-color: var(--gold); }

@@ -1,0 +1,36 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["intent", "dialogue", "proposedActions", "unresolvedQuestions", "referencedKnowledgeIds", "usage"],
+  "properties": {
+    "intent": { "type": "string", "enum": ["question", "discussion", "command", "ambiguous", "unsupported"] },
+    "dialogue": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "proposedActions": {
+      "type": "array", "maxItems": 3,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["kind", "target", "assignee", "conditions", "restrictions", "deadline"],
+        "properties": {
+          "kind": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "target": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "assignee": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "conditions": { "type": "array", "maxItems": 5, "uniqueItems": true, "items": { "type": "string", "minLength": 1, "maxLength": 300 } },
+          "restrictions": { "type": "array", "maxItems": 5, "uniqueItems": true, "items": { "type": "string", "minLength": 1, "maxLength": 80 } },
+          "deadline": { "type": ["string", "null"], "minLength": 1, "maxLength": 100 }
+        }
+      }
+    },
+    "unresolvedQuestions": { "type": "array", "maxItems": 5, "uniqueItems": true, "items": { "type": "string", "minLength": 1, "maxLength": 300 } },
+    "referencedKnowledgeIds": { "type": "array", "maxItems": 30, "uniqueItems": true, "items": { "type": "string", "minLength": 1, "maxLength": 80 } },
+    "usage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["inputTokens", "outputTokens", "externalCalls", "costUsd"],
+      "properties": {
+        "inputTokens": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+        "outputTokens": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+        "externalCalls": { "type": "integer", "minimum": 0, "maximum": 10000 },
+        "costUsd": { "type": ["number", "null"], "minimum": 0, "maximum": 1000000 }
+      }
+    }
+  }
+}

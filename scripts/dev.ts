@@ -19,7 +19,7 @@ try {
   await once(api, 'listening');
   vite = await createServer();
   await vite.listen();
-  console.log('\nThrone of Voices · M0 · MOCK ONLY\n화면: http://127.0.0.1:5173\nAPI: http://127.0.0.1:3001\n종료: Ctrl+C · 서버 코드 수정 후 재시작\n');
+  console.log('\nThrone of Voices · M2 · 기본 Mock (해석 출처는 화면 상태 참조)\n화면: http://127.0.0.1:5173\nAPI: http://127.0.0.1:3001\n종료: Ctrl+C · 서버 코드 수정 후 재시작\n');
 } catch (error) {
   await close();
   console.error(`시작 실패: ${error instanceof Error ? error.message : 'UNKNOWN_ERROR'}`);

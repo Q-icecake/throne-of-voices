@@ -5,7 +5,11 @@ import type {
 import { FakeClock } from './clock.ts';
 import { knowledgeFor, playerView } from './knowledge.ts';
 import { MockCommandInterpreter } from './mock-interpreter.ts';
-import type { CommandInterpreter } from './mock-interpreter.ts';
+import type { CommandInterpreter, Interpretation } from './mock-interpreter.ts';
+import type { InterpretationProvider, ProviderInput } from './llm/types.ts';
+import { ProviderError } from './llm/types.ts';
+import { interpret, toReading } from './llm/pipeline.ts';
+import { actionVocabulary, validateProposal } from './llm/validator.ts';
 import { MockLLMProvider } from './provider.ts';
 import type { LLMProvider } from './provider.ts';
 import { ENGAGEMENT_POLICY_LABELS, NAVAL_DRILL, RESTRICTION_LABELS } from './rules.ts';
@@ -13,7 +17,7 @@ import { createInitialWorld } from './world.ts';
 import type { DraftRecord, EventCause, EventRecord, TaskRecord, WorldState } from './world.ts';
 
 const pad = (value: number) => String(value).padStart(4, '0');
-const INTENT_LABELS = { question: '질문', hypothetical: '가정·검토', unsupported: '미지원' } as const;
+const INTENT_LABELS = { question: '질문', hypothetical: '가정·검토', discussion: '논의', ambiguous: '확인 질문', unsupported: '미지원' } as const;
 
 const REJECTION_REPLIES: Record<RejectionCode, string> = {
   DRAFT_NOT_FOUND: '해당 초안을 찾을 수 없습니다. 상태를 다시 읽어 주세요.',
@@ -27,26 +31,39 @@ const REJECTION_REPLIES: Record<RejectionCode, string> = {
   ASSIGNEE_BUSY: '주유가 지금 명을 받을 수 없는 상태입니다.',
 };
 
-export class GameEngine {
+export class GameEngine<P extends InterpretationProvider | undefined = undefined> {
   #clock = new FakeClock();
   #world: WorldState = createInitialWorld(this.#clock.snapshot());
   #events: EventRecord[] = [];
   #provider: LLMProvider;
   #interpreter: CommandInterpreter;
+  #interpretationProvider: P | undefined;
+  #requestVersion = 0;
+  #context: ProviderInput['context'] = [];
+  #timeoutMs: number;
+  #connectionStatus: string;
 
-  constructor(provider: LLMProvider = new MockLLMProvider(), interpreter: CommandInterpreter = new MockCommandInterpreter()) {
+  constructor(provider: LLMProvider = new MockLLMProvider(), interpreter: CommandInterpreter = new MockCommandInterpreter(),
+    interpretationProvider?: P, timeoutMs = 15000, status = 'AI 미연결, Mock 사용 중') {
     this.#provider = provider;
     this.#interpreter = interpreter;
+    this.#interpretationProvider = interpretationProvider;
+    if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0 || timeoutMs > 15000) throw new Error('INVALID_TIMEOUT');
+    this.#timeoutMs = timeoutMs;
+    this.#connectionStatus = interpretationProvider?.status ?? status;
     this.reset();
   }
 
   reset(): void {
+    this.#requestVersion++;
+    this.#context = [];
     this.#clock = new FakeClock();
     this.#world = createInitialWorld(this.#clock.snapshot());
     this.#events = [{ id: 'event-0000', atActiveMs: 0, kind: 'reset', summary: '고정 초기 상태로 시작', cause: null, fromRevision: 0, toRevision: 0 }];
   }
 
-  view() { return playerView(this.#world); }
+  view() { return { ...playerView(this.#world), mode: this.#interpretationProvider ? 'ai' as const : 'mock' as const,
+    interpretation: { source: this.#interpretationProvider ? 'AI' as const : 'Mock' as const, status: this.#connectionStatus } }; }
 
   logs(): PublicLogRecord[] {
     return this.#events.map(({ id, atActiveMs, kind, summary }) => ({ id, atActiveMs, kind, summary }));
@@ -89,9 +106,56 @@ export class GameEngine {
     return { state: this.view(), ...(result ? { result } : {}) };
   }
 
-  command(request: CommandRequest): CommandResponse {
+  command(request: CommandRequest): P extends undefined ? CommandResponse : Promise<CommandResponse> {
+    const version = ++this.#requestVersion;
+    if (this.#interpretationProvider) {
+      return this.#commandAI(structuredClone(request), version) as P extends undefined ? CommandResponse : Promise<CommandResponse>;
+    }
     const outcome = this.#handleCommand(request);
-    return { state: this.view(), outcome };
+    return { state: this.view(), outcome } as P extends undefined ? CommandResponse : Promise<CommandResponse>;
+  }
+
+  async #commandAI(request: CommandRequest, version: number): Promise<CommandResponse> {
+    if (request.type !== 'submit' && request.type !== 'revise') return { outcome: this.#handleCommand(request), state: this.view() };
+    if (typeof request.text !== 'string' || !request.text.trim() || request.text.length > 2000) throw new Error('INVALID_TEXT');
+    if (request.type === 'revise') {
+      const blocked = this.#editBlock(this.#world.drafts.find(draft => draft.id === request.draftId), request.version);
+      if (blocked) return { outcome: this.#reject(blocked, request), state: this.view() };
+    }
+    const stale = (): CommandResponse => ({ state: this.view(), outcome: { kind: 'error', code: 'STALE_RESPONSE', input: request.text,
+      reply: '이전 해석 응답을 무시했습니다. 최신 초안은 보존되었습니다. 필요하면 입력을 다시 보내 주세요.' } });
+    try {
+      const input: ProviderInput = { text: request.text, knowledge: knowledgeFor(this.#world, 'player'),
+        context: structuredClone(this.#context), actions: actionVocabulary() };
+      if (request.type === 'revise') input.context.push({ role: 'player', text: this.#world.drafts.find(draft => draft.id === request.draftId)!.text });
+      const proposal = await interpret(this.#interpretationProvider!, input, this.#timeoutMs);
+      if (version !== this.#requestVersion) return stale();
+      const reading = toReading(proposal);
+      const outcome = request.type === 'submit' ? this.#submit(request, reading) : this.#revise(request, reading);
+      this.#context.push({ role: 'player', text: request.text }, { role: 'assistant', text: outcome.reply });
+      this.#context = this.#context.slice(-6);
+      this.#connectionStatus = this.#interpretationProvider!.status;
+      return { state: this.view(), outcome };
+    } catch (error) {
+      if (version !== this.#requestVersion) return stale();
+      const code = error instanceof ProviderError ? error.code : 'PROVIDER_ERROR';
+      const messages = { PROVIDER_TIMEOUT: 'AI 응답 시간이 초과되었습니다.', CALL_LIMIT: 'AI 호출 상한에 도달했습니다. 추가 호출을 차단했습니다.',
+        INVALID_PROPOSAL: 'AI 제안의 형식이나 허용 범위가 맞지 않습니다.', PROVIDER_ERROR: 'AI 연결에 실패했습니다.' };
+      this.#connectionStatus = messages[code];
+      return { state: this.view(), outcome: { kind: 'error', code, input: request.text,
+        reply: `${messages[code]} 입력과 초안은 보존되었습니다. 문장을 고쳐 쓰거나 다시 시도해 주세요. Mock으로 전환하지 않았습니다.` } };
+    }
+  }
+
+  #readMock(text: string): Interpretation {
+    const reading = this.#interpreter.interpret(text);
+    if (reading.intent !== 'command') return reading;
+    const proposal = validateProposal({ intent: 'command', dialogue: reading.reply,
+      proposedActions: [{ kind: reading.action, target: 'jiangdong-navy', assignee: 'zhou-yu',
+        restrictions: reading.restrictions, conditions: [], deadline: null }], unresolvedQuestions: reading.unresolved,
+      referencedKnowledgeIds: [], usage: { inputTokens: 0, outputTokens: 0, externalCalls: 0, costUsd: 0 } },
+    { text, knowledge: knowledgeFor(this.#world, 'player'), context: [], actions: actionVocabulary() });
+    return proposal.intent === 'command' ? reading : { intent: 'ambiguous', reply: `[Mock] ${proposal.dialogue}`, reason: '조건 확인 필요 · 실행 없음' };
   }
 
   #handleCommand(request: CommandRequest): CommandOutcome {
@@ -104,10 +168,10 @@ export class GameEngine {
     }
   }
 
-  #submit(request: Extract<CommandRequest, { type: 'submit' }>): CommandOutcome {
+  #submit(request: Extract<CommandRequest, { type: 'submit' }>, interpreted?: Interpretation): CommandOutcome {
     if (typeof request.text !== 'string' || !request.text.trim() || request.text.length > 2000) throw new Error('INVALID_TEXT');
     // Interpret before touching the world, so an interpreter failure changes nothing.
-    const reading = this.#interpreter.interpret(request.text);
+    const reading = interpreted ?? this.#readMock(request.text);
     const quoted = this.#quote(request.text);
     if (reading.intent !== 'command') {
       this.#record('command-submit', `입력 「${quoted}」 · ${INTENT_LABELS[reading.intent]} · 실행 없음 · ${reading.reason}`, structuredClone(request));
@@ -123,11 +187,12 @@ export class GameEngine {
     return { kind: 'draft', draftId: draft.id, version: 1, reply: reading.reply };
   }
 
-  #revise(request: Extract<CommandRequest, { type: 'revise' }>): CommandOutcome {
+  #revise(request: Extract<CommandRequest, { type: 'revise' }>, interpreted?: Interpretation): CommandOutcome {
     const draft = this.#world.drafts.find(item => item.id === request.draftId);
     const blocked = this.#editBlock(draft, request.version);
     if (blocked) return this.#reject(blocked, request);
-    const reading = this.#interpreter.interpret(request.text);
+    const reading = interpreted ?? this.#readMock(request.text);
+    if (reading.intent === 'ambiguous') return { kind: 'answer', intent: 'ambiguous', reply: reading.reply, reason: reading.reason };
     if (reading.intent !== 'command') return this.#reject('REVISION_NOT_COMMAND', request);
     const target = draft!;
     target.version++;

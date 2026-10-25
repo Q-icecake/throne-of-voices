@@ -20,6 +20,11 @@ const panel = byId('panel');
 const panelBody = byId('panel-body');
 const devDrawer = byId('dev-drawer');
 const replyLine = byId('reply');
+// AI replies can wrap or scroll. Reserve their actual height so panels never hide them.
+new ResizeObserver(entries => {
+  const height = entries[0]?.target.getBoundingClientRect().height ?? 0;
+  stage.style.setProperty('--speech-clearance', `${Math.ceil(height) + 28}px`);
+}).observe(byId('speech'));
 const devControls = ['advance', 'advance-30', 'pause', 'reset', 'probe-submit', 'snapshot', 'logs'];
 const pauseLabels = { manual: '수동', typing: '작성 중', provider: 'AI 대기', confirmation: '확인 대기', background: '백그라운드' };
 const PANEL_TITLES = { document: '문서', map: '강동 상황도', record: '처리 기록', command: '명령' } as const;
@@ -39,7 +44,7 @@ async function api<T>(path: string, body?: unknown): Promise<T> {
   const response = await fetch(path, {
     method: body === undefined ? 'GET' : 'POST',
     ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }),
-    signal: AbortSignal.timeout(5000),
+    signal: AbortSignal.timeout(path === '/api/command' ? 20000 : 5000),
   });
   if (!response.ok) throw new Error(`로컬 서버 오류 (${response.status}). 서버 실행 상태를 확인하고 다시 시도하세요. 입력은 보존되었습니다.`);
   return await response.json() as T;
@@ -90,7 +95,12 @@ function renderPanel(): void {
   panelBody.replaceChildren(content);
   for (const area of editing) {
     const next = panelBody.querySelector<HTMLTextAreaElement>(`#${area.id}`);
-    if (next) { next.value = area.value; next.closest<HTMLElement>('.revise')!.hidden = false; }
+    if (next) {
+      next.value = area.value;
+      next.closest<HTMLElement>('.revise')!.hidden = false;
+      const button = next.closest('.draft-card')?.querySelector('[data-revise-submit]');
+      if (button) button.textContent = '수정 반영';
+    }
   }
   panelBody.dataset.view = `${focus.panel}:${focus.documentId ?? ''}`;
   if (sameView) panelBody.scrollTop = scroll;
@@ -118,6 +128,10 @@ function renderBadges(): void {
 function render(next: PlayerView): void {
   if (!state) for (const doc of next.knowledge.documents) seenDocuments.add(doc.id);
   state = next;
+  stage.dataset.interpretation = next.mode;
+  const interpretation = next.interpretation ?? { source: 'Mock', status: 'AI 미연결, Mock 사용 중' };
+  byId('interpretation-status').textContent = `${interpretation.source} · ${interpretation.status}`;
+  byId('interpretation-status').title = interpretation.status;
   byId('active-time').textContent = seconds(next.clock.activeMs);
   byId('held-time').textContent = seconds(next.clock.heldMs);
   byId('revision').textContent = String(next.revision);
@@ -177,11 +191,19 @@ function describe(outcome: CommandOutcome): string {
 }
 
 async function command(request: CommandRequest): Promise<CommandOutcome> {
+  if (state?.mode === 'ai' && (request.type === 'submit' || request.type === 'revise')) {
+    showReply('AI 해석을 기다리는 중입니다 (최대 15초). 입력은 계속 고쳐 쓸 수 있습니다.', '해석 상태');
+  }
   const response = await api<CommandResponse>('/api/command', request);
   await refreshLogs();
   render(response.state);
   const { outcome } = response;
-  showReply(describe(outcome), outcome.kind === 'rejected' || outcome.kind === 'cancelled' ? '처리 결과' : '장굉');
+  showReply(describe(outcome), outcome.kind === 'rejected' || outcome.kind === 'cancelled' || outcome.kind === 'error' ? '처리 결과' : state?.mode === 'ai' ? 'AI 해석' : '장굉');
+  if (outcome.kind === 'error') {
+    replyLine.hidden = true;
+    errorBox.textContent = outcome.reply;
+    errorBox.hidden = false;
+  }
   if (outcome.kind === 'draft' && focus.panel !== 'command') setFocus({ type: 'open', panel: 'command' });
   return outcome;
 }
@@ -207,9 +229,9 @@ byId('speech-form').addEventListener('submit', event => {
   if (composing || !speechInput.value.trim()) return;
   const text = speechInput.value;
   void run(async () => {
-    await command({ type: 'submit', text });
+    const outcome = await command({ type: 'submit', text });
     // Clear only after the server accepted the input; failures keep the text.
-    if (speechInput.value === text) { speechInput.value = ''; autosize(); }
+    if (outcome.kind !== 'error' && !(outcome.kind === 'answer' && outcome.intent === 'ambiguous') && speechInput.value === text) { speechInput.value = ''; autosize(); }
   });
 });
 
@@ -254,7 +276,7 @@ byId('probe-form').addEventListener('submit', event => {
   void run(() => dispatch({ type: 'mock-probe', text: probeInput.value }));
 });
 
-const INTENT_LABELS = { command: '명령', question: '질문', hypothetical: '가정', unsupported: '미지원' } as const;
+const INTENT_LABELS = { command: '명령', question: '질문', hypothetical: '가정', discussion: '논의', ambiguous: '확인 질문', unsupported: '미지원' } as const;
 byId('samples').replaceChildren(...MOCK_SAMPLE_SENTENCES.map(sample => h('li', {},
   h('button', { type: 'button', onclick: () => { speechInput.value = sample.text; autosize(); updateSpeechButton(); speechInput.focus(); } }, sample.text),
   h('small', {}, INTENT_LABELS[sample.intent]))));

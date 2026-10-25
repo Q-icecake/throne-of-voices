@@ -68,7 +68,7 @@ function draftCard(draft: CommandDraftView, actions: PanelActions): HTMLElement 
     h('textarea', { id: `revise-${draft.id}`, rows: '2', maxlength: '2000' }));
   const textarea = editor.querySelector('textarea')!;
   textarea.value = draft.text;
-  const reviseButton = h('button', { type: 'button', class: 'btn', disabled: actions.busy, onclick: () => {
+  const reviseButton = h('button', { type: 'button', class: 'btn', 'data-revise-submit': '', disabled: actions.busy, onclick: () => {
     if (editor.hidden) { editor.hidden = false; reviseButton.textContent = '수정 반영'; textarea.focus(); return; }
     if (textarea.value.trim()) actions.revise(draft, textarea.value);
   } }, '수정');

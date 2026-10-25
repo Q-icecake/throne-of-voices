@@ -1,0 +1,9 @@
+[
+  {
+    "kind": "naval-drill",
+    "description": "주유가 강동 수군을 정비한다. 대상 jiangdong-navy, 수행자 zhou-yu만 허용. 교전은 포함하지 않는다. no-first-strike는 먼저 공격하지 말라는 제한이다. 기타 조건과 기한은 확인 질문으로 돌린다. 여러 행동의 분해·실행은 M3 이전에는 지원하지 않는다.",
+    "targets": ["jiangdong-navy"],
+    "assignees": ["zhou-yu"],
+    "restrictions": ["no-first-strike"]
+  }
+]

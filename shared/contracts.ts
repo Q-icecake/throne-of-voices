@@ -96,7 +96,8 @@ export interface PlayerView {
   scenario: 'm1-fixture-v1';
   sessionId: string;
   revision: number;
-  mode: 'mock';
+  mode: 'mock' | 'ai';
+  interpretation?: { source: 'Mock' | 'AI'; status: string };
   clock: ClockState;
   player: { name: string; locationLabel: string };
   characters: { id: CharacterId; name: string; role: string }[];
@@ -133,7 +134,7 @@ export type CommandRequest =
   | { type: 'cancel'; draftId: string; version: number }
   | { type: 'confirm'; draftId: string; version: number };
 
-export type CommandIntent = 'command' | 'question' | 'hypothetical' | 'unsupported';
+export type CommandIntent = 'command' | 'question' | 'hypothetical' | 'discussion' | 'ambiguous' | 'unsupported';
 
 export type RejectionCode =
   | 'DRAFT_NOT_FOUND' | 'DRAFT_VERSION_OUTDATED' | 'DRAFT_CANCELLED' | 'DRAFT_REJECTED'
@@ -141,6 +142,7 @@ export type RejectionCode =
   | 'TASK_CONFLICT' | 'GRAIN_SHORT' | 'ASSIGNEE_BUSY';
 
 export type CommandOutcome =
+  | { kind: 'error'; code: 'PROVIDER_ERROR' | 'PROVIDER_TIMEOUT' | 'CALL_LIMIT' | 'INVALID_PROPOSAL' | 'STALE_RESPONSE'; reply: string; input: string }
   | { kind: 'draft'; draftId: string; version: number; reply: string }
   | { kind: 'answer'; intent: Exclude<CommandIntent, 'command'>; reply: string; reason: string }
   | { kind: 'confirmed'; draftId: string; taskId: string; duplicate: boolean; reply: string }
