@@ -9,6 +9,8 @@
 | 다른 PC로 옮기기 | [docs/USB_PORTABILITY.md](docs/USB_PORTABILITY.md) |
 | Gemini·Ollama·VPN 설정 | [docs/LLM_SETUP.md](docs/LLM_SETUP.md) |
 | 평가(eval) 명령과 결과 읽기 | [docs/EVAL.md](docs/EVAL.md) |
+| 모델 비교·기본 공급자 판정 | [docs/LLM_COMPARISON.md](docs/LLM_COMPARISON.md) |
+| 새 PC 설치·Claude 프롬프트 | [docs/NEW_PC_SETUP_PROMPT.md](docs/NEW_PC_SETUP_PROMPT.md) |
 | 알려진 한계 | [docs/KNOWN_LIMITS.md](docs/KNOWN_LIMITS.md) |
 | 플레이 방법 | [docs/PLAY_GUIDE.md](docs/PLAY_GUIDE.md) |
 | 기획·범위 | `PROTOTYPE_SPEC.md`, `DEVELOPMENT_PLAN.md`, `VISUAL_DIRECTION.md`, `OPENING_SCENARIO.md` |
@@ -27,7 +29,7 @@ Throne of Voices 프로젝트를 이어서 작업한다. 작업 폴더는 F:\Mai
 먼저 HANDOFF.md 전체를 읽고, 그다음 docs/ARCHITECTURE.md를 읽어라. 세부가 필요하면 HANDOFF.md 표의 문서를 따른다.
 규칙: 한국어로 답한다. API 키는 환경변수나 화면 입력으로만 다루고 파일·커밋·채팅에 쓰지 않는다. 대규모 구현은 Codex에 위임하고 Claude는 계획·검토·통합을 맡는다(사용자 기본 분업). 커밋은 해도 되지만 push 전에는 알려 준다.
 시작 확인: .\run.ps1 install → .\run.ps1 typecheck → .\run.ps1 test (1138개 통과가 기준).
-지금 할 일: HANDOFF.md 5절의 EXAONE 결과 채우기와 모델 비교, 그다음 6절 "남은 문제 / 다음 단계" 1번부터.
+지금 할 일: HANDOFF.md 5절과 docs/LLM_COMPARISON.md의 기본 Mock 유지 판정을 확인한다. 다음은 로컬 프롬프트 개선안과 Gemini 전체 dev/NPC 평가이며 라이브 호출은 별도 승인된 환경에서만 한다. 새 PC 설치는 docs/NEW_PC_SETUP_PROMPT.md를 따른다.
 ```
 
 ## 1. 이 프로젝트는 무엇인가
@@ -39,6 +41,7 @@ Throne of Voices 프로젝트를 이어서 작업한다. 작업 폴더는 F:\Mai
 - **Mock 모드(키 없이)**: 첫 15분 전체가 완성되어 동작한다.
 - **실제 AI 연결(Gemini / OpenAI 호환 / Ollama)**: 코드·설정 화면·진단·속도 제한·VPN 경로 모두 구현됨. **실제 모델 품질은 아직 충분히 검증되지 않았다**(아래 5절).
 - 자동 검증: 타입체크 통과, `node --test` **1138/1138 통과**(통합 직후 이 PC에서 측정).
+- 039 보완 후: 전체 **1150/1150**, 타입·빌드·`verify-all` **21/21**, 정답 scripted **80/80** 통과. EXAONE 원문 2건은 NPC eval 후단에서 거절하며 게임 비노출 회귀도 통과했다. 설치 자체는 모의 실행·실제 드라이런으로 검증했고 실설치·추론 호출은 하지 않았다.
 
 ### v0.1 → v0.2 구성 (main에 모두 들어 있음)
 
@@ -94,7 +97,7 @@ $env:LLM_PROVIDER = 'ollama'; $env:OLLAMA_MODEL_ID = 'qwen3:4b'
 .\run.ps1 dev                 # 또는 첫 화면 설정에서 Ollama 선택 → 모델 목록 불러오기
 ```
 
-기준 PC: Ollama 0.40.8, RAM 16GB, GPU RX 6600 XT(GPU 가속 여부는 미확인). 주소는 loopback만 허용된다.
+기준 PC: Ollama 0.40.8, RAM 16GB, GPU RX 6600 XT 8GB(리드 실측에서 100% GPU 확인; 이번 작업의 재측정은 아님). 주소는 loopback만 허용된다.
 
 ### 키·비밀 규칙
 
@@ -114,27 +117,28 @@ node scripts/eval/compare.ts <결과폴더1> <결과폴더2> --out artifacts/oll
 
 결과는 `artifacts/eval/<UTC시각>-<모드>-<pid>/`(summary.md, results.json, human-review.csv). 개발(dev) 세트 80건(명령 60+NPC 20)만 쓰고 **final 세트는 아직 한 번도 채점하지 않았다**(튜닝 오염 방지).
 
-알려진 결과(기록 기준):
-- Mock: 원응답 47/80 → 검증 후 51/80 (Mock은 언어 모델이 아님).
-- 정답 scripted replay: 80/80 (validator 수정 후).
-- Gemini 첫 라이브 실행: 18회 시도, 통과 11/18, HTTP 429로 중단. 원인 분석은 EVAL.md 036절.
-- 실제 모델 dev 80건 결과 (요약 원본: [docs/eval-results/](docs/eval-results/)):
+실측 비교와 원본 실행 ID·한계는 [docs/LLM_COMPARISON.md](docs/LLM_COMPARISON.md)를 따른다. 아래는 **039 수정 전 실측**이다.
 
-| 모델 | 실행 건수 | 모델 원본 통과 | 검증 후 통과 | 모델 원본 안전 위반 | 지연 p50 |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Gemini 3.5 Flash-Lite | 18/20 (429로 중단) | — (v2 형식) | 11/18 | 0/18 | 2.3초 |
-| Ollama qwen3:4b | 80/80 | 0/80 | 6/80 | 79/80 | 10.7초 |
-| Ollama qwen3:8b | 80/80 | 16/80 | 24/80 | 50/80 | 18.6초 |
-| Ollama exaone3.5:7.8b | **2026-10-26 새벽 실행 중** | | | | |
+| 모델 | 검증 후 정답 | 명령 / NPC | 모델 원본 안전 위반 | 검증 후 안전 위반 | 지연 p50 / p95 | 형식·호출 오류 |
+| --- | ---: | --- | ---: | ---: | --- | ---: |
+| Gemini 3.5 Flash Lite | 11/18 (61.1%) | 11/18 / 미측정 | 미측정(v2 어댑터 0/18) | 0/18 | 2.3초 / 3.4초 | 1 (429) |
+| qwen3:4b | 6/80 (7.5%) | 6/60 / 0/20 | 79/80 | 0/80 | 10.7초 / 12.6초 | 40 |
+| qwen3:8b | 24/80 (30.0%) | 20/60 / 4/20 | 50/80 | 0/80 | 18.6초 / 32.0초 | 4 |
+| exaone3.5:7.8b | 19/80 (23.8%) | 13/60 / 6/20 | 45/80 | **2/80** | 19.7초 / 31.3초 | 35 |
 
-  읽는 법: "안전 위반"은 모델이 낸 원본 제안의 위반이며, 검증 후(validator 통과 후) 위반은 모든 실행에서 0이다. 즉 게임은 안전하지만 로컬 소형 모델은 해석을 많이 틀린다. 현재까지는 Gemini가 정확도·속도 모두 가장 낫다.
-- EXAONE 평가는 옛 작업 폴더 `%USERPROFILE%\dispatch-work\throne-v02`에서 돌았으며 결과는 그 폴더의 `artifacts/eval/<시각>-live-<pid>/`에 생긴다. 끝나면 summary.md를 `docs/eval-results/`로 복사하고 위 표를 채운 뒤, `node scripts/eval/compare.ts <폴더들> --out artifacts/ollama-comparison.md`로 비교표를 만든다.
+Gemini는 dev 처음 18건·명령만, 로컬은 dev 80건 전체다. 같은 세트라도 표본 차이가 있어 전체 품질 순위를 확정하지 않는다. Gemini의 진짜 modelRaw는 당시 포착하지 않았다.
+
+**기본 공급자 기준은 검증 후 정답률 ≥60%, 검증 후 안전 위반 0건, 지연 p50 ≤8초를 모두 충족하는 것. 로컬은 정확도·지연 미달이며 EXAONE은 안전도 미달이다. 기본 Mock 유지, 실제 AI는 Gemini 잠정 권장, Ollama는 선택·오프라인 개발용(로컬 중 qwen3:8b 우선).** 코드 기본값은 바꾸지 않았다.
+
+EXAONE 두 건은 `N-zhang-zhao-05` / `N-zhou-yu-05`의 허위 수군 정비 완료 대사다. 구조 검사만 수행하던 eval 경로는 통과했지만 게임의 기존 표시 전 claim guard는 차단한다. 039에서 NPC eval에도 같은 guard를 적용하여 두 원문을 거절하며, 거절은 정답으로 세지 않는다. 원본은 `tests/fixtures/exaone-039.json`, 실패→수정 회귀는 `tests/local-llm-safety.test.ts`에 있다. 이전 실측 파일은 그대로 보존한다.
+
+정답 scripted replay는 80/80을 유지해야 한다. Mock/오류 주입 점수는 언어 모델 품질이 아니며 원본·어댑터·후단을 구분한다. 새 PC는 [설치 프롬프트](docs/NEW_PC_SETUP_PROMPT.md)와 루트 `setup.ps1`을 사용한다.
 
 ## 6. 남은 문제 / 다음 단계
 
 우선순위 제안:
 
-1. **Ollama/Gemini 실제 품질 비교를 끝내고 기본 모델을 결정**한다(위 5절). 실패 사례는 `human-review.csv`로 사람이 본다.
+1. **기본 Mock 유지 판정 완료**(5절). 프롬프트 단순화·few-shot·스키마 간소화 후보로 로컬을 재평가하고 Gemini dev 80건 전체·NPC 평가를 진행한다. 라이브 호출은 별도 승인·무료 할당량 범위에서만 한다.
 2. 라이브 평가에서 드러난 validator 과잉 거부/모델 오류를 구분해 고친다(EVAL.md 036·다음 라이브 실행 권고).
 3. 사람 검증: 15분 플레이의 재미·긴장, 실제 IME, 다른 브라우저, 역사 문서의 사료 대조 ([KNOWN_LIMITS.md](docs/KNOWN_LIMITS.md), `docs/QA_MATRIX.md`).
 4. 아트: 현재 SVG는 임시 자산이다. 인물 표현·복식·공간감의 사람 평가 필요.
