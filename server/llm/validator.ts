@@ -47,7 +47,7 @@ export function validateProposal(raw: unknown, input: ProviderInput): Proposal {
   matches(value, OUTPUT_SCHEMA);
   const proposal = structuredClone(value) as Proposal;
   if (!/[가-힣]/.test(proposal.dialogue) || proposal.unresolvedQuestions.some(q => !/[가-힣]/.test(q))) invalid();
-  const ids = new Set(input.knowledge.documents.map(doc => doc.id));
+  const ids = new Set([...input.knowledge.documents.map(doc => doc.id), ...(input.character?.cards.map(card => card.id) ?? [])]);
   if (proposal.referencedKnowledgeIds.some(id => !ids.has(id))) invalid();
   for (const action of proposal.proposedActions) {
     const vocabulary = registry.find(entry => entry.kind === action.kind);

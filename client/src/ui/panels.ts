@@ -1,8 +1,34 @@
 import type { CommandDraftView, PlayerView, PublicDocument, PublicLogRecord, TaskView } from '../../../shared/contracts.ts';
 import { h, seconds } from './dom.ts';
 import MAP_SVG from '../assets/jiangdong-map.svg?raw';
+import type { AudienceRequest, CharacterId } from '../../../shared/contracts.ts';
+
+export function audiencePanel(state: PlayerView, busy: boolean, act: (request: AudienceRequest) => void): HTMLElement {
+  const next = state.audience.requested.find(id => state.characters.find(c => c.id === id)?.audienceStatus === 'ready');
+  const selected = new Set<CharacterId>(state.audience.participants);
+  const choices = h('div', { class: 'audience-choices' });
+  const notice = h('p', { role: 'status', class: 'audience-notice' });
+  for (const person of state.characters) {
+    const occupied = person.audienceStatus === 'busy';
+    const checkbox = h('input', { type: 'checkbox', value: person.id, checked: selected.has(person.id), disabled: occupied || busy, 'aria-label': `${person.name} 회의 참석`,
+      onchange: event => { if ((event.target as HTMLInputElement).checked) selected.add(person.id); else selected.delete(person.id); } });
+    choices.append(h('div', { class: 'audience-person' },
+      h('label', {}, checkbox, `${person.name} · ${person.role}`),
+      h('small', {}, occupied ? '임무 중 · 접견 불가' : state.audience.requested.includes(person.id) ? '접견 요청 · 호출 가능' : '호출 가능'),
+      h('button', { type: 'button', 'data-invite': person.id, disabled: occupied || busy, onclick: () => act({ type: 'invite', participants: [person.id] }) }, '단독 접견'),
+      h('button', { type: 'button', 'data-defer': person.id, disabled: busy, onclick: () => act({ type: 'defer', characterId: person.id }) }, '연기'),
+      state.audience.participants.includes(person.id) ? h('button', { type: 'button', 'data-dismiss': person.id, disabled: busy, onclick: () => act({ type: 'dismiss', characterId: person.id }) }, '퇴실') : null));
+  }
+  return h('div', { class: 'audience-panel' }, h('p', {}, '원하는 인물을 먼저 부를 수 있습니다. 회의는 두세 명을 선택해 여십시오.'),
+    next ? h('button', { type: 'button', id: 'next-audience', disabled: busy, onclick: () => act({ type: 'invite', participants: [next] }) }, `요청 순서대로 접견 · ${state.characters.find(c => c.id === next)!.name}`) : null, choices,
+    h('button', { type: 'button', id: 'start-meeting', disabled: busy, onclick: () => {
+      if (selected.size < 2 || selected.size > 3) { notice.textContent = '회의에는 두세 명을 선택해 주십시오.'; return; }
+      act({ type: 'invite', participants: [...selected] });
+    } }, '선택한 인물과 회의'), notice, h('p', { class: 'dev-note' }, '작성된 대사 풀 · 오프라인 대화 / LLM 대사 라이브 미검증'));
+}
 
 export interface PanelActions {
+  share?(characterId: CharacterId, documentId: string): void;
   openDocument(id: string): void;
   confirm(draft: CommandDraftView): void;
   cancel(draft: CommandDraftView): void;
@@ -51,7 +77,11 @@ export function documentPanel(state: PlayerView, selectedId: string | null, acti
     h('p', { class: 'paper-body' }, selected.claim),
     h('dl', { class: 'paper-meta' }, ...meta.flatMap(([label, value]) => [h('dt', {}, label), h('dd', {}, value)])),
     h('span', { class: 'stamp' }, '시험 자료'));
-  return h('div', { class: 'doc-panel' }, list, paper);
+  const sharing = selected.id !== LEDGER_DOC_ID && actions.share ? h('div', { class: 'document-sharing' },
+    h('p', {}, '열람만으로는 다른 인물에게 전달되지 않습니다.'),
+    ...state.audience.participants.map(id => h('button', { type: 'button', 'data-share': id, disabled: actions.busy,
+      onclick: () => actions.share!(id, selected.id) }, `${state.characters.find(c => c.id === id)!.name}에게 보여 주기`))) : null;
+  return h('div', { class: 'doc-panel' }, list, paper, sharing);
 }
 
 function conditionLabel(value: string): string {

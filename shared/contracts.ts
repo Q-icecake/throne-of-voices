@@ -109,6 +109,8 @@ export interface LedgerView {
 }
 
 export interface PlayerView {
+  audience: { participants: CharacterId[]; met: CharacterId[]; requested: CharacterId[] };
+  conversation: TalkTurn[];
   schemaVersion: 1;
   scenario: 'm1-fixture-v1';
   sessionId: string;
@@ -117,7 +119,7 @@ export interface PlayerView {
   interpretation?: { source: 'Mock' | 'AI'; status: string };
   clock: ClockState;
   player: { name: string; locationLabel: string };
-  characters: { id: CharacterId; name: string; role: string }[];
+  characters: { id: CharacterId; name: string; role: string; audienceStatus: 'ready' | 'busy' }[];
   knowledge: KnowledgeView;
   ledger: LedgerView;
   drafts: CommandDraftView[];
@@ -169,6 +171,7 @@ export type CommandOutcome =
   | { kind: 'rejected'; code: RejectionCode; reply: string };
 
 export type LogKind =
+  | 'audience' | 'talk' | 'document-shared' | 'relationship'
   | 'reset' | TestAction['type']
   | 'command-submit' | 'command-revise' | 'command-cancel' | 'command-confirm' | 'command-rejected'
   | 'task-delivered' | 'task-completed' | 'task-progress' | 'command-recall';
@@ -194,4 +197,19 @@ export interface ActionResponse {
 export interface CommandResponse {
   state: PlayerView;
   outcome: CommandOutcome;
+}
+
+export interface TalkTurn { eventId: string; speaker: CharacterId | 'player'; text: string; participants: CharacterId[] }
+export type AudienceRequest =
+  | { type: 'invite'; participants: CharacterId[] }
+  | { type: 'dismiss' | 'defer'; characterId: CharacterId }
+  | { type: 'share'; characterId: CharacterId; documentId: string };
+export interface TalkRequest { characterId: CharacterId; text: string }
+export interface TalkResponse {
+  source: 'offline' | 'AI' | 'mixed';
+  state: PlayerView;
+  turns: TalkTurn[];
+  inputOwner: 'player';
+  outcome?: CommandOutcome;
+  notice?: string;
 }

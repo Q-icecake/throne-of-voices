@@ -9,6 +9,14 @@ export interface ActionVocabulary {
   restrictions: RestrictionId[];
 }
 export interface ProviderInput {
+  character?: {
+    id: import('../../shared/contracts.ts').CharacterId;
+    identity: string; stance: string; expertise: string; concerns: string;
+    relationship: string;
+    cards: { id: string; claim: string }[];
+    memories: { eventId: string; fact: string; witnesses: import('../../shared/contracts.ts').CharacterId[] }[];
+    memorySummary: { text: string; eventIds: string[] };
+  };
   text: string;
   knowledge: KnowledgeView;
   context: { role: 'player' | 'assistant'; text: string }[];

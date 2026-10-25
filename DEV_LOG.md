@@ -1,5 +1,20 @@
 # Development Log
 
+## 2026-10-25 — J07 / 008 M4 네 인물 대화
+
+- 구현: 장굉·장조·주유·노숙의 서버 인물 카드/입장/전문성/우려/관계/사건 ID 기억, `POST /api/talk`, 접견·회의·연기·퇴실·명시적 문서 공유. 질문/논의는 자원·작업·외교를 바꾸지 않으며 명령은 기존 M2/M3 해석·검증·초안·확인 경로를 재사용한다. 첫 접견 중복 방지와 요청 순서 변경을 지원한다.
+- 지식 경계: 자기 카드와 허용된 문서/대화/기억만 분리해 Provider에 전달한다. 회의는 현재 참석자 전원에게 허용된 자료만 사용한다. 비참석자 기억, 공유 전 문서, 미래·숨은 병력·적의 속마음 보호를 검사했다. 문서 열람은 공유가 아니다. 전체 WorldState와 관계 수치는 Provider/브라우저에 노출하지 않는다.
+- 기억/관계: 사실 기록 및 요약이 실제 사건 ID를 참조한다. 질문·가정은 질문으로 기록하고, 명령 기억은 확정 ID와 금지 조건/미완료 상태를 보존한다. 새 문서 공유에만 작은 존중 변화와 이유를 남기며, 연기·퇴실로 신뢰를 떨어뜨리지 않는다. 회의는 한 답변과 짧은 반론 후 입력권을 반환한다. 자동 토론/힌트/재촉 없음.
+- 화면: 기존 S2/S3와 기록 패널 사용, 4명 선택과 두세 명 회의, 문서별 보여 주기, 임무 중 접견 불가 사유, 입력 보존, 퇴실 인물 숨김. 새 SVG 3개는 장굉 원본의 색·관·소품 변형인 임시 표현이다. 최종 아트 아님. 새 의존성 없음.
+- 수정 중 발견·해결: 내부 `available` 공개가 기존 경계 테스트를 깨뜨려 파생 `audienceStatus`만 공개하도록 수정했다. 1366 회의 명패 가림을 수정했고, 명령 패널 열린 상태에서 새 초안을 만들면 패널이 닫히던 회귀를 M3 브라우저 검사로 발견해 고쳤다. 접견 부재 시에도 제출한 문장을 보존한다. 브라우저 스크립트의 숨김/비동기 패널 대기 오류를 고쳐 실제 결과까지 기다리도록 했다.
+- 자동 검증: `node --test tests/*.test.ts` **106/106** (기존 93개 유지, 신규 13개), `node node_modules/typescript/bin/tsc --noEmit`, `node node_modules/vite/bin/vite.js build`, `git -c safe.directory=C:/Users/q_ice/dispatch-work/throne-integrate diff --check` 통과. 기존 테스트 삭제·약화 없음.
+- 설치된 Edge headless 1920×1080·1366×768: `node scripts/verify-m4.ts` **16/16**, `node scripts/screenshots.ts --out artifacts/m4/scenes` **12/12**, `node scripts/verify-visual.ts --out artifacts/m4/visual` **16/16**, `node scripts/verify-m3.ts --out artifacts/m4/m3` **10/10**, `node scripts/verify-llm-ui.ts --out artifacts/m4/llm` **12/12**, `node scripts/verify-r1.ts --out artifacts/m4/r1` **6/6**. R1 스크립트에 출력 경로 옵션만 추가했다.
+- 증거: `artifacts/m4/`의 tests/typecheck/build/diff-check 로그, verification-exit-codes.json, character-browser-checks.json 및 하위 회귀 JSON. `audience-{zhang-hong,zhang-zhao,zhou-yu,lu-su}-{1920x1080,1366x768}.png`, `meeting-{1920x1080,1366x768}.png` 10장을 직접 확인했다. 문서·지도·기록 전환 후 입력, 두 발언 후 입력권 반환, 지연 자동 대화 없음, 원문 기록, 공유 전/후, 미확인 명령의 무소모, 임무 중 버튼 사유를 실제 UI로 검사했다.
+- 문서: `docs/CHARACTERS.md`와 `client/src/assets/ASSETS.md`. 서버 변경 `server/{characters,world,knowledge,engine,http,mock-interpreter}.ts`, `server/llm/{types,validator}.ts`, `system.ko.txt`; 계약 `shared/contracts.ts`; 화면 `client/index.html`, `client/src/{main,style,ui/focus,ui/panels}` 및 SVG; 검사 `tests/characters.test.ts`, `scripts/{verify-m4,verify-r1}.ts`.
+- 결정/가정: 기본 요청 목록은 고정 시험 설정, 접견 이동은 즉시 처리한다. 자동 요청·이동 이벤트는 M5에 넘긴다. 캐릭터의 개인 문서라도 플레이어/회의 참석자가 모르면 자동 낭독하지 않는다. UI 계산 장부는 공유 원본 문서가 아니므로 실제 보고 문서를 공유한다. 오프라인 선택은 난수를 쓰지 않는 고정 대사 풀이다.
+- 미검증: **작성된 대사 풀 기준 오프라인 구현, LLM 대사는 라이브 미검증**. 실제 외부 호출 0회. 일반 한국어 이해, 대사 자연스러움, 모델 사전학습 미래정보 억제, 실제 IME, 다른 브라우저, 15분 재미는 미검증이다. 자동 시험 통과를 이 품질의 증명으로 쓰지 않는다.
+- 제출: 시작 HEAD `f187315`, 브랜치 `integrate/visual-assets`에 변경 보존. `_common.md`/HANDOFF는 Git add/commit을 시도하지 말고 리드가 커밋하도록 명시하며, `.git`은 쓰기 범위 밖 원본 저장소의 worktree 메타데이터를 가리킨다. add/commit/push 미실행. 소유권 차이는 읽기 명령별 safe.directory만 사용했다. 전역 설정 변경·사용자 확인 팝업 없음. 인계 보고 `.codex-runs/m4-characters-report.md`; 다음 단계는 리드 커밋 및 M5 사건 연결이다.
+
 ## 2026-10-25 — J06b / 010 R1 지적 수정
 
 - 범위: R1 네 건을 실패 테스트로 재현한 뒤 수정했다. 최초 신규 서버 검사 25개 중 19개 실패·6개 기존 통과, 화면 6개 중 5개 실패·1개 통과. `비공개` 오판, 원문 없는 수군 추가, 같은 절 행동 덮어쓰기/세금 요청 소실, 단독 조건 누락 및 1366 스크롤 문제 모두 재현. 별도 잘못된 의도 검사도 실패 후 수정했다. 증거: `artifacts/r1-fixes/repro-*`.

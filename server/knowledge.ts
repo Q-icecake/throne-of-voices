@@ -51,9 +51,11 @@ function taskView(world: WorldState, task: WorldState['tasks'][number]): TaskVie
 export function playerView(world: WorldState): PlayerView {
   return {
     schemaVersion: 1, scenario: world.scenario, sessionId: world.sessionId,
+    audience: structuredClone(world.audience), conversation: structuredClone(world.conversation),
     revision: world.revision, mode: 'mock', clock: structuredClone(world.clock),
     player: { name: world.player.name, locationLabel: world.player.locationLabel },
-    characters: world.characters.map(({ id, name, role }) => ({ id, name, role })),
+    characters: world.characters.map(({ id, name, role, available }) => ({ id, name, role,
+      audienceStatus: available && !world.tasks.some(t => t.assignee === id && !['completed', 'stopped'].includes(t.stage)) ? 'ready' : 'busy' })),
     knowledge: knowledgeFor(world, 'player'),
     ledger: {
       recordedAtMs: world.ledger.recordedAtMs, source: world.ledger.source,

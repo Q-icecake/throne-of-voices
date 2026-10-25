@@ -11,6 +11,12 @@ import { INITIAL_FOCUS, reduceFocus, sceneId } from './ui/focus.ts';
 import type { FocusEvent, FocusState } from './ui/focus.ts';
 import { commandPanel, documentList, documentPanel, mapPanel, recordPanel } from './ui/panels.ts';
 import type { PanelActions } from './ui/panels.ts';
+import { audiencePanel } from './ui/panels.ts';
+import type { AudienceRequest, CharacterId, TalkResponse } from '../../shared/contracts.ts';
+import zhaoArt from './assets/zhang-zhao.svg';
+import yuArt from './assets/zhou-yu.svg';
+import suArt from './assets/lu-su.svg';
+import hongArt from './assets/zhang-hong.svg';
 
 const stage = byId('stage');
 const speechInput = byId<HTMLTextAreaElement>('speech-input');
@@ -27,13 +33,16 @@ new ResizeObserver(entries => {
 }).observe(byId('speech'));
 const devControls = ['advance', 'advance-30', 'pause', 'reset', 'probe-submit', 'snapshot', 'logs'];
 const pauseLabels = { manual: '수동', typing: '작성 중', provider: 'AI 대기', confirmation: '확인 대기', background: '백그라운드' };
-const PANEL_TITLES = { document: '문서', map: '강동 상황도', record: '처리 기록', command: '명령' } as const;
+const PANEL_TITLES = { document: '문서', map: '강동 상황도', record: '처리 기록', command: '명령', audience: '접견 · 회의' } as const;
 
 let state: PlayerView | undefined;
 let focus: FocusState = INITIAL_FOCUS;
 let logs: PublicLogRecord[] = [];
 let busy = false;
 let composing = false;
+let audienceMode = false;
+let addressee: CharacterId = 'zhang-hong';
+const art = { 'zhang-hong': hongArt, 'zhang-zhao': zhaoArt, 'zhou-yu': yuArt, 'lu-su': suArt };
 const seenDocuments = new Set<string>();
 
 mountSlot(byId('layer-back'), 'court.background');
@@ -44,7 +53,7 @@ async function api<T>(path: string, body?: unknown): Promise<T> {
   const response = await fetch(path, {
     method: body === undefined ? 'GET' : 'POST',
     ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }),
-    signal: AbortSignal.timeout(path === '/api/command' ? 20000 : 5000),
+    signal: AbortSignal.timeout(path === '/api/command' || path === '/api/talk' ? 20000 : 5000),
   });
   if (!response.ok) throw new Error(`로컬 서버 오류 (${response.status}). 서버 실행 상태를 확인하고 다시 시도하세요. 입력은 보존되었습니다.`);
   return await response.json() as T;
@@ -60,7 +69,7 @@ function setFocus(event: FocusEvent): void {
 function renderFocus(): void {
   stage.dataset.scene = sceneId(focus);
   stage.dataset.panel = focus.panel;
-  for (const [id, name] of [['tool-documents', 'document'], ['tool-map', 'map'], ['tool-command', 'command'], ['tool-record', 'record']] as const) {
+  for (const [id, name] of [['tool-audience', 'audience'], ['tool-documents', 'document'], ['tool-map', 'map'], ['tool-command', 'command'], ['tool-record', 'record']] as const) {
     byId(id).setAttribute('aria-pressed', String(focus.panel === name));
   }
   byId('tool-dev').setAttribute('aria-pressed', String(focus.devOpen));
@@ -69,6 +78,7 @@ function renderFocus(): void {
 }
 
 const panelActions = (): PanelActions => ({
+  share: (characterId, documentId) => void run(() => audience({ type: 'share', characterId, documentId })),
   busy,
   recall: task => void run(async () => { await command({ type: 'recall', taskId: task.id }); }),
   openDocument: id => setFocus({ type: 'open', panel: 'document', documentId: id }),
@@ -88,6 +98,7 @@ function renderPanel(): void {
   const sameView = panelBody.dataset.view === viewKey;
   let content: HTMLElement;
   switch (focus.panel) {
+    case 'audience': content = audiencePanel(state, busy, request => void run(() => audience(request))); break;
     case 'document': content = documentPanel(state, focus.documentId, panelActions()); break;
     case 'map': content = mapPanel(state, panelActions()); break;
     case 'command': content = commandPanel(state, panelActions()); break;
@@ -131,6 +142,7 @@ function renderBadges(): void {
 function render(next: PlayerView): void {
   if (!state) for (const doc of next.knowledge.documents) seenDocuments.add(doc.id);
   state = next;
+  renderAudience();
   stage.dataset.interpretation = next.mode;
   const interpretation = next.interpretation ?? { source: 'Mock', status: 'AI 미연결, Mock 사용 중' };
   byId('interpretation-status').textContent = `${interpretation.source} · ${interpretation.status}`;
@@ -149,6 +161,55 @@ function render(next: PlayerView): void {
   byId('snapshot-preview').textContent = JSON.stringify(next, null, 2);
   renderBadges();
   renderPanel();
+}
+
+function renderAudience(): void {
+  if (!state) return;
+  const empty = state.audience.participants.length === 0;
+  stage.dataset.audienceEmpty = String(empty);
+  document.querySelector<HTMLElement>('.character-art')!.hidden = empty;
+  byId('zhang-hong-tag').hidden = empty;
+  byId('hotspot-zhang-hong').hidden = empty;
+  if (!state.audience.participants.includes(addressee)) addressee = state.audience.participants[0] ?? 'zhang-hong';
+  const person = state.characters.find(c => c.id === addressee)!;
+  document.querySelector('.speech-to')!.textContent = empty ? '접견 필요' : `${person.name}에게`;
+  byId('speech').setAttribute('aria-label', `${person.name}에게 말하기`);
+  speechInput.placeholder = `${person.name}에게 말하거나 지시하세요. (Enter 줄바꿈 · 전하기 버튼으로 전송)`;
+  const mainImage = document.querySelector<HTMLImageElement>('.character-art .slot-image');
+  if (mainImage && !mainImage.src.endsWith(art[addressee])) mainImage.src = art[addressee];
+  byId('zhang-hong-tag').textContent = `${person.name} · ${person.role}`;
+  byId('hotspot-zhang-hong').setAttribute('aria-label', `${person.name}에게 말하기`);
+  document.querySelectorAll('.meeting-figure').forEach(el => el.remove());
+  state.audience.participants.filter(id => id !== addressee).forEach((id, index) => {
+    const other = state!.characters.find(c => c.id === id)!;
+    const figure = h('button', { type: 'button', class: 'meeting-figure', 'aria-label': `${other.name}에게 발언 요청`,
+      onclick: () => { addressee = id; renderAudience(); speechInput.focus(); } },
+      h('img', { src: art[id], alt: '', class: 'meeting-art' }), h('span', {}, other.name));
+    figure.style.left = `${58 + index * 12}%`;
+    byId('layer-mid').append(figure);
+  });
+  if (audienceMode) {
+    focus = reduceFocus(focus, { type: 'address', speaker: state.audience.participants.length ? addressee : null, meeting: state.audience.participants.length > 1 });
+    stage.dataset.scene = sceneId(focus);
+  }
+}
+
+async function audience(request: AudienceRequest): Promise<void> {
+  const response = await api<TalkResponse>('/api/audience', request);
+  audienceMode = true;
+  render(response.state);
+  showReply(response.notice ?? '접견 상태를 갱신했습니다.', '접견');
+  if (request.type === 'invite' && response.state.audience.participants.join() === request.participants.join()) setFocus({ type: 'close' });
+}
+
+async function talk(text: string): Promise<CommandOutcome> {
+  const response = await api<TalkResponse>('/api/talk', { characterId: addressee, text });
+  render(response.state);
+  await refreshLogs();
+  const spoken = response.turns.filter(t => t.speaker !== 'player');
+  showReply(response.notice ?? response.outcome?.reply ?? spoken.map(t => `${state!.characters.find(c => c.id === t.speaker)!.name}: ${t.text}`).join('\n'), `${{ offline: '오프라인', AI: 'AI', mixed: 'AI + 작성 대사' }[response.source]} 대화 · 주군의 차례`);
+  if (response.outcome?.kind === 'draft' && focus.panel !== 'command') setFocus({ type: 'open', panel: 'command' });
+  return response.outcome ?? { kind: 'answer', intent: response.notice ? 'ambiguous' : 'discussion', reply: response.notice ?? '', reason: '실행 없음' };
 }
 
 function showReply(text: string, speaker = '장굉'): void {
@@ -225,20 +286,21 @@ function autosize(): void {
 speechInput.addEventListener('input', () => { updateSpeechButton(); autosize(); });
 speechInput.addEventListener('compositionstart', () => { composing = true; });
 speechInput.addEventListener('compositionend', () => { composing = false; });
-speechInput.addEventListener('focus', () => setFocus({ type: 'address', speaker: 'zhang-hong' }));
-speechInput.addEventListener('blur', () => { if (!speechInput.value.trim()) setFocus({ type: 'address', speaker: null }); });
+speechInput.addEventListener('focus', () => setFocus({ type: 'address', speaker: addressee }));
+speechInput.addEventListener('blur', () => { if (!audienceMode && !speechInput.value.trim()) setFocus({ type: 'address', speaker: null }); });
 byId('speech-form').addEventListener('submit', event => {
   event.preventDefault();
   if (composing || !speechInput.value.trim()) return;
   const text = speechInput.value;
   void run(async () => {
-    const outcome = await command({ type: 'submit', text });
+    const outcome = audienceMode || state?.mode === 'mock' ? await talk(text) : await command({ type: 'submit', text });
     // Clear only after the server accepted the input; failures keep the text.
     if (outcome.kind !== 'error' && !(outcome.kind === 'answer' && outcome.intent === 'ambiguous') && speechInput.value === text) { speechInput.value = ''; autosize(); }
   });
 });
 
-byId('hotspot-zhang-hong').addEventListener('click', () => { speechInput.focus(); });
+byId('hotspot-zhang-hong').addEventListener('click', () => { audienceMode = true; renderAudience(); speechInput.focus(); });
+byId('tool-audience').addEventListener('click', () => setFocus({ type: 'open', panel: 'audience' }));
 byId('hotspot-documents').addEventListener('click', () => setFocus({ type: 'open', panel: 'document' }));
 byId('hotspot-map').addEventListener('click', () => setFocus({ type: 'open', panel: 'map' }));
 byId('tool-documents').addEventListener('click', () => setFocus({ type: 'open', panel: 'document' }));
@@ -264,6 +326,7 @@ byId('pause').addEventListener('click', () => { void run(() => dispatch({ type: 
 byId('reset').addEventListener('click', () => { void run(async () => {
   const response = await api<ActionResponse>('/api/test/reset', {});
   seenDocuments.clear();
+  audienceMode = false; addressee = 'zhang-hong'; focus = INITIAL_FOCUS;
   state = undefined;
   render(response.state);
   replyLine.hidden = true;

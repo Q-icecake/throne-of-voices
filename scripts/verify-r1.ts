@@ -6,7 +6,8 @@ import { createServer } from 'vite';
 import { createGameServer } from '../server/http.ts';
 import { GameEngine } from '../server/engine.ts';
 
-const output = 'artifacts/r1-fixes';
+const outIndex = process.argv.indexOf('--out');
+const output = outIndex >= 0 ? process.argv[outIndex + 1]! : 'artifacts/r1-fixes';
 const repro = process.argv.includes('--repro');
 const api = createGameServer(new GameEngine(), 5277);
 api.listen(3107, '127.0.0.1'); await once(api, 'listening');

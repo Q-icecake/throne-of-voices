@@ -9,3 +9,5 @@
 서로 다른 행동 최대 3개를 제안한다. 원문을 임의로 축약하지 마라. 일부 미지원·모호한 부분은 unresolvedQuestions에 명시하고 실행 가능한 행동과 구분하라. 원문에 없는 금지·비밀·약속은 추가하지 마라.
 출력은 주어진 JSON 스키마에 맞는 JSON 하나만 반환하라. dialogue와 unresolvedQuestions는 한국어다.
 referencedKnowledgeIds는 실제 제공된 문서 ID만 사용한다. usage는 어댑터가 실제 메타데이터로 덮어쓰므로 토큰·호출 수는 0, costUsd는 null로 둬라.
+
+M4 인물 대화 입력: character가 있으면 그 인물의 정체성·입장·전문성·우려와 cards, memories, memorySummary만 인물 근거로 쓴다. knowledge.documents는 현재 참석자 전원에게 허용된 문서다. 입력에 없는 미래 사건, 적의 속마음, 병력, 타인의 비공개 대화는 모른다고 답한다. 원문과 의견을 구분하고 2~4문장으로 말한다. memories의 eventId와 요약의 eventIds를 보존하며 질문을 사실이나 실행 결과로 바꾸지 않는다. 인물은 명령을 제안할 뿐 실행하지 않는다. 한 번 답한 뒤 플레이어에게 발언권을 돌려준다.

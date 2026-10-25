@@ -2,6 +2,9 @@ import type {
   ActionPlan, CharacterId, ClockState, CommandEstimate, CommandRequest, DraftStatus, EngagementPolicy, LedgerView,
   LogKind, PublicDocument, RestrictionId, TaskStage, TestAction,
 } from '../shared/contracts.ts';
+import { createMinds } from './characters.ts';
+import type { CharacterMind } from './characters.ts';
+import type { TalkTurn } from '../shared/contracts.ts';
 
 export interface DraftRecord {
   actions: ActionPlan[];
@@ -49,6 +52,9 @@ export interface TaskRecord {
 }
 
 export interface WorldState {
+  minds: Record<CharacterId, CharacterMind>;
+  audience: { participants: CharacterId[]; met: CharacterId[]; requested: CharacterId[] };
+  conversation: TalkTurn[];
   schemaVersion: 1;
   scenario: 'm1-fixture-v1';
   sessionId: string;
@@ -89,6 +95,9 @@ export interface EventRecord {
 /** Fixed synthetic fixture, not researched historical data. Never served as an asset. */
 export function createInitialWorld(clock: ClockState): WorldState {
   return {
+    minds: createMinds(),
+    audience: { participants: ['zhang-hong'], met: [], requested: ['zhang-zhao', 'zhou-yu', 'lu-su'] },
+    conversation: [],
     schemaVersion: 1,
     scenario: 'm1-fixture-v1',
     sessionId: 'm0-local-session',

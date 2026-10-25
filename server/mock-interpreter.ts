@@ -36,6 +36,9 @@ export class MockCommandInterpreter implements CommandInterpreter {
       return { intent: 'question', reason: '질문으로 판단했습니다. 실행하지 않습니다.',
         reply: '[Mock] 질문으로 들었습니다. 답변은 실제 AI 연결(M2) 이후에 가능하며, 지금은 아무것도 실행하지 않습니다.' };
     }
+    if (/논의하자|논의해\s*봐|견해를|생각을|어떻게\s*생각|설명해|비교해/.test(text) && !/정비하라|연락해|보내라|명령/.test(text)) {
+      return { intent: 'discussion', reason: '견해를 묻는 논의 · 실행 없음', reply: '[Mock] 논의로 들었습니다. 행동을 실행하지 않습니다.' };
+    }
     if (/조조.*(?:답|시간|회신)|유비.*(?:연락|접촉|타진|알아|의중|조건)|정찰|암살|재분배|개혁|그 사람|다른 사람/.test(text)) {
       const { actions, unresolved } = parseCompound(text);
       if (actions.length) return { intent: 'command', action: actions[0]!.kind, actions,

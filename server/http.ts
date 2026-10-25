@@ -5,6 +5,8 @@ import type { CommandRequest, PauseReason, TestAction } from '../shared/contract
 import { GameEngine } from './engine.ts';
 import { configuredProvider } from './llm/gemini.ts';
 import type { InterpretationProvider } from './llm/types.ts';
+import { CHARACTER_IDS } from './characters.ts';
+import type { AudienceRequest, CharacterId } from '../shared/contracts.ts';
 
 class HttpError extends Error {
   status: number;
@@ -100,7 +102,7 @@ export function createGameServer(engine?: GameEngine | GameEngine<Interpretation
       const path = new URL(request.url ?? '/', 'http://127.0.0.1').pathname;
       if (request.method === 'GET') {
         switch (path) {
-          case '/api/health': return json(response, 200, { milestone: 'M2', mode: game.view().mode, clock: 'manual-fake', interpretation: game.view().interpretation });
+          case '/api/health': return json(response, 200, { milestone: 'M4', mode: game.view().mode, clock: 'manual-fake', interpretation: game.view().interpretation });
           case '/api/state': return json(response, 200, engine.view());
           case '/api/test/snapshot': return json(response, 200, engine.publicSnapshot());
           case '/api/test/logs': return json(response, 200, engine.logs());
@@ -119,6 +121,20 @@ export function createGameServer(engine?: GameEngine | GameEngine<Interpretation
       if (request.method === 'POST' && path === '/api/command') {
         const command = parseCommand(await readObject(request));
         return json(response, 200, await game.command(command));
+      }
+      if (request.method === 'POST' && path === '/api/talk') {
+        const body = await readObject(request);
+        if (!exactKeys(body, ['characterId', 'text']) || !CHARACTER_IDS.includes(body.characterId as CharacterId) || !validText(body.text)) throw new HttpError(400, 'INVALID_TALK');
+        return json(response, 200, await game.talk({ characterId: body.characterId as CharacterId, text: body.text }));
+      }
+      if (request.method === 'POST' && path === '/api/audience') {
+        const body = await readObject(request);
+        const id = CHARACTER_IDS.includes(body.characterId as CharacterId);
+        const valid = body.type === 'invite' ? exactKeys(body, ['type', 'participants']) && Array.isArray(body.participants) && body.participants.length >= 1 && body.participants.length <= 3 && new Set(body.participants).size === body.participants.length && body.participants.every(p => CHARACTER_IDS.includes(p as CharacterId)) :
+          body.type === 'share' ? exactKeys(body, ['type', 'characterId', 'documentId']) && id && typeof body.documentId === 'string' && body.documentId.length <= 100 :
+          (body.type === 'dismiss' || body.type === 'defer') && exactKeys(body, ['type', 'characterId']) && id;
+        if (!valid) throw new HttpError(400, 'INVALID_AUDIENCE');
+        return json(response, 200, game.audience(body as unknown as AudienceRequest));
       }
       json(response, 404, { error: 'NOT_FOUND' });
     } catch (error) {

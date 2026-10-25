@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#140f0b" />
     <link rel="icon" href="data:," />
-    <title>Throne of Voices · 적벽 전야 (M2 시험판)</title>
+    <title>Throne of Voices · 적벽 전야 (M4 시험판)</title>
   </head>
   <body>
     <div id="stage" class="stage" data-scene="S0" data-panel="none">
@@ -37,6 +37,7 @@
       </header>
 
       <nav class="hud hud-tools" aria-label="자료와 도구">
+        <button type="button" class="tool" id="tool-audience" aria-pressed="false"><span class="tool-glyph" aria-hidden="true">人</span><span class="tool-label">접견</span></button>
         <button type="button" class="tool" id="tool-documents" aria-pressed="false"><span class="tool-glyph" aria-hidden="true">簡</span><span class="tool-label">문서</span><span class="tool-badge" id="badge-documents" hidden></span></button>
         <button type="button" class="tool" id="tool-map" aria-pressed="false"><span class="tool-glyph" aria-hidden="true">圖</span><span class="tool-label">지도</span></button>
         <button type="button" class="tool" id="tool-command" aria-pressed="false"><span class="tool-glyph" aria-hidden="true">令</span><span class="tool-label">명령</span><span class="tool-badge" id="badge-command" hidden></span></button>
@@ -68,7 +69,7 @@
           <button type="button" class="panel-close" id="dev-close">닫기</button>
         </div>
         <div class="dev-body">
-          <p class="dev-note">M2 시험판 · 해석 출처와 연결 상태는 상단에 표시합니다. 시계는 버튼을 누를 때만 흐릅니다. 지도·문서·인물은 시험용 재구성이며 아트는 임시입니다.</p>
+          <p class="dev-note">M4 시험판 · 인물 대화는 작성된 한국어 대사 풀을 사용합니다. LLM 대사는 라이브 미검증입니다. 시계는 버튼을 누를 때만 흐릅니다. 지도·문서·인물은 시험용 재구성이며 아트는 임시입니다.</p>
           <div class="clock-grid">
             <div><span>활성 시간</span><strong id="active-time">0.0초</strong></div>
             <div><span>보류 시간</span><strong id="held-time">0.0초</strong></div>

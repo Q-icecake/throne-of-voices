@@ -196,3 +196,25 @@ pre { max-height: 220px; overflow: auto; font-size: 11px; background: #0f1513; p
   :root { --t: 0ms; }
   .panel { animation: none; }
 }
+
+/* M4: temporary character variants share the established stage and camera. */
+.meeting-figure { position: absolute; top: 41%; width: 10.3%; height: 34%; padding: 0; border: 0; background: transparent; pointer-events: auto; cursor: pointer; color: #e8dcbf; }
+.meeting-art { width: 100%; height: 100%; object-fit: contain; filter: brightness(.85); }
+.meeting-figure span { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); padding: 2px 12px; background: #211b15; border: 1px solid #9b865e; white-space: nowrap; }
+.meeting-figure:hover .meeting-art, .meeting-figure:focus .meeting-art { filter: brightness(1.2); }
+.stage[data-scene="S3"] .layer-back { filter: brightness(.8); }
+.stage:has(.reply:not([hidden])) .panel { bottom: max(150px, var(--speech-clearance, 150px)); }
+.stage:has(.reply:not([hidden]))[data-panel="map"] .panel { bottom: auto; max-height: calc(100vh - 102px - var(--speech-clearance, 150px)); }
+.reply { white-space: pre-line; }
+.audience-person { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 0; border-bottom: 1px solid #65563d; }
+.audience-person label { flex: 1 0 52%; }
+.audience-person small { flex: 1 0 35%; }
+.audience-person button, #start-meeting, .document-sharing button { padding: 6px 12px; border: 1px solid #9b865e; background: #30281d; color: #f0e5cc; cursor: pointer; }
+.audience-person button:disabled { opacity: .55; cursor: not-allowed; }
+#start-meeting { margin-top: 16px; }
+.document-sharing { padding-top: 12px; }
+.document-sharing button { margin: 4px; }
+.stage:has(.reply:not([hidden])):is([data-scene="S2"], [data-scene="S3"]) #zhang-hong-tag { top: 39%; }
+.meeting-figure span { top: -24px; bottom: auto; }
+#next-audience { padding: 6px 12px; background: #30281d; border: 1px solid #9b865e; color: #f0e5cc; cursor: pointer; }
+.stage[data-audience-empty="true"] .figure-zhang-hong { visibility: hidden; }
