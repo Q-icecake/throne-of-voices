@@ -1,5 +1,6 @@
 import type { CommandDraftView, PlayerView, PublicDocument, PublicLogRecord, TaskView } from '../../../shared/contracts.ts';
 import { h, seconds } from './dom.ts';
+import MAP_SVG from '../assets/jiangdong-map.svg?raw';
 
 export interface PanelActions {
   openDocument(id: string): void;
@@ -165,22 +166,3 @@ export function mapPanel(state: PlayerView, actions: PanelActions): HTMLElement 
   wrapper.append(legend, h('p', { class: 'muted' }, '시험용 개념도입니다. 축척·지리 정확성이 없으며 관측된 병력은 표시하지 않습니다. 받은 보고가 있는 곳만 표시합니다.'));
   return wrapper;
 }
-
-const MAP_SVG = `
-<svg class="silk-map" viewBox="0 0 720 400" role="img" aria-labelledby="map-title map-desc">
-  <title id="map-title">강동 주변 시험용 개념도</title>
-  <desc id="map-desc">형주와 강동, 그 사이의 장강을 표시한 개념도. 병력이나 실시간 위치 정보는 포함하지 않습니다.</desc>
-  <defs>
-    <linearGradient id="silk" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d9c79d"/><stop offset="1" stop-color="#c4ad7c"/></linearGradient>
-    <pattern id="weave" width="6" height="6" patternUnits="userSpaceOnUse"><path d="M0 3h6M3 0v6" stroke="#b39a68" stroke-width=".5" opacity=".5"/></pattern>
-  </defs>
-  <rect width="720" height="400" fill="url(#silk)"/><rect width="720" height="400" fill="url(#weave)"/>
-  <rect x="10" y="10" width="700" height="380" fill="none" stroke="#7a5a2e" stroke-width="2"/>
-  <path d="M-20 150 C100 120 160 260 280 210 S480 140 565 230 S700 260 760 220" stroke="#6f8a83" stroke-width="34" fill="none" opacity=".75"/>
-  <path d="M-20 150 C100 120 160 260 280 210 S480 140 565 230 S700 260 760 220" stroke="#a9bfb5" stroke-width="2" fill="none"/>
-  <g fill="none" stroke="#5a5040" stroke-width="2.5" opacity=".55"><path d="M60 90l25-32 25 32 23-24 24 24"/><path d="M455 100l25-32 25 32 23-24 24 24"/><path d="M170 340l25-32 25 32 23-24 24 24"/></g>
-  <g fill="#3b3328" font-family="Batang, serif"><text x="140" y="140" font-size="28">형주</text><text x="330" y="196" font-size="18" letter-spacing="8">장강</text></g>
-  <g id="map-jiangdong" class="map-marker"><circle cx="500" cy="300" r="9" fill="#9b3b2e"/><text x="516" y="308" font-size="28" fill="#3b3328" font-family="Batang, serif">강동</text></g>
-  <g id="map-navy" class="map-marker"><path d="M560 250 l12 -10 l12 10 l-12 6 z" fill="#2f4a44"/><text x="590" y="256" font-size="15" fill="#2f4a44" font-family="Batang, serif">수군 진영</text></g>
-  <text x="24" y="378" fill="#5c5244" font-size="13">시험용 개념도 · 축척 없음 · 관측된 병력 표시 없음</text>
-</svg>`;

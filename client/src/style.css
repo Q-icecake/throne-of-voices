@@ -39,6 +39,15 @@ button, textarea { font: inherit; color: inherit; }
 .layer { position: absolute; inset: 0; pointer-events: none; transition: transform var(--t) var(--ease), filter var(--t) var(--ease); transform-origin: 50% 45%; }
 .scene-svg, .slot-image { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
 .layer.has-image .scene-svg { visibility: hidden; }
+/* Independent image documents keep imported SVG gradient IDs isolated. */
+.character-art { position: absolute; left: 38.1%; top: 40.7%; width: 10.31%; height: 33.33%; pointer-events: none; }
+.figure-zhang-hong { transform: translateX(-300px); }
+.layer-mid:has(.character-art.has-image) .figure-zhang-hong { visibility: hidden; }
+/* B's seat is at (890, 457) in 1600x900; A figures remain in 1920x1080. */
+.scene-box:has(.layer-back.has-image) .ruler-placement { transform: translate(108px, -52px); }
+.scene-box:has(.layer-back.has-image) #sun-quan-tag { left: 55.625%; top: 53%; }
+.scene-box:has(.layer-front.has-image) #hotspot-documents { left: 2.8%; top: 76%; width: 11%; height: 7%; }
+.scene-box:has(.layer-front.has-image) #hotspot-map { left: 86.3%; top: 76%; width: 11.5%; height: 8%; }
 
 /* Camera: each depth moves by a different amount when the focus changes. */
 .stage[data-panel="document"] .layer-back, .stage[data-panel="command"] .layer-back, .stage[data-panel="record"] .layer-back { transform: scale(1.03) translateX(-2.5%); filter: brightness(.7); }
@@ -55,7 +64,7 @@ button, textarea { font: inherit; color: inherit; }
   border-radius: 6px; outline-offset: 2px;
 }
 .hotspot:focus-visible { outline: 2px solid #f2d893; }
-.hotspot-figure { left: 54.8%; top: 43.5%; width: 7.9%; height: 29%; }
+.hotspot-figure { left: 39.5%; top: 41.7%; width: 7.8%; height: 32%; }
 .hotspot-figure:hover ~ #zhang-hong-tag, .hotspot-figure:focus-visible ~ #zhang-hong-tag { border-color: var(--gold); color: #fff3d6; }
 #hotspot-documents { left: 7%; top: 82%; width: 13%; height: 6.5%; }
 #hotspot-map { left: 19.5%; top: 80.5%; width: 8.6%; height: 5%; }
@@ -67,7 +76,7 @@ button, textarea { font: inherit; color: inherit; }
 }
 .hotspot-prop:hover .prop-label, .hotspot-prop:focus-visible .prop-label { opacity: 1; }
 .name-tag {
-  position: absolute; left: 58.75%; top: 73.5%; transform: translateX(-50%);
+  position: absolute; left: 43.25%; top: 75%; transform: translateX(-50%);
   padding: 1px 12px; font-size: 14px; white-space: nowrap; pointer-events: none;
   background: rgba(20, 15, 11, .78); border: 1px solid var(--panel-edge); color: #e8dcbf;
 }
@@ -113,7 +122,7 @@ button, textarea { font: inherit; color: inherit; }
 .reply .speaker { font-family: var(--serif); color: #e2c98b; margin-right: 8px; }
 .speech-form {
   display: flex; align-items: stretch; gap: 0;
-  background: rgba(12, 9, 7, .84); border: 1px solid rgba(180, 154, 99, .42);
+  background: rgba(24, 27, 22, .94); border: 1px solid rgba(196, 174, 123, .65);
   box-shadow: 0 10px 40px rgba(0, 0, 0, .5);
 }
 .speech-target { display: flex; align-items: center; padding: 0 14px; border-right: 1px solid rgba(180, 154, 99, .3); }
@@ -122,7 +131,7 @@ button, textarea { font: inherit; color: inherit; }
   flex: 1; min-width: 0; resize: none; border: 0; background: transparent; padding: 13px 14px;
   font-size: 16px; line-height: 1.5; max-height: 120px; color: #f2ecdc;
 }
-#speech-input::placeholder { color: #8f8572; }
+#speech-input::placeholder { color: #c3b99f; }
 #speech-input:focus { outline: none; }
 .speech-form:focus-within { border-color: var(--gold); }
 .speech-submit {

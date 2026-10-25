@@ -303,7 +303,7 @@ export function midLayerSvg(): string {
   return `${svgOpen('scene-svg')}
     ${guard(530, 690, 190, false)}
     ${guard(1390, 690, 190, true)}
-    ${seatedRuler(960, 600, 132)}
+    <g class="ruler-placement">${seatedRuler(960, 600, 132)}</g>
     <g class="figure-zhang-hong">${zhangHong}</g>
   </svg>`;
 }

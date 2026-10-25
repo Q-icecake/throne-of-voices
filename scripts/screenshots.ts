@@ -8,7 +8,7 @@ import type { ViteDevServer } from 'vite';
 import { createGameServer } from '../server/http.ts';
 
 /**
- * Drives the real app in the installed Edge/Chrome (no browser download), captures each scene
+ * Drives the real app in the installed Edge (no browser download), captures each scene
  * at two desktop sizes and measures layout rules from VISUAL_DIRECTION §11.
  * Usage: node scripts/screenshots.ts [S0,S1,S4,S5a,S5b,S2] [--out artifacts/m1]
  * Starts its own API + Vite on separate ports (3101/5273) so a running dev server is never touched.
@@ -21,15 +21,13 @@ const SIZES = [{ width: 1920, height: 1080 }, { width: 1366, height: 768 }];
 const ORDER = '주유에게 수군을 정비하라고 전해. 먼저 공격하지는 마.';
 
 async function launch(): Promise<Browser> {
-  for (const channel of ['msedge', 'chrome'] as const) {
-    try { return await chromium.launch({ channel }); } catch { /* try next */ }
-  }
-  throw new Error('Edge 또는 Chrome을 찾지 못했습니다.');
+  // Stage review requires the installed Edge; preserve its real launch error on failure.
+  return await chromium.launch({ channel: 'msedge' });
 }
 
 interface Metrics {
   scene: string; size: string; pageScroll: boolean; hudCoverage: number;
-  blockedControls: string[]; offscreenControls: string[]; bodyFontPx: number | null;
+  blockedControls: string[]; offscreenControls: string[]; bodyFontPx: number | null; minReadingFontPx: number;
 }
 
 async function measure(page: Page, scene: string, size: string): Promise<Metrics> {
@@ -39,7 +37,12 @@ async function measure(page: Page, scene: string, size: string): Promise<Metrics
     const visible = (el: Element) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden'; };
     const persistent = ['.hud-status', '.hud-tools', '.speech'].map(sel => document.querySelector(sel)).filter((el): el is Element => !!el && visible(el));
     const area = persistent.reduce((sum, el) => { const r = el.getBoundingClientRect(); return sum + r.width * r.height; }, 0);
-    const controls = [...document.querySelectorAll('button')].filter(visible).filter(el => !el.closest('.dev-drawer') && !el.closest('[hidden]'));
+    const panelOpen = !!document.querySelector('.panel:not([hidden])');
+    const controls = [...document.querySelectorAll('button, [role="button"]')].filter(visible)
+      .filter(el => !el.closest('.dev-drawer') && !el.closest('[hidden]'))
+      // Scene props move behind the active workspace (and bottom input) during
+      // camera transitions. Only S0/S2 require their direct hit targets.
+      .filter(el => !(panelOpen && el.closest('.scene')));
     const blocked: string[] = [], offscreen: string[] = [];
     for (const el of controls) {
       const r = el.getBoundingClientRect();
@@ -53,12 +56,15 @@ async function measure(page: Page, scene: string, size: string): Promise<Metrics
       if (top !== el && !el.contains(top)) blocked.push(label);
     }
     const body = document.querySelector('.paper-body');
+    const reading = [...document.querySelectorAll('#speech-input, .reply, .paper-body, .draft-quote, .draft-rows, .restrictions li, .revise textarea, .map-legend, .record-list, .panel-body p.muted')]
+      .filter(el => visible(el) && !el.closest('[hidden]'));
     return {
       scene: sceneName!, size: sizeName!,
       pageScroll: doc.scrollHeight > vh + 1 || doc.scrollWidth > vw + 1,
       hudCoverage: Math.round((area / (vw * vh)) * 1000) / 10,
       blockedControls: blocked, offscreenControls: offscreen,
       bodyFontPx: body ? parseFloat(getComputedStyle(body).fontSize) : null,
+      minReadingFontPx: Math.min(...reading.map(el => parseFloat(getComputedStyle(el).fontSize))),
     };
   }, [scene, size]);
 }
@@ -122,6 +128,8 @@ try {
       if (!step) throw new Error(`Unknown scene ${scene}`);
       await reset(page);
       await step(page);
+      await page.evaluate(() => document.fonts.ready);
+      await settle(page);
       const name = `${scene.toLowerCase()}-${size.width}x${size.height}.png`;
       await page.screenshot({ path: fileURLToPath(new URL(name, outDir)) });
       results.push(await measure(page, scene, `${size.width}x${size.height}`));
@@ -143,6 +151,7 @@ for (const m of results) {
     m.blockedControls.length && `가려진 버튼: ${m.blockedControls.join(', ')}`,
     m.offscreenControls.length && `화면 밖 버튼: ${m.offscreenControls.join(', ')}`,
     m.bodyFontPx !== null && m.bodyFontPx < 16 && `문서 본문 ${m.bodyFontPx}px < 16px`,
+    m.minReadingFontPx < 16 && `읽기/입력 본문 ${m.minReadingFontPx}px < 16px`,
   ].filter(Boolean);
   if (problems.length) failed = true;
   console.log(`${m.scene.padEnd(4)} ${m.size.padEnd(10)} UI ${String(m.hudCoverage).padStart(5)}%  ${problems.length ? '✖ ' + problems.join(' / ') : '✔'}`);
