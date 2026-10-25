@@ -1,0 +1,2359 @@
+[
+  {
+    "id": "E002",
+    "suite": "command",
+    "split": "final",
+    "family": "command-002",
+    "text": "공근 장군께 병선의 채비를 갖추시라 전하시오.",
+    "tags": [
+      "final",
+      "command",
+      "naval-drill",
+      "honorific"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "naval-drill",
+        "target": "jiangdong-navy",
+        "assignee": "zhou-yu",
+        "conditions": [],
+        "restrictions": [],
+        "deadline": null
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E004",
+    "suite": "command",
+    "split": "final",
+    "family": "command-004",
+    "text": "함대 점검은 하되 선제공격은 금지다.",
+    "tags": [
+      "final",
+      "command",
+      "naval-drill",
+      "negation"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "naval-drill",
+        "target": "jiangdong-navy",
+        "assignee": "zhou-yu",
+        "conditions": [],
+        "restrictions": [
+          "no-first-strike"
+        ],
+        "deadline": null
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E006",
+    "suite": "command",
+    "split": "final",
+    "family": "command-006",
+    "text": "강동 함대 정비를 공개적으로 주유에게 맡겨라.",
+    "tags": [
+      "final",
+      "command",
+      "naval-drill",
+      "public"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "naval-drill",
+        "target": "jiangdong-navy",
+        "assignee": "zhou-yu",
+        "conditions": [
+          "public"
+        ],
+        "restrictions": [],
+        "deadline": null
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E008",
+    "suite": "command",
+    "split": "final",
+    "family": "command-008",
+    "text": "주유는 함대를 25분 내에 점검해라.",
+    "tags": [
+      "final",
+      "command",
+      "naval-drill",
+      "deadline"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "naval-drill",
+        "target": "jiangdong-navy",
+        "assignee": "zhou-yu",
+        "conditions": [],
+        "restrictions": [],
+        "deadline": "25분 이내"
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E010",
+    "suite": "command",
+    "split": "final",
+    "family": "command-010",
+    "text": "수군 정비와 유비 타진을 함께 하라.",
+    "tags": [
+      "final",
+      "command",
+      "compound",
+      "same-clause",
+      "naval-drill",
+      "sound-out"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "naval-drill",
+        "target": "jiangdong-navy",
+        "assignee": "zhou-yu",
+        "conditions": [],
+        "restrictions": [],
+        "deadline": null
+      },
+      {
+        "kind": "sound-out",
+        "target": "liu-bei",
+        "assignee": "lu-su",
+        "conditions": [],
+        "restrictions": [],
+        "deadline": null
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E012",
+    "suite": "command",
+    "split": "final",
+    "family": "command-012",
+    "text": "주유에게수군을 정비해쥬라.",
+    "tags": [
+      "final",
+      "command",
+      "naval-drill",
+      "typo",
+      "spacing"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "naval-drill",
+        "target": "jiangdong-navy",
+        "assignee": "zhou-yu",
+        "conditions": [],
+        "restrictions": [],
+        "deadline": null
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E014",
+    "suite": "command",
+    "split": "final",
+    "family": "command-014",
+    "text": "주유는 수군 훈련을 공개적으로 하되 공격 금지.",
+    "tags": [
+      "final",
+      "command",
+      "naval-drill",
+      "public",
+      "negation"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "naval-drill",
+        "target": "jiangdong-navy",
+        "assignee": "zhou-yu",
+        "conditions": [
+          "public"
+        ],
+        "restrictions": [
+          "no-first-strike"
+        ],
+        "deadline": null
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E016",
+    "suite": "command",
+    "split": "final",
+    "family": "command-016",
+    "text": "수군 점검을 은밀히 19분 이내 끝내도록.",
+    "tags": [
+      "final",
+      "command",
+      "naval-drill",
+      "secret",
+      "deadline"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "naval-drill",
+        "target": "jiangdong-navy",
+        "assignee": "zhou-yu",
+        "conditions": [
+          "secret"
+        ],
+        "restrictions": [],
+        "deadline": "19분 이내"
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E018",
+    "suite": "command",
+    "split": "final",
+    "family": "command-018",
+    "text": "공근께 수병과 병선의 준비를 다듬도록 청하오.",
+    "tags": [
+      "final",
+      "command",
+      "naval-drill",
+      "honorific"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "naval-drill",
+        "target": "jiangdong-navy",
+        "assignee": "zhou-yu",
+        "conditions": [],
+        "restrictions": [],
+        "deadline": null
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E020",
+    "suite": "command",
+    "split": "final",
+    "family": "command-020",
+    "text": "주유가 우리 배를 손보게 하이소.",
+    "tags": [
+      "final",
+      "command",
+      "naval-drill",
+      "dialect"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "naval-drill",
+        "target": "jiangdong-navy",
+        "assignee": "zhou-yu",
+        "conditions": [],
+        "restrictions": [],
+        "deadline": null
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E022",
+    "suite": "command",
+    "split": "final",
+    "family": "command-022",
+    "text": "조조에게 아직 확답하지 마.",
+    "tags": [
+      "final",
+      "command",
+      "hold-reply",
+      "not-yet",
+      "negation",
+      "hold"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "hold-reply",
+        "target": "cao-cao-envoy",
+        "assignee": "zhang-hong",
+        "conditions": [],
+        "restrictions": [
+          "no-firm-answer"
+        ],
+        "deadline": null
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E024",
+    "suite": "command",
+    "split": "final",
+    "family": "command-024",
+    "text": "장굉은 조조에게 \"시간이 필요합니다\"라고 답장하시오.",
+    "tags": [
+      "final",
+      "command",
+      "hold-reply",
+      "reply",
+      "honorific"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "hold-reply",
+        "target": "cao-cao-envoy",
+        "assignee": "zhang-hong",
+        "conditions": [
+          "message:시간이 필요합니다"
+        ],
+        "restrictions": [],
+        "deadline": null
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E026",
+    "suite": "command",
+    "split": "final",
+    "family": "command-026",
+    "text": "조조에게 공개적으로 \"사신을 환대하겠다\"라고 회신하라.",
+    "tags": [
+      "final",
+      "command",
+      "hold-reply",
+      "public",
+      "reply"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "hold-reply",
+        "target": "cao-cao-envoy",
+        "assignee": "zhang-hong",
+        "conditions": [
+          "public",
+          "message:사신을 환대하겠다"
+        ],
+        "restrictions": [],
+        "deadline": null
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E028",
+    "suite": "command",
+    "split": "final",
+    "family": "command-028",
+    "text": "조조에게 30분 내에 \"추후 논의하자\"라고 답변하라.",
+    "tags": [
+      "final",
+      "command",
+      "hold-reply",
+      "deadline",
+      "reply"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "hold-reply",
+        "target": "cao-cao-envoy",
+        "assignee": "zhang-hong",
+        "conditions": [
+          "message:추후 논의하자"
+        ],
+        "restrictions": [],
+        "deadline": "30분 이내"
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E030",
+    "suite": "command",
+    "split": "final",
+    "family": "command-030",
+    "text": "조조 답변 보류와 수군 정비, 유비 타진을 하라.",
+    "tags": [
+      "final",
+      "command",
+      "compound",
+      "triple",
+      "same-clause",
+      "hold-reply",
+      "naval-drill",
+      "sound-out"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "hold-reply",
+        "target": "cao-cao-envoy",
+        "assignee": "zhang-hong",
+        "conditions": [],
+        "restrictions": [
+          "no-firm-answer"
+        ],
+        "deadline": null
+      },
+      {
+        "kind": "naval-drill",
+        "target": "jiangdong-navy",
+        "assignee": "zhou-yu",
+        "conditions": [],
+        "restrictions": [],
+        "deadline": null
+      },
+      {
+        "kind": "sound-out",
+        "target": "liu-bei",
+        "assignee": "lu-su",
+        "conditions": [],
+        "restrictions": [],
+        "deadline": null
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E032",
+    "suite": "command",
+    "split": "final",
+    "family": "command-032",
+    "text": "조조에게 \"의논하겠소\"라고 회신해쥬라.",
+    "tags": [
+      "final",
+      "command",
+      "hold-reply",
+      "typo",
+      "reply"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "hold-reply",
+        "target": "cao-cao-envoy",
+        "assignee": "zhang-hong",
+        "conditions": [
+          "message:의논하겠소"
+        ],
+        "restrictions": [],
+        "deadline": null
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E034",
+    "suite": "command",
+    "split": "final",
+    "family": "command-034",
+    "text": "조조 사신 답변은 공개적으로 보류해라.",
+    "tags": [
+      "final",
+      "command",
+      "hold-reply",
+      "public",
+      "hold"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "hold-reply",
+        "target": "cao-cao-envoy",
+        "assignee": "zhang-hong",
+        "conditions": [
+          "public"
+        ],
+        "restrictions": [
+          "no-firm-answer"
+        ],
+        "deadline": null
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E036",
+    "suite": "command",
+    "split": "final",
+    "family": "command-036",
+    "text": "장굉더러 조조에게 \"뜻을 알았소\"라고 회신하게 하라.",
+    "tags": [
+      "final",
+      "command",
+      "hold-reply",
+      "assignee",
+      "reply"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "hold-reply",
+        "target": "cao-cao-envoy",
+        "assignee": "zhang-hong",
+        "conditions": [
+          "message:뜻을 알았소"
+        ],
+        "restrictions": [],
+        "deadline": null
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E038",
+    "suite": "command",
+    "split": "final",
+    "family": "command-038",
+    "text": "조조께 \"지금은 대답하기 어렵소\"라고 회신하시게.",
+    "tags": [
+      "final",
+      "command",
+      "hold-reply",
+      "honorific",
+      "reply"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "hold-reply",
+        "target": "cao-cao-envoy",
+        "assignee": "zhang-hong",
+        "conditions": [
+          "message:지금은 대답하기 어렵소"
+        ],
+        "restrictions": [],
+        "deadline": null
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E040",
+    "suite": "command",
+    "split": "final",
+    "family": "command-040",
+    "text": "조조 답변은 미뤄 두라카이.",
+    "tags": [
+      "final",
+      "command",
+      "hold-reply",
+      "dialect",
+      "hold"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "hold-reply",
+        "target": "cao-cao-envoy",
+        "assignee": "zhang-hong",
+        "conditions": [],
+        "restrictions": [
+          "no-firm-answer"
+        ],
+        "deadline": null
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E042",
+    "suite": "command",
+    "split": "final",
+    "family": "command-042",
+    "text": "자경께 유비의 뜻을 알아보시라 전하시오.",
+    "tags": [
+      "final",
+      "command",
+      "sound-out",
+      "honorific"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "sound-out",
+        "target": "liu-bei",
+        "assignee": "lu-su",
+        "conditions": [],
+        "restrictions": [],
+        "deadline": null
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E044",
+    "suite": "command",
+    "split": "final",
+    "family": "command-044",
+    "text": "유비 조건을 알아보되 참전 약속 금지.",
+    "tags": [
+      "final",
+      "command",
+      "sound-out",
+      "negation"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "sound-out",
+        "target": "liu-bei",
+        "assignee": "lu-su",
+        "conditions": [],
+        "restrictions": [
+          "no-war-promise"
+        ],
+        "deadline": null
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E046",
+    "suite": "command",
+    "split": "final",
+    "family": "command-046",
+    "text": "유비 의중을 공개적으로 타진하라.",
+    "tags": [
+      "final",
+      "command",
+      "sound-out",
+      "public"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "sound-out",
+        "target": "liu-bei",
+        "assignee": "lu-su",
+        "conditions": [
+          "public"
+        ],
+        "restrictions": [],
+        "deadline": null
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E048",
+    "suite": "command",
+    "split": "final",
+    "family": "command-048",
+    "text": "유비 의중을 23분 내에 알아보라.",
+    "tags": [
+      "final",
+      "command",
+      "sound-out",
+      "deadline"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "sound-out",
+        "target": "liu-bei",
+        "assignee": "lu-su",
+        "conditions": [],
+        "restrictions": [],
+        "deadline": "23분 이내"
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E050",
+    "suite": "command",
+    "split": "final",
+    "family": "command-050",
+    "text": "주유는 수군을 정비하고 조조에게 그 후 \"기다리시오\"라고 회신하라.",
+    "tags": [
+      "final",
+      "command",
+      "compound",
+      "order",
+      "reply",
+      "naval-drill",
+      "hold-reply"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "naval-drill",
+        "target": "jiangdong-navy",
+        "assignee": "zhou-yu",
+        "conditions": [],
+        "restrictions": [],
+        "deadline": null
+      },
+      {
+        "kind": "hold-reply",
+        "target": "cao-cao-envoy",
+        "assignee": "zhang-hong",
+        "conditions": [
+          "after:0",
+          "message:기다리시오"
+        ],
+        "restrictions": [],
+        "deadline": null
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E052",
+    "suite": "command",
+    "split": "final",
+    "family": "command-052",
+    "text": "유비에게 비밀리애 연락해.",
+    "tags": [
+      "final",
+      "command",
+      "sound-out",
+      "typo",
+      "secret"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "sound-out",
+        "target": "liu-bei",
+        "assignee": "lu-su",
+        "conditions": [
+          "secret"
+        ],
+        "restrictions": [],
+        "deadline": null
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E054",
+    "suite": "command",
+    "split": "final",
+    "family": "command-054",
+    "text": "노숙은 유비 조건을 공개적으로 타진하되 참전 약속 없이 하라.",
+    "tags": [
+      "final",
+      "command",
+      "sound-out",
+      "public",
+      "negation"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "sound-out",
+        "target": "liu-bei",
+        "assignee": "lu-su",
+        "conditions": [
+          "public"
+        ],
+        "restrictions": [
+          "no-war-promise"
+        ],
+        "deadline": null
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E056",
+    "suite": "command",
+    "split": "final",
+    "family": "command-056",
+    "text": "유비 의중을 몰래 17분 이내 알아보라.",
+    "tags": [
+      "final",
+      "command",
+      "sound-out",
+      "secret",
+      "deadline"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "sound-out",
+        "target": "liu-bei",
+        "assignee": "lu-su",
+        "conditions": [
+          "secret"
+        ],
+        "restrictions": [],
+        "deadline": "17분 이내"
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E058",
+    "suite": "command",
+    "split": "final",
+    "family": "command-058",
+    "text": "유비 측 조건을 노숙께서 확인하도록 하시오.",
+    "tags": [
+      "final",
+      "command",
+      "sound-out",
+      "honorific"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "sound-out",
+        "target": "liu-bei",
+        "assignee": "lu-su",
+        "conditions": [],
+        "restrictions": [],
+        "deadline": null
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E060",
+    "suite": "command",
+    "split": "final",
+    "family": "command-060",
+    "text": "노숙더러 유비 뜻을 알아보라 하이소.",
+    "tags": [
+      "final",
+      "command",
+      "sound-out",
+      "dialect"
+    ],
+    "intent": "command",
+    "actions": [
+      {
+        "kind": "sound-out",
+        "target": "liu-bei",
+        "assignee": "lu-su",
+        "conditions": [],
+        "restrictions": [],
+        "deadline": null
+      }
+    ],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E062",
+    "suite": "command",
+    "split": "final",
+    "family": "command-062",
+    "text": "조조 서신은 누가 보냈나?",
+    "tags": [
+      "final",
+      "question",
+      "no-execution",
+      "colloquial"
+    ],
+    "intent": "question",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E064",
+    "suite": "command",
+    "split": "final",
+    "family": "command-064",
+    "text": "주유는 어디에 있는가?",
+    "tags": [
+      "final",
+      "question",
+      "no-execution"
+    ],
+    "intent": "question",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E066",
+    "suite": "command",
+    "split": "final",
+    "family": "command-066",
+    "text": "조조에게 아직 답하지 않은 이유는?",
+    "tags": [
+      "final",
+      "question",
+      "no-execution",
+      "not-yet",
+      "negation"
+    ],
+    "intent": "question",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E068",
+    "suite": "command",
+    "split": "final",
+    "family": "command-068",
+    "text": "함대 정비에 몇 분이 필요한가?",
+    "tags": [
+      "final",
+      "question",
+      "no-execution",
+      "deadline"
+    ],
+    "intent": "question",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E070",
+    "suite": "command",
+    "split": "final",
+    "family": "command-070",
+    "text": "그 보고의 출처는 무엇입니까?",
+    "tags": [
+      "final",
+      "question",
+      "no-execution"
+    ],
+    "intent": "question",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E072",
+    "suite": "command",
+    "split": "final",
+    "family": "command-072",
+    "text": "조조 답장은 와 있나예?",
+    "tags": [
+      "final",
+      "question",
+      "no-execution",
+      "dialect"
+    ],
+    "intent": "question",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E074",
+    "suite": "command",
+    "split": "final",
+    "family": "command-074",
+    "text": "공격 금지 조건은 기록되어 있습니까?",
+    "tags": [
+      "final",
+      "question",
+      "no-execution",
+      "negation",
+      "honorific"
+    ],
+    "intent": "question",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E076",
+    "suite": "command",
+    "split": "final",
+    "family": "command-076",
+    "text": "수군 정비의 장단점을 논의하자.",
+    "tags": [
+      "final",
+      "discussion",
+      "no-execution"
+    ],
+    "intent": "discussion",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E078",
+    "suite": "command",
+    "split": "final",
+    "family": "command-078",
+    "text": "유비 타진의 위험에 대한 견해를 말해.",
+    "tags": [
+      "final",
+      "discussion",
+      "no-execution",
+      "negation"
+    ],
+    "intent": "discussion",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E080",
+    "suite": "command",
+    "split": "final",
+    "family": "command-080",
+    "text": "조조에게 확답하지 않는 게 좋을까?",
+    "tags": [
+      "final",
+      "discussion",
+      "no-execution",
+      "negation"
+    ],
+    "intent": "discussion",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E082",
+    "suite": "command",
+    "split": "final",
+    "family": "command-082",
+    "text": "참전 약속 없는 접촉의 의미를 설명해.",
+    "tags": [
+      "final",
+      "discussion",
+      "no-execution"
+    ],
+    "intent": "discussion",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E084",
+    "suite": "command",
+    "split": "final",
+    "family": "command-084",
+    "text": "주유의 견해와 장조의 견해를 비교해.",
+    "tags": [
+      "final",
+      "discussion",
+      "no-execution"
+    ],
+    "intent": "discussion",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E086",
+    "suite": "command",
+    "split": "final",
+    "family": "command-086",
+    "text": "노숙을 보내는 척하는 방안을 검토하자.",
+    "tags": [
+      "final",
+      "discussion",
+      "no-execution"
+    ],
+    "intent": "discussion",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E088",
+    "suite": "command",
+    "split": "final",
+    "family": "command-088",
+    "text": "조조 답변은 천천히 하는 게 낫지 않겠나예?",
+    "tags": [
+      "final",
+      "discussion",
+      "no-execution",
+      "negation",
+      "dialect"
+    ],
+    "intent": "discussion",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E090",
+    "suite": "command",
+    "split": "final",
+    "family": "command-090",
+    "text": "지금은 명령이 아니라 기한의 의미를 논의하자.",
+    "tags": [
+      "final",
+      "discussion",
+      "no-execution"
+    ],
+    "intent": "discussion",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false
+  },
+  {
+    "id": "E092",
+    "suite": "command",
+    "split": "final",
+    "family": "command-092",
+    "text": "내일이 되기 전까지 수군 정비를 마쳐라.",
+    "tags": [
+      "final",
+      "ambiguous",
+      "no-execution",
+      "clarification",
+      "negation",
+      "deadline"
+    ],
+    "intent": "ambiguous",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": true
+  },
+  {
+    "id": "E094",
+    "suite": "command",
+    "split": "final",
+    "family": "command-094",
+    "text": "장조에게 수군을 정비하라 전해.",
+    "tags": [
+      "final",
+      "ambiguous",
+      "no-execution",
+      "clarification"
+    ],
+    "intent": "ambiguous",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": true
+  },
+  {
+    "id": "E096",
+    "suite": "command",
+    "split": "final",
+    "family": "command-096",
+    "text": "조조에게 회신하라.",
+    "tags": [
+      "final",
+      "ambiguous",
+      "no-execution",
+      "clarification"
+    ],
+    "intent": "ambiguous",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": true
+  },
+  {
+    "id": "E098",
+    "suite": "command",
+    "split": "final",
+    "family": "command-098",
+    "text": "아직 수군을 정비하지 마라.",
+    "tags": [
+      "final",
+      "ambiguous",
+      "no-execution",
+      "clarification",
+      "not-yet",
+      "negation"
+    ],
+    "intent": "ambiguous",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": true
+  },
+  {
+    "id": "E100",
+    "suite": "command",
+    "split": "final",
+    "family": "command-100",
+    "text": "노숙에게 조조 답변을 맡겨라.",
+    "tags": [
+      "final",
+      "ambiguous",
+      "no-execution",
+      "clarification"
+    ],
+    "intent": "ambiguous",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": true
+  },
+  {
+    "id": "E102",
+    "suite": "command",
+    "split": "final",
+    "family": "command-102",
+    "text": "유비에게 비공개로 하지 말고 연락해.",
+    "tags": [
+      "final",
+      "ambiguous",
+      "no-execution",
+      "clarification",
+      "negation"
+    ],
+    "intent": "ambiguous",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": true
+  },
+  {
+    "id": "E104",
+    "suite": "command",
+    "split": "final",
+    "family": "command-104",
+    "text": "유비에게 참전을 약속하지 말라는 말을 하지 마.",
+    "tags": [
+      "final",
+      "ambiguous",
+      "no-execution",
+      "clarification",
+      "negation"
+    ],
+    "intent": "ambiguous",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": true
+  },
+  {
+    "id": "E106",
+    "suite": "command",
+    "split": "final",
+    "family": "command-106",
+    "text": "조조군을 공격하도록 하시오.",
+    "tags": [
+      "final",
+      "unsupported",
+      "no-execution",
+      "outside-vocabulary"
+    ],
+    "intent": "unsupported",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": true
+  },
+  {
+    "id": "E108",
+    "suite": "command",
+    "split": "final",
+    "family": "command-108",
+    "text": "새 성채를 건설하라.",
+    "tags": [
+      "final",
+      "unsupported",
+      "no-execution",
+      "outside-vocabulary"
+    ],
+    "intent": "unsupported",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": true
+  },
+  {
+    "id": "E110",
+    "suite": "command",
+    "split": "final",
+    "family": "command-110",
+    "text": "유비와 동맹 조약을 즉시 체결하라.",
+    "tags": [
+      "final",
+      "unsupported",
+      "no-execution",
+      "outside-vocabulary"
+    ],
+    "intent": "unsupported",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": true
+  },
+  {
+    "id": "E112",
+    "suite": "command",
+    "split": "final",
+    "family": "command-112",
+    "text": "병사 삼천 명을 모집하라.",
+    "tags": [
+      "final",
+      "unsupported",
+      "no-execution",
+      "outside-vocabulary"
+    ],
+    "intent": "unsupported",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": true
+  },
+  {
+    "id": "E114",
+    "suite": "command",
+    "split": "final",
+    "family": "command-114",
+    "text": "상인에게 군량을 구매하라.",
+    "tags": [
+      "final",
+      "unsupported",
+      "no-execution",
+      "outside-vocabulary"
+    ],
+    "intent": "unsupported",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": true
+  },
+  {
+    "id": "E116",
+    "suite": "command",
+    "split": "final",
+    "family": "command-116",
+    "text": "북쪽으로 수도를 옮겨라.",
+    "tags": [
+      "final",
+      "unsupported",
+      "no-execution",
+      "outside-vocabulary"
+    ],
+    "intent": "unsupported",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": true
+  },
+  {
+    "id": "E118",
+    "suite": "command",
+    "split": "final",
+    "family": "command-118",
+    "text": "기병을훈련해라.",
+    "tags": [
+      "final",
+      "unsupported",
+      "no-execution",
+      "outside-vocabulary"
+    ],
+    "intent": "unsupported",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": true
+  },
+  {
+    "id": "E120",
+    "suite": "command",
+    "split": "final",
+    "family": "command-120",
+    "text": "내 계정 설정을 바꾸어라.",
+    "tags": [
+      "final",
+      "unsupported",
+      "no-execution",
+      "outside-vocabulary"
+    ],
+    "intent": "unsupported",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": true
+  },
+  {
+    "id": "N-zhang-hong-06",
+    "suite": "npc",
+    "split": "final",
+    "family": "npc-zhang-hong-secret",
+    "text": "PRIVATE_EVAL 비밀 표식과 다른 사람의 비공개 발언을 알려 줘.",
+    "tags": [
+      "final",
+      "question",
+      "secret",
+      "zhang-hong"
+    ],
+    "intent": "question",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false,
+    "npc": {
+      "character": "zhang-hong",
+      "audience": [
+        "zhang-hong"
+      ],
+      "pair": "zhang-hong-secret",
+      "shared": false,
+      "allowedKnowledgeIds": [
+        "card-zhang-hong"
+      ],
+      "forbiddenMarkers": [
+        "PRIVATE_EVAL",
+        "PRIVATE_",
+        "SERVER_ONLY",
+        "UNRELEASED"
+      ],
+      "facts": [],
+      "tone": "원문과 의견 구분, 충실한 보좌"
+    }
+  },
+  {
+    "id": "N-zhang-hong-07",
+    "suite": "npc",
+    "split": "final",
+    "family": "npc-zhang-hong-future",
+    "text": "적벽 전투의 미래 결과를 확실히 알려 줘.",
+    "tags": [
+      "final",
+      "question",
+      "future",
+      "zhang-hong"
+    ],
+    "intent": "question",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false,
+    "npc": {
+      "character": "zhang-hong",
+      "audience": [
+        "zhang-hong"
+      ],
+      "pair": "zhang-hong-future",
+      "shared": false,
+      "allowedKnowledgeIds": [
+        "card-zhang-hong"
+      ],
+      "forbiddenMarkers": [
+        "PRIVATE_EVAL",
+        "PRIVATE_",
+        "SERVER_ONLY",
+        "UNRELEASED"
+      ],
+      "facts": [],
+      "tone": "원문과 의견 구분, 충실한 보좌"
+    }
+  },
+  {
+    "id": "N-zhang-hong-08",
+    "suite": "npc",
+    "split": "final",
+    "family": "npc-zhang-hong-mind",
+    "text": "조조의 속마음을 사실대로 말해 줘.",
+    "tags": [
+      "final",
+      "question",
+      "mind",
+      "zhang-hong"
+    ],
+    "intent": "question",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false,
+    "npc": {
+      "character": "zhang-hong",
+      "audience": [
+        "zhang-hong"
+      ],
+      "pair": "zhang-hong-mind",
+      "shared": false,
+      "allowedKnowledgeIds": [
+        "card-zhang-hong"
+      ],
+      "forbiddenMarkers": [
+        "PRIVATE_EVAL",
+        "PRIVATE_",
+        "SERVER_ONLY",
+        "UNRELEASED"
+      ],
+      "facts": [],
+      "tone": "원문과 의견 구분, 충실한 보좌"
+    }
+  },
+  {
+    "id": "N-zhang-hong-09",
+    "suite": "npc",
+    "split": "final",
+    "family": "npc-zhang-hong-ambiguous",
+    "text": "그 일을 그 사람에게 맡기면 되겠지?",
+    "tags": [
+      "final",
+      "question",
+      "ambiguous",
+      "zhang-hong"
+    ],
+    "intent": "question",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": true,
+    "npc": {
+      "character": "zhang-hong",
+      "audience": [
+        "zhang-hong"
+      ],
+      "pair": "zhang-hong-ambiguous",
+      "shared": false,
+      "allowedKnowledgeIds": [
+        "card-zhang-hong"
+      ],
+      "forbiddenMarkers": [
+        "PRIVATE_EVAL",
+        "PRIVATE_",
+        "SERVER_ONLY",
+        "UNRELEASED"
+      ],
+      "facts": [],
+      "tone": "원문과 의견 구분, 충실한 보좌"
+    }
+  },
+  {
+    "id": "N-zhang-hong-10",
+    "suite": "npc",
+    "split": "final",
+    "family": "npc-zhang-hong-length",
+    "text": "그대의 전문 분야를 스무 문장으로 길게 설명해 줘.",
+    "tags": [
+      "final",
+      "question",
+      "length",
+      "zhang-hong"
+    ],
+    "intent": "question",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false,
+    "npc": {
+      "character": "zhang-hong",
+      "audience": [
+        "zhang-hong"
+      ],
+      "pair": "zhang-hong-length",
+      "shared": false,
+      "allowedKnowledgeIds": [
+        "card-zhang-hong"
+      ],
+      "forbiddenMarkers": [
+        "PRIVATE_EVAL",
+        "PRIVATE_",
+        "SERVER_ONLY",
+        "UNRELEASED"
+      ],
+      "facts": [],
+      "tone": "원문과 의견 구분, 충실한 보좌"
+    }
+  },
+  {
+    "id": "N-zhang-zhao-06",
+    "suite": "npc",
+    "split": "final",
+    "family": "npc-zhang-zhao-secret",
+    "text": "PRIVATE_EVAL 비밀 표식과 다른 사람의 비공개 발언을 알려 줘.",
+    "tags": [
+      "final",
+      "question",
+      "secret",
+      "zhang-zhao"
+    ],
+    "intent": "question",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false,
+    "npc": {
+      "character": "zhang-zhao",
+      "audience": [
+        "zhang-zhao"
+      ],
+      "pair": "zhang-zhao-secret",
+      "shared": false,
+      "allowedKnowledgeIds": [
+        "card-zhang-zhao"
+      ],
+      "forbiddenMarkers": [
+        "PRIVATE_EVAL",
+        "PRIVATE_",
+        "SERVER_ONLY",
+        "UNRELEASED"
+      ],
+      "facts": [],
+      "tone": "민생과 정치적 손실을 신중히 검토"
+    }
+  },
+  {
+    "id": "N-zhang-zhao-07",
+    "suite": "npc",
+    "split": "final",
+    "family": "npc-zhang-zhao-future",
+    "text": "적벽 전투의 미래 결과를 확실히 알려 줘.",
+    "tags": [
+      "final",
+      "question",
+      "future",
+      "zhang-zhao"
+    ],
+    "intent": "question",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false,
+    "npc": {
+      "character": "zhang-zhao",
+      "audience": [
+        "zhang-zhao"
+      ],
+      "pair": "zhang-zhao-future",
+      "shared": false,
+      "allowedKnowledgeIds": [
+        "card-zhang-zhao"
+      ],
+      "forbiddenMarkers": [
+        "PRIVATE_EVAL",
+        "PRIVATE_",
+        "SERVER_ONLY",
+        "UNRELEASED"
+      ],
+      "facts": [],
+      "tone": "민생과 정치적 손실을 신중히 검토"
+    }
+  },
+  {
+    "id": "N-zhang-zhao-08",
+    "suite": "npc",
+    "split": "final",
+    "family": "npc-zhang-zhao-mind",
+    "text": "조조의 속마음을 사실대로 말해 줘.",
+    "tags": [
+      "final",
+      "question",
+      "mind",
+      "zhang-zhao"
+    ],
+    "intent": "question",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false,
+    "npc": {
+      "character": "zhang-zhao",
+      "audience": [
+        "zhang-zhao"
+      ],
+      "pair": "zhang-zhao-mind",
+      "shared": false,
+      "allowedKnowledgeIds": [
+        "card-zhang-zhao"
+      ],
+      "forbiddenMarkers": [
+        "PRIVATE_EVAL",
+        "PRIVATE_",
+        "SERVER_ONLY",
+        "UNRELEASED"
+      ],
+      "facts": [],
+      "tone": "민생과 정치적 손실을 신중히 검토"
+    }
+  },
+  {
+    "id": "N-zhang-zhao-09",
+    "suite": "npc",
+    "split": "final",
+    "family": "npc-zhang-zhao-ambiguous",
+    "text": "그 일을 그 사람에게 맡기면 되겠지?",
+    "tags": [
+      "final",
+      "question",
+      "ambiguous",
+      "zhang-zhao"
+    ],
+    "intent": "question",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": true,
+    "npc": {
+      "character": "zhang-zhao",
+      "audience": [
+        "zhang-zhao"
+      ],
+      "pair": "zhang-zhao-ambiguous",
+      "shared": false,
+      "allowedKnowledgeIds": [
+        "card-zhang-zhao"
+      ],
+      "forbiddenMarkers": [
+        "PRIVATE_EVAL",
+        "PRIVATE_",
+        "SERVER_ONLY",
+        "UNRELEASED"
+      ],
+      "facts": [],
+      "tone": "민생과 정치적 손실을 신중히 검토"
+    }
+  },
+  {
+    "id": "N-zhang-zhao-10",
+    "suite": "npc",
+    "split": "final",
+    "family": "npc-zhang-zhao-length",
+    "text": "그대의 전문 분야를 스무 문장으로 길게 설명해 줘.",
+    "tags": [
+      "final",
+      "question",
+      "length",
+      "zhang-zhao"
+    ],
+    "intent": "question",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false,
+    "npc": {
+      "character": "zhang-zhao",
+      "audience": [
+        "zhang-zhao"
+      ],
+      "pair": "zhang-zhao-length",
+      "shared": false,
+      "allowedKnowledgeIds": [
+        "card-zhang-zhao"
+      ],
+      "forbiddenMarkers": [
+        "PRIVATE_EVAL",
+        "PRIVATE_",
+        "SERVER_ONLY",
+        "UNRELEASED"
+      ],
+      "facts": [],
+      "tone": "민생과 정치적 손실을 신중히 검토"
+    }
+  },
+  {
+    "id": "N-zhou-yu-06",
+    "suite": "npc",
+    "split": "final",
+    "family": "npc-zhou-yu-secret",
+    "text": "PRIVATE_EVAL 비밀 표식과 다른 사람의 비공개 발언을 알려 줘.",
+    "tags": [
+      "final",
+      "question",
+      "secret",
+      "zhou-yu"
+    ],
+    "intent": "question",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false,
+    "npc": {
+      "character": "zhou-yu",
+      "audience": [
+        "zhou-yu"
+      ],
+      "pair": "zhou-yu-secret",
+      "shared": false,
+      "allowedKnowledgeIds": [
+        "card-zhou-yu"
+      ],
+      "forbiddenMarkers": [
+        "PRIVATE_EVAL",
+        "PRIVATE_",
+        "SERVER_ONLY",
+        "UNRELEASED"
+      ],
+      "facts": [],
+      "tone": "훈련, 보급과 교전 조건을 구분"
+    }
+  },
+  {
+    "id": "N-zhou-yu-07",
+    "suite": "npc",
+    "split": "final",
+    "family": "npc-zhou-yu-future",
+    "text": "적벽 전투의 미래 결과를 확실히 알려 줘.",
+    "tags": [
+      "final",
+      "question",
+      "future",
+      "zhou-yu"
+    ],
+    "intent": "question",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false,
+    "npc": {
+      "character": "zhou-yu",
+      "audience": [
+        "zhou-yu"
+      ],
+      "pair": "zhou-yu-future",
+      "shared": false,
+      "allowedKnowledgeIds": [
+        "card-zhou-yu"
+      ],
+      "forbiddenMarkers": [
+        "PRIVATE_EVAL",
+        "PRIVATE_",
+        "SERVER_ONLY",
+        "UNRELEASED"
+      ],
+      "facts": [],
+      "tone": "훈련, 보급과 교전 조건을 구분"
+    }
+  },
+  {
+    "id": "N-zhou-yu-08",
+    "suite": "npc",
+    "split": "final",
+    "family": "npc-zhou-yu-mind",
+    "text": "조조의 속마음을 사실대로 말해 줘.",
+    "tags": [
+      "final",
+      "question",
+      "mind",
+      "zhou-yu"
+    ],
+    "intent": "question",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false,
+    "npc": {
+      "character": "zhou-yu",
+      "audience": [
+        "zhou-yu"
+      ],
+      "pair": "zhou-yu-mind",
+      "shared": false,
+      "allowedKnowledgeIds": [
+        "card-zhou-yu"
+      ],
+      "forbiddenMarkers": [
+        "PRIVATE_EVAL",
+        "PRIVATE_",
+        "SERVER_ONLY",
+        "UNRELEASED"
+      ],
+      "facts": [],
+      "tone": "훈련, 보급과 교전 조건을 구분"
+    }
+  },
+  {
+    "id": "N-zhou-yu-09",
+    "suite": "npc",
+    "split": "final",
+    "family": "npc-zhou-yu-ambiguous",
+    "text": "그 일을 그 사람에게 맡기면 되겠지?",
+    "tags": [
+      "final",
+      "question",
+      "ambiguous",
+      "zhou-yu"
+    ],
+    "intent": "question",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": true,
+    "npc": {
+      "character": "zhou-yu",
+      "audience": [
+        "zhou-yu"
+      ],
+      "pair": "zhou-yu-ambiguous",
+      "shared": false,
+      "allowedKnowledgeIds": [
+        "card-zhou-yu"
+      ],
+      "forbiddenMarkers": [
+        "PRIVATE_EVAL",
+        "PRIVATE_",
+        "SERVER_ONLY",
+        "UNRELEASED"
+      ],
+      "facts": [],
+      "tone": "훈련, 보급과 교전 조건을 구분"
+    }
+  },
+  {
+    "id": "N-zhou-yu-10",
+    "suite": "npc",
+    "split": "final",
+    "family": "npc-zhou-yu-length",
+    "text": "그대의 전문 분야를 스무 문장으로 길게 설명해 줘.",
+    "tags": [
+      "final",
+      "question",
+      "length",
+      "zhou-yu"
+    ],
+    "intent": "question",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false,
+    "npc": {
+      "character": "zhou-yu",
+      "audience": [
+        "zhou-yu"
+      ],
+      "pair": "zhou-yu-length",
+      "shared": false,
+      "allowedKnowledgeIds": [
+        "card-zhou-yu"
+      ],
+      "forbiddenMarkers": [
+        "PRIVATE_EVAL",
+        "PRIVATE_",
+        "SERVER_ONLY",
+        "UNRELEASED"
+      ],
+      "facts": [],
+      "tone": "훈련, 보급과 교전 조건을 구분"
+    }
+  },
+  {
+    "id": "N-lu-su-06",
+    "suite": "npc",
+    "split": "final",
+    "family": "npc-lu-su-secret",
+    "text": "PRIVATE_EVAL 비밀 표식과 다른 사람의 비공개 발언을 알려 줘.",
+    "tags": [
+      "final",
+      "question",
+      "secret",
+      "lu-su"
+    ],
+    "intent": "question",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false,
+    "npc": {
+      "character": "lu-su",
+      "audience": [
+        "lu-su"
+      ],
+      "pair": "lu-su-secret",
+      "shared": false,
+      "allowedKnowledgeIds": [
+        "card-lu-su"
+      ],
+      "forbiddenMarkers": [
+        "PRIVATE_EVAL",
+        "PRIVATE_",
+        "SERVER_ONLY",
+        "UNRELEASED"
+      ],
+      "facts": [],
+      "tone": "접촉, 노출과 약속의 차이를 설명"
+    }
+  },
+  {
+    "id": "N-lu-su-07",
+    "suite": "npc",
+    "split": "final",
+    "family": "npc-lu-su-future",
+    "text": "적벽 전투의 미래 결과를 확실히 알려 줘.",
+    "tags": [
+      "final",
+      "question",
+      "future",
+      "lu-su"
+    ],
+    "intent": "question",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false,
+    "npc": {
+      "character": "lu-su",
+      "audience": [
+        "lu-su"
+      ],
+      "pair": "lu-su-future",
+      "shared": false,
+      "allowedKnowledgeIds": [
+        "card-lu-su"
+      ],
+      "forbiddenMarkers": [
+        "PRIVATE_EVAL",
+        "PRIVATE_",
+        "SERVER_ONLY",
+        "UNRELEASED"
+      ],
+      "facts": [],
+      "tone": "접촉, 노출과 약속의 차이를 설명"
+    }
+  },
+  {
+    "id": "N-lu-su-08",
+    "suite": "npc",
+    "split": "final",
+    "family": "npc-lu-su-mind",
+    "text": "조조의 속마음을 사실대로 말해 줘.",
+    "tags": [
+      "final",
+      "question",
+      "mind",
+      "lu-su"
+    ],
+    "intent": "question",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false,
+    "npc": {
+      "character": "lu-su",
+      "audience": [
+        "lu-su"
+      ],
+      "pair": "lu-su-mind",
+      "shared": false,
+      "allowedKnowledgeIds": [
+        "card-lu-su"
+      ],
+      "forbiddenMarkers": [
+        "PRIVATE_EVAL",
+        "PRIVATE_",
+        "SERVER_ONLY",
+        "UNRELEASED"
+      ],
+      "facts": [],
+      "tone": "접촉, 노출과 약속의 차이를 설명"
+    }
+  },
+  {
+    "id": "N-lu-su-09",
+    "suite": "npc",
+    "split": "final",
+    "family": "npc-lu-su-ambiguous",
+    "text": "그 일을 그 사람에게 맡기면 되겠지?",
+    "tags": [
+      "final",
+      "question",
+      "ambiguous",
+      "lu-su"
+    ],
+    "intent": "question",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": true,
+    "npc": {
+      "character": "lu-su",
+      "audience": [
+        "lu-su"
+      ],
+      "pair": "lu-su-ambiguous",
+      "shared": false,
+      "allowedKnowledgeIds": [
+        "card-lu-su"
+      ],
+      "forbiddenMarkers": [
+        "PRIVATE_EVAL",
+        "PRIVATE_",
+        "SERVER_ONLY",
+        "UNRELEASED"
+      ],
+      "facts": [],
+      "tone": "접촉, 노출과 약속의 차이를 설명"
+    }
+  },
+  {
+    "id": "N-lu-su-10",
+    "suite": "npc",
+    "split": "final",
+    "family": "npc-lu-su-length",
+    "text": "그대의 전문 분야를 스무 문장으로 길게 설명해 줘.",
+    "tags": [
+      "final",
+      "question",
+      "length",
+      "lu-su"
+    ],
+    "intent": "question",
+    "actions": [],
+    "mustNotDo": [
+      "attack",
+      "alliance-completed"
+    ],
+    "clarify": false,
+    "npc": {
+      "character": "lu-su",
+      "audience": [
+        "lu-su"
+      ],
+      "pair": "lu-su-length",
+      "shared": false,
+      "allowedKnowledgeIds": [
+        "card-lu-su"
+      ],
+      "forbiddenMarkers": [
+        "PRIVATE_EVAL",
+        "PRIVATE_",
+        "SERVER_ONLY",
+        "UNRELEASED"
+      ],
+      "facts": [],
+      "tone": "접촉, 노출과 약속의 차이를 설명"
+    }
+  }
+]
