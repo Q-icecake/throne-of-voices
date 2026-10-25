@@ -1,7 +1,7 @@
 import { createServer } from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { PAUSE_REASONS } from '../shared/contracts.ts';
-import type { PauseReason, TestAction } from '../shared/contracts.ts';
+import type { CommandRequest, PauseReason, TestAction } from '../shared/contracts.ts';
 import { GameEngine } from './engine.ts';
 
 class HttpError extends Error {
@@ -56,6 +56,25 @@ export function parseAction(value: Record<string, unknown>): TestAction {
   throw new HttpError(400, 'INVALID_ACTION');
 }
 
+const validText = (value: unknown): value is string =>
+  typeof value === 'string' && value.trim().length > 0 && value.length <= 2000;
+const validDraftRef = (value: Record<string, unknown>) =>
+  typeof value.draftId === 'string' && /^draft-\d{4}$/.test(value.draftId) &&
+  typeof value.version === 'number' && Number.isSafeInteger(value.version) && value.version >= 1;
+
+export function parseCommand(value: Record<string, unknown>): CommandRequest {
+  if (value.type === 'submit' && exactKeys(value, ['type', 'text']) && validText(value.text)) {
+    return { type: 'submit', text: value.text };
+  }
+  if (value.type === 'revise' && exactKeys(value, ['type', 'draftId', 'version', 'text']) && validDraftRef(value) && validText(value.text)) {
+    return { type: 'revise', draftId: value.draftId as string, version: value.version as number, text: value.text };
+  }
+  if ((value.type === 'cancel' || value.type === 'confirm') && exactKeys(value, ['type', 'draftId', 'version']) && validDraftRef(value)) {
+    return { type: value.type, draftId: value.draftId as string, version: value.version as number };
+  }
+  throw new HttpError(400, 'INVALID_COMMAND');
+}
+
 export function createGameServer(engine = new GameEngine()) {
   const server = createServer(async (request, response) => {
     try {
@@ -69,7 +88,7 @@ export function createGameServer(engine = new GameEngine()) {
       const path = new URL(request.url ?? '/', 'http://127.0.0.1').pathname;
       if (request.method === 'GET') {
         switch (path) {
-          case '/api/health': return json(response, 200, { milestone: 'M0', mode: 'mock', clock: 'manual-fake', externalCalls: 0 });
+          case '/api/health': return json(response, 200, { milestone: 'M1', mode: 'mock', clock: 'manual-fake', externalCalls: 0 });
           case '/api/state': return json(response, 200, engine.view());
           case '/api/test/snapshot': return json(response, 200, engine.publicSnapshot());
           case '/api/test/logs': return json(response, 200, engine.logs());
@@ -84,6 +103,10 @@ export function createGameServer(engine = new GameEngine()) {
       if (request.method === 'POST' && path === '/api/test/action') {
         const action = parseAction(await readObject(request));
         return json(response, 200, engine.dispatch(action));
+      }
+      if (request.method === 'POST' && path === '/api/command') {
+        const command = parseCommand(await readObject(request));
+        return json(response, 200, engine.command(command));
       }
       json(response, 404, { error: 'NOT_FOUND' });
     } catch (error) {

@@ -1,8 +1,46 @@
-import type { CharacterId, ClockState, PublicDocument, TestAction } from '../shared/contracts.ts';
+import type {
+  CharacterId, ClockState, CommandEstimate, CommandRequest, DraftStatus, EngagementPolicy, LedgerView,
+  LogKind, PublicDocument, RestrictionId, TaskStage, TestAction,
+} from '../shared/contracts.ts';
+
+export interface DraftRecord {
+  id: string;
+  version: number;
+  status: DraftStatus;
+  text: string;
+  action: 'naval-drill';
+  assignee: CharacterId;
+  messenger: CharacterId;
+  restrictions: RestrictionId[];
+  estimate: CommandEstimate;
+  unresolved: string[];
+  statusNote?: string;
+  taskId?: string;
+  /** Version that was confirmed; later confirms of it are idempotent. */
+  confirmedVersion?: number;
+}
+
+export interface TaskRecord {
+  id: string;
+  draftId: string;
+  draftVersion: number;
+  action: 'naval-drill';
+  assignee: CharacterId;
+  restrictions: RestrictionId[];
+  stage: TaskStage;
+  registeredAtMs: number;
+  deliveredAtMs?: number;
+  completedAtMs?: number;
+  /** Event that spent the grain. Present at most once: guards against double spending. */
+  grainSpentEventId?: string;
+  grainSpent: number;
+  readinessAppliedEventId?: string;
+  reportIds: string[];
+}
 
 export interface WorldState {
   schemaVersion: 1;
-  scenario: 'm0-fixture-v1';
+  scenario: 'm1-fixture-v1';
   sessionId: string;
   revision: number;
   clock: ClockState;
@@ -13,17 +51,27 @@ export interface WorldState {
   }[];
   resources: { grain: number; treasury: number };
   diplomacy: { requests: { id: string; status: 'pending' | 'answered' }[] };
-  navy: { readiness: number; engagementPolicy: 'hold' };
+  navy: { readiness: number; engagementPolicy: EngagementPolicy };
   documents: (PublicDocument & { readers: ('player' | CharacterId)[] })[];
+  /** What the player's ledger last recorded. Updated only when a report is filed. */
+  ledger: LedgerView;
+  drafts: DraftRecord[];
+  tasks: TaskRecord[];
+  counters: { draft: number; task: number; report: number };
   hidden: { marker: string; enemyTroops: number; enemyIntent: string };
 }
+
+export type EventCause =
+  | TestAction
+  | CommandRequest
+  | { type: 'task-progress'; taskId: string; stage: TaskStage };
 
 export interface EventRecord {
   id: string;
   atActiveMs: number;
-  kind: 'reset' | TestAction['type'];
+  kind: LogKind;
   summary: string;
-  cause: TestAction | null;
+  cause: EventCause | null;
   fromRevision: number;
   toRevision: number;
 }
@@ -32,11 +80,11 @@ export interface EventRecord {
 export function createInitialWorld(clock: ClockState): WorldState {
   return {
     schemaVersion: 1,
-    scenario: 'm0-fixture-v1',
+    scenario: 'm1-fixture-v1',
     sessionId: 'm0-local-session',
     revision: 0,
     clock,
-    player: { name: '손권', locationLabel: '강동 · 시험용 집무실' },
+    player: { name: '손권', locationLabel: '강동 · 정무청 (시험용)' },
     characters: [
       { id: 'zhang-hong', name: '장굉', role: '보좌', location: 'office', available: true, privatePerspective: 'PRIVATE_ADVISER_FIXTURE' },
       { id: 'zhang-zhao', name: '장조', role: '내정', location: 'residence', available: true, privatePerspective: 'PRIVATE_CIVIL_FIXTURE' },
@@ -49,8 +97,8 @@ export function createInitialWorld(clock: ClockState): WorldState {
     documents: [
       {
         id: 'm0-public-note', title: '시험용 집무 기록',
-        claim: '집무실 화면과 보고 전달 경로를 점검하기 위한 문서입니다. 아직 명령을 실행하거나 역사 사건을 진행하지 않습니다.',
-        source: 'M0 시험 자료', observedAtMs: 0, arrivedAtMs: 0,
+        claim: '정무청 화면과 보고 전달 경로를 점검하기 위한 문서입니다. M1에서는 장굉을 통해 수군 정비 지시 하나만 실제로 처리할 수 있으며, 역사 사건은 아직 진행하지 않습니다.',
+        source: '시험 자료', observedAtMs: 0, arrivedAtMs: 0,
         evidence: '실행 환경 점검용', region: '강동', provenance: 'test-reconstruction',
         readers: ['player', 'zhang-hong'],
       },
@@ -61,6 +109,10 @@ export function createInitialWorld(clock: ClockState): WorldState {
         readers: ['zhou-yu'],
       },
     ],
+    ledger: { recordedAtMs: 0, source: '시험용 장부 (초기값)', navalReadiness: 20, grain: 1000, engagementPolicy: 'hold' },
+    drafts: [],
+    tasks: [],
+    counters: { draft: 0, task: 0, report: 0 },
     hidden: { marker: 'SERVER_ONLY_M0_SENTINEL', enemyTroops: 987654, enemyIntent: 'PRIVATE_ENEMY_INTENT' },
   };
 }
