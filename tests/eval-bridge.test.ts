@@ -17,7 +17,7 @@ const settings = (provider: string): NodeJS.ProcessEnv => ({
 });
 
 for (const provider of ['gemini', 'openai-compatible'] as const) {
-  test(`eval factory ${provider}: retries and every budget stop preserve failed usage and reservations`, async () => {
+  test(`eval factory ${provider}: zero retries and next-case budget stops preserve failed usage and reservations`, async () => {
     const dir = mkdtempSync(join(tmpdir(), 'throne-eval-bridge-'));
     const original = globalThis.fetch;
     let external = 0;
@@ -44,7 +44,7 @@ for (const provider of ['gemini', 'openai-compatible'] as const) {
         assert.ok(source);
         assert.equal(source.model, `${provider}/eval-model`);
         const result = await source.sample(fixture, inputFor(fixture));
-        assert.equal(calls, scenario === 'retry' ? 2 : 1, scenario);
+        assert.equal(calls, 1, scenario);
         assert.equal(result.reservations, calls, scenario);
         assert.equal(result.attempts.length, calls, scenario);
         assert.equal(JSON.parse(readFileSync(budgetFile, 'utf8')).calls, calls, scenario);
@@ -53,7 +53,13 @@ for (const provider of ['gemini', 'openai-compatible'] as const) {
           assert.equal(attempt.outputTokens, scenario === 'unknown' ? null : 3);
           assert.equal(attempt.error, 'HTTP_500');
         }
-        assert.equal(result.error, ({ retry: 'PROVIDER_ERROR', call: 'CALL_LIMIT', tokens: 'TOKEN_BUDGET',
+        assert.equal(result.error, 'PROVIDER_ERROR');
+        const next = await source.sample(fixture, inputFor(fixture));
+        assert.equal(calls, scenario === 'retry' ? 2 : 1, scenario);
+        assert.equal(next.reservations, scenario === 'retry' ? 1 : 0);
+        assert.equal(next.attempts.length, next.reservations);
+        assert.equal(JSON.parse(readFileSync(budgetFile, 'utf8')).calls, calls);
+        assert.equal(next.error, ({ retry: 'PROVIDER_ERROR', call: 'CALL_LIMIT', tokens: 'TOKEN_BUDGET',
           cost: 'COST_BUDGET', unknown: 'USAGE_UNKNOWN', daily: 'CALL_LIMIT', session: 'CALL_LIMIT' })[scenario]);
         assert.ok(!JSON.stringify(result).includes('fake-test-only'));
       }

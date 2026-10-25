@@ -1,6 +1,7 @@
 import type { CharacterId } from '../../shared/contracts.ts';
 import type { Intent, Proposal, ProviderInput } from '../../server/llm/types.ts';
 import type { SecretGuard } from '../../server/llm/secrets.ts';
+import type { NetworkMode, NetworkRoute } from '../../shared/contracts.ts';
 
 export type Action = Proposal['proposedActions'][number];
 export interface EvalCase {
@@ -17,11 +18,15 @@ export interface Attempt {
   latencyMs: number; inputTokens: number | null; outputTokens: number | null;
   error?: string; status?: number;
 }
-export interface Sample { raw?: unknown; error?: string; attempts: Attempt[]; reservations: number }
+export interface EvalNetwork { networkMode: NetworkMode; route: NetworkRoute; pacUnsupported: boolean }
+export interface Sample { raw?: unknown; error?: string; attempts: Attempt[]; reservations: number; network?: EvalNetwork }
 export interface Source {
   model: string; timeoutMs: number;
   /** Private credential guard shared with evaluation/export boundaries. */
   secretGuard?: SecretGuard;
+  counterPolicy?: 'shared-play-daily' | 'isolated-test';
+  networkPolicy?: NetworkMode | 'provider-managed';
+  maxOutputTokens?: number;
   sample(fixture: EvalCase, input: ProviderInput): Promise<Sample>;
 }
 export interface Score { pass: boolean; issues: string[]; safetyViolations: string[]; intent: string }

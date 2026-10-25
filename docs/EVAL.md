@@ -1,6 +1,45 @@
 # v0.2 평가 장치
 
-이 도구는 해석 품질과 검증기 동작을 측정한다. 게임 상태를 실행하거나 실제 모델 품질을 보증하지 않는다. 서버·UI·기존 Mock 코드를 수정하지 않으며, 외부 의존성을 추가하지 않는다. 모든 사례는 시험용 재구성이다.
+## 복사해서 실행 — 개발 20개, 실제 호출 최대 20회 (035)
+
+아래는 사용자가 직접 라이브 평가를 실행할 때의 명령이다. 저장소 루트의 **같은 PowerShell 창**에서 Node 24 이상으로 실행한다. 키는 현재 창과 자식 프로세스에만 설정하며 영구 저장하지 않는다. 실제 키·프록시 주소를 문서나 명령 문자열에 붙여 넣지 않는다. 모델 접근권·요금은 사용자가 확인한다. 이 작업의 검증에서는 실제 외부 호출을 하지 않았다.
+
+```powershell
+$env:LLM_PROVIDER = 'gemini'
+$evalSecret = Read-Host 'API key (화면에 표시하지 않음)' -AsSecureString
+try {
+  $env:GEMINI_API_KEY = [System.Net.NetworkCredential]::new('', $evalSecret).Password
+  $env:GEMINI_MODEL_ID = Read-Host '사용 가능한 모델 ID'
+  $env:LLM_DAILY_CALL_LIMIT = '30'
+  $env:LLM_SESSION_CALL_LIMIT = '30'
+  $env:LLM_TIMEOUT_MS = '15000'
+  $env:LLM_RETRIES = '0'
+  node scripts/eval-llm.ts --live --split dev --limit 20 --max-calls 20
+  # 종료 코드 0/1/2와 출력된 Artifacts 경로를 확인한다.
+  # artifacts/eval/<UTC시각>-live-<pid>/summary.md
+  # 같은 폴더: results.json, human-review.csv, human-review.json
+} finally {
+  Remove-Item Env:GEMINI_API_KEY -ErrorAction SilentlyContinue
+  $evalSecret.Dispose()
+  Remove-Variable evalSecret
+}
+```
+
+CLI 자체에는 선택·확인 프롬프트가 없다. `--live` 명령 실행이 동의이며, 전송 전 예정 호출 수(상한), 선택 사례 수, 누적 관측 토큰 상한, 요청별 출력 토큰 상한을 표시한다. 위 명령의 예정 호출 상한은 20회이고 일일 잔여/세션/토큰/오류에 따라 더 적게 끝날 수 있다. 기본 Gemini 출력 상한은 요청당 2048이며 입력 토큰 상한은 아니다. `GEMINI_MAX_OUTPUT_TOKENS`(256~32768), `GEMINI_THINKING_MODE`(low/default)도 게임 factory와 동일하게 적용한다.
+
+- `--network auto|proxy|direct`: 기본 auto. Gemini는 게임 V11의 동일한 `NetworkRouter`로 각 호출 직전에 입력 → HTTPS/HTTP 환경 프록시 → 활성 Windows 시스템 프록시 → 직접 순서로 선택한다. 실패 후 경로 전환·사전 접속 시험·재시도는 없다. 각 사례 최대 1회, 재시도 0은 `LLM_RETRIES` 값과 무관하게 고정한다.
+- `--proxy <주소>`: 선택적 메모리 입력. 주소가 필요하면 PowerShell 변수로 읽어 전달하고 사용 후 변수를 지운다. 명령행 인수는 OS의 프로세스 조회에 보일 수 있으므로 시스템 프록시 자동 감지를 우선한다. 주소·인증정보는 출력/보고서/진단에 남기지 않고 manual-proxy/env-proxy/system-proxy/direct 종류만 기록한다. 프록시 모드에서 감지값이 없거나 잘못되면 차단하며 직접으로 우회하지 않는다. PAC/SOCKS는 지원하지 않으며 PAC 감지 여부는 결과에 표시한다.
+- Windows 시스템 프록시형 VPN은 위 기본 명령만으로 게임과 같은 경로를 사용한다. CLI에 `--use-env-proxy`나 수동 `HTTPS_PROXY` 설정은 필요하지 않다. VPN을 끄고 남은 프록시를 우회하려면 `--network direct`를 추가한다. 전역 환경/레지스트리/브라우저/계정 설정은 바꾸지 않는다.
+- `--limit N`: 양의 정수, 개발 세트에만 허용. fixture 파일의 고정 순서에서 처음 N개를 선택하며 무작위 추출/비율 재조정은 하지 않는다. 현재 처음 20개는 명령 사례이므로 NPC 품질을 대표하지 않는다. N이 세트보다 크면 전체 개발 세트를 선택한다. JSON에는 availableCases/totalCases/limits.limit을 따로 기록한다. 미선택 사례는 skipped가 아니며, 선택 후 예산 중단으로 실행하지 못한 ID만 skipped다.
+- holdout은 명시적 `--split final`로만 실행하고 `--limit`과 조합하면 전송 전 설정 오류로 종료한다. 기본 dev 실행은 final을 읽거나 채점하지 않는다.
+
+**실제 라이브 평가는 게임과 같은 UTC 일일 카운터에 포함한다.** 기본 `artifacts/llm-usage.json`, 게임과 CLI에 같은 `LLM_USAGE_FILE`을 설정한 경우 그 파일을 공유한다. 이전 게임 사용량을 이어받고 성공/실패 모두 시도 직전 1회 예약한다. 라우팅 설정 문제로 전송에 못 도달한 예약도 V11 게임 정책대로 포함한다. 키/모델/옵션 오류·일일/세션 한도에서 예약 전 차단하면 0회다. CLI 재실행으로 일일 수치는 초기화되지 않는다. 세션 상한은 각 CLI 실행에 별도로 적용하며 실행 중인 게임 서버의 세션 수치는 올리지 않는다. 일일 한도 값은 각 프로세스 설정이므로 동일하게 설정해야 한다. 이는 앱의 로컬 안전장치이며 Google 계정의 전체 할당량/청구 통계는 아니다.
+
+Mock/scripted는 예약 0회다. 주입한 가짜 transport, Node 테스트 문맥, test 진단 출처의 자동 검증은 임시 카운터를 사용하며 명시적 테스트 budgetFile도 지원한다. 실제 파일을 초기화하지 않는다. 라이브와 오프라인 격리를 구분한 035 정책이 이전 '모든 평가는 임시 파일' 정책을 대체한다.
+
+## 평가 범위
+
+이 도구는 해석 품질과 검증기 동작을 측정한다. 게임 상태를 실행하거나 실제 모델 품질을 보증하지 않는다. 엔진·UI·기존 Mock 동작을 바꾸지 않으며, 외부 의존성을 추가하지 않는다. 모든 사례는 시험용 재구성이다.
 
 ## 세트와 분리
 
@@ -44,28 +83,19 @@ scripted 형식은 `{version:1, split:"dev", responses:{사례ID:원응답}}`이
 
 bridge는 V1의 `server/llm/config.ts`에 있는 `configuredProvider`/`providerConfig`와 중립 `budget.ts`를 사용한다. `LLM_PROVIDER=gemini`와 `openai-compatible`을 지원하며 기본 mock·알 수 없는 공급자·잘못된 설정을 다른 공급자로 바꾸지 않는다. 평가 코드에서 Gemini 구현을 직접 import하지 않는다. Gemini의 `usageMetadata`와 호환 API의 `usage.prompt_tokens/completion_tokens`를 명시적으로 구분하고 성공·실패 HTTP 모두 숫자 사용량만 관측한다.
 
-현재 V1 factory는 budget 주입 인수가 없으므로 bridge 안에서 factory가 선택·검증한 어댑터의 공통 생성자 계약으로 평가용 budget을 주입해 다시 만든다. factory 선택 단계에서는 호출·예약이 없다. 이 제한된 연결은 재시도 **예약 전** 호출/토큰/비용 검사를 유지하고 가짜 transport 시험을 별도 budget 파일에 격리하기 위한 것이다. 서버 전역/프로토타입을 변경하지 않는다. 향후 factory가 budget 주입을 제공하면 이 연결을 직접 호출로 바꾸면 된다. 두 어댑터의 생성자 계약·실패 회계·성공 경로는 `tests/eval-bridge.test.ts`에서 검사한다.
+factory의 선택적 budget/network 주입 계약으로 평가용 예약 guard와 V11 라우터를 전달한다. 선택된 어댑터를 별도로 재구성하지 않으므로 Gemini의 출력/사고 설정과 네트워크 정책을 함께 보존한다. 서버 전역/프로토타입은 변경하지 않는다. 두 공급자의 실패 회계·성공 경로·다음 사례 예산 차단은 `tests/eval-bridge.test.ts`, 경로/CLI/공유 카운터는 `tests/eval-network.test.ts`에서 가짜 transport로 검사한다.
 
 키·모델 ID·양수 일일/세션 상한·양수 `--max-calls`가 모두 있어야 한다. 키는 로컬 프로세스 환경으로만 전달하며 로그·fixture·버전 관리에 넣지 않는다. 아래는 사용자가 모델 접근권과 과금 조건을 확인한 환경에서 수행할 절차다. 이 문서에는 실재 모델명·키·현재 가격을 가정하지 않는다.
 
-```powershell
-$env:LLM_PROVIDER = 'gemini'
-$evalSecret = Read-Host 'API key' -AsSecureString
-$env:GEMINI_API_KEY = [System.Net.NetworkCredential]::new('', $evalSecret).Password
-$env:GEMINI_MODEL_ID = Read-Host '사용 가능한 모델 ID'
-$env:LLM_DAILY_CALL_LIMIT = '5'
-$env:LLM_SESSION_CALL_LIMIT = '5'
-$env:LLM_TIMEOUT_MS = '15000'
-$env:LLM_RETRIES = '0'
-node scripts/eval-llm.ts --live --max-calls 3 --max-tokens 20000
-Remove-Item Env:GEMINI_API_KEY
-```
+복사용 전체 절차는 문서 맨 앞에 있다. 추가 관측 토큰 한도 예: `--max-tokens 20000`. 별도 대화형 확인은 없다.
 
-모델/키/상한 누락은 공급자 호출 0회로 종료 2와 설정 안내를 출력한다. 일반 오류는 다음 사례로 진행하되 `CALL_LIMIT`/429 또는 예산 중단은 남은 ID를 `skipped`로 기록한다. 일일 예산 파일은 기존 서버의 `artifacts/llm-usage.json`을 공유한다. 호출 시도와 재시도 모두 명시 상한에 포함된다. 예산 검사는 재시도 전에도 적용한다.
+모델/키/상한 누락은 공급자 호출 0회로 종료 2와 설정 안내를 출력한다. 일반 오류는 다음 사례로 진행하되 `CALL_LIMIT`/429 또는 예산 중단은 남은 ID를 `skipped`로 기록한다. 일일 예산 파일은 기존 서버의 `artifacts/llm-usage.json`을 공유한다. 각 사례는 최대 한 번만 시도한다. 다음 사례의 예약 전에도 CLI 호출/토큰/비용 상한을 검사한다.
 
 OpenAI 호환 서버는 `LLM_PROVIDER=openai-compatible`, `OPENAI_COMPAT_API_KEY`, `OPENAI_COMPAT_MODEL_ID`, `OPENAI_COMPAT_BASE_URL`을 설정하고 같은 상한/CLI 옵션을 사용한다. 주소는 V1 factory의 HTTPS/로컬 HTTP 제한을 따른다. CLI 차단 안내는 선택한 공급자의 필수 설정명을 표시한다. 공급자를 선택하지 않았거나 알 수 없으면 두 지원 공급자 중 선택하도록 안내한다. 실제 접속·과금·모델 품질은 이번 작업에서 확인하지 않았다.
 
-`--max-tokens N`은 관측된 입력+출력 토큰 누계, `--budget-usd B --input-price Pi --output-price Po`는 백만 토큰당 입력/출력 단가에 따른 관측 비용으로 다음 호출을 중단한다. 금액/토큰 제한은 한 응답을 받은 뒤에야 정확히 계산되므로 마지막 호출 한 번의 초과 가능성이 있다. **현재 공급자에 출력 토큰 상한 계약이 없으므로 엄격한 금액 한도는 아니다.** 엄격한 요청 횟수 한도는 `--max-calls`와 공급자 예산으로 보장한다. 사용량이 누락되면 금액/토큰 제한이 설정된 실행은 다음 호출 전에 `USAGE_UNKNOWN`으로 중단한다.
+V11 라우터는 Google 전용이므로 호환 Provider의 네트워크는 기존 전송 설정을 따른다. `--network proxy/direct` 또는 `--proxy`를 호환 Provider에 지정하면 설정 오류로 차단하며 지원한다고 표시하지 않는다. 기본 auto 결과에는 provider-managed를 명시한다.
+
+`--max-tokens N`은 관측된 입력+출력 토큰 누계, `--budget-usd B --input-price Pi --output-price Po`는 백만 토큰당 입력/출력 단가에 따른 관측 비용으로 다음 호출을 중단한다. 금액/토큰 제한은 한 응답을 받은 뒤에야 정확히 계산되므로 마지막 호출 한 번의 초과 가능성이 있다. **Gemini 요청별 출력 상한은 입력 토큰·전체 비용 상한이 아니므로 엄격한 금액 한도는 아니다.** 호환 Provider의 출력 상한 계약은 별도로 추가하지 않았다. 엄격한 요청 횟수 한도는 `--max-calls`와 공급자 예산으로 보장한다. 사용량이 누락되면 금액/토큰 제한이 설정된 실행은 다음 호출 전에 `USAGE_UNKNOWN`으로 중단한다.
 
 ## 자동 채점과 결과 해석
 
@@ -76,6 +106,8 @@ OpenAI 호환 서버는 `LLM_PROVIDER=openai-compatible`, `OPENAI_COMPAT_API_KEY
 - 성공률은 실제 시도 사례를 분모로 하며 전체 예정 수와 skipped를 함께 표시한다. 안전 위반률은 한 사례에서 하나 이상의 안전 규칙 위반이 검출된 비율이다. 검증기 거절/실행하지 않은 사례를 안전 성공으로 해석하지 않는다. 후단 점수는 validator 출력이며 화면의 추가 대사 보호와 실제 게임 실행 안전성 전체를 뜻하지 않는다.
 
 `artifacts/eval/<UTC시각>-<모드>-<pid>/`에는 `results.json`, `summary.md`, `human-review.csv`, `human-review.json`을 저장한다. 모델 ID, 프롬프트+스키마+행동 어휘 SHA-256, fixture SHA-256, split, 제한값, 사례별 원응답/검증결과/오류코드/총 지연을 기록한다. JSON은 단계별 혼동표와 필드 오류를 포함한다.
+
+summary.md는 모든 선택 사례의 원응답/검증후 PASS·FAIL·SKIPPED, 안전 위반 수/비율, 지연 p50/p95, 알려진 토큰 합계/누락, 사례 오류 코드 및 HTTP 시도 오류 분포, 실제 선택 경로 종류와 카운터 정책을 포함한다. 명령 사례를 분모로 의도·행동(kind/target/assignee 및 배열 순서)·조건(행동 동일성+conditions/restrictions/deadline)의 사례 단위 완전 일치율을 원응답/검증후 각각 계산한다. 행동 없는 의도는 기대 빈 배열과 비교하며 NPC는 이 세 정확도의 분모에서 제외한다. 누락/스키마 오류/검증 거절은 정확도로 인정하지 않는다.
 
 전송 wrapper는 성공·실패 HTTP의 제한된 응답에서 숫자 사용량만 관측한다. 각 시도의 HTTP 상태·지연·입력/출력 토큰·오류 코드, 재시도 수, 예산 예약 수와 실패 호출 토큰을 기록한다. 상위 오류 원문·헤더·키는 기록하지 않는다. 사용량 누락은 `null` 및 `missingUsageAttempts`로 표시하며 0으로 간주하지 않는다. p50/p95는 실제 전송 시도의 nearest-rank 백분위다. 오프라인은 실제 전송이 없으므로 N/A이며 사례 처리 지연은 별도 필드다.
 

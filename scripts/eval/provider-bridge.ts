@@ -1,12 +1,44 @@
 // V1 integration seam: provider selection and settings belong to the neutral factory.
-import { configuredProvider, providerConfig } from '../../server/llm/config.ts';
-import type { ProviderConfig } from '../../server/llm/config.ts';
+import { configuredProvider, geminiConfig, providerConfig } from '../../server/llm/config.ts';
 import { CallBudget } from '../../server/llm/budget.ts';
-import { isolatedUsageFile } from '../../server/llm/usage-file.ts';
+import { isolatedUsageFile, PLAY_USAGE_FILE } from '../../server/llm/usage-file.ts';
 import { ProviderError } from '../../server/llm/types.ts';
 import { SecretGuard } from '../../server/llm/secrets.ts';
-import type { InterpretationProvider } from '../../server/llm/types.ts';
-import type { Attempt, Source } from './types.ts';
+import { NetworkRouter, readWindowsProxy } from '../../server/llm/network-routing.ts';
+import type { SystemProxyReader } from '../../server/llm/network-routing.ts';
+import { GAME_MAX_TOKENS } from '../../server/llm/gemini-response.ts';
+import type { NetworkMode } from '../../shared/contracts.ts';
+import type { Attempt, EvalNetwork, Source } from './types.ts';
+
+export interface LiveRuntime {
+  transport?: typeof fetch; budgetFile?: string; networkMode?: NetworkMode; proxy?: string;
+  readSystemProxy?: SystemProxyReader;
+}
+
+/** Addresses never enter prompts or metadata; reject accidental reflection at export boundaries too. */
+class EvalSecrets extends SecretGuard {
+  #addresses = new Set<string>();
+  addAddress(value: string | undefined) {
+    if (!value) return;
+    this.#addresses.add(value);
+    for (const part of value.split(';')) {
+      const entry = part.trim();
+      const address = (/^(?:https?|socks)=/i.test(entry) ? entry.slice(entry.indexOf('=') + 1) : entry).trim();
+      if (!address) continue;
+      this.#addresses.add(address);
+      try {
+        const url = new URL(address.includes('://') ? address : `http://${address}`);
+        this.#addresses.add(url.host);
+        if (url.username) this.#addresses.add(url.username);
+        if (url.password) this.#addresses.add(url.password);
+      } catch { /* Invalid values are still protected verbatim. */ }
+    }
+  }
+  override reflects(text: string): boolean {
+    return super.reflects(text) || [...this.#addresses].some(address =>
+      [address, encodeURIComponent(address), Buffer.from(address).toString('base64')].some(value => text.includes(value)));
+  }
+}
 
 export const errorCode = (error: unknown): string => error instanceof ProviderError ? error.code : 'PROVIDER_ERROR';
 const token = (v: unknown): number | null => typeof v === 'number' && Number.isSafeInteger(v) && v >= 0 ? v : null;
@@ -57,11 +89,30 @@ export function observedTransport(transport: typeof fetch, attempts: Attempt[], 
 
 export function liveSource(maxCalls: number, env: NodeJS.ProcessEnv = process.env,
   limits: { maxTokens?: number; budgetUsd?: number; inputPrice?: number; outputPrice?: number } = {},
-  runtime: { transport?: typeof fetch; budgetFile?: string } = {}): Source | undefined {
+  runtime: LiveRuntime = {}): Source | undefined {
   const format = env.LLM_PROVIDER;
   if ((format !== 'gemini' && format !== 'openai-compatible') || !Number.isSafeInteger(maxCalls) || maxCalls <= 0) return undefined;
-  const config = providerConfig(env, (format === 'gemini' ? env.GEMINI_MODEL_ID : env.OPENAI_COMPAT_MODEL_ID) ?? '');
+  // The CLI is one attempt per case, regardless of inherited retry settings.
+  const settings = { ...env, LLM_RETRIES: '0' };
+  const config = format === 'gemini' ? geminiConfig(settings) : providerConfig(settings, env.OPENAI_COMPAT_MODEL_ID ?? '');
   if (!config || config.dailyLimit <= 0 || config.sessionLimit <= 0) return undefined;
+  if (format !== 'gemini' && (runtime.proxy || runtime.networkMode && runtime.networkMode !== 'auto'))
+    throw new Error('NETWORK_GOOGLE_ONLY');
+  const isolated = !!(runtime.transport || process.env.NODE_TEST_CONTEXT || env.LLM_DIAGNOSTIC_SOURCE === 'test');
+  const secretGuard = new EvalSecrets((format === 'gemini' ? env.GEMINI_API_KEY : env.OPENAI_COMPAT_API_KEY) ?? '');
+  for (const address of [runtime.proxy, env.HTTPS_PROXY, env.https_proxy, env.HTTP_PROXY, env.http_proxy, env.OPENAI_COMPAT_BASE_URL])
+    secretGuard.addAddress(address);
+  const readSystem = runtime.readSystemProxy ?? (isolated ? () => ({ enabled: false, server: '', pac: false }) : readWindowsProxy);
+  let network: EvalNetwork | undefined;
+  class EvalRouter extends NetworkRouter {
+    override select() {
+      const selection = super.select();
+      network = { ...selection.metadata(), pacUnsupported: selection.pacUnsupported };
+      return selection;
+    }
+  }
+  const router = new EvalRouter(env, () => { const value = readSystem(); secretGuard.addAddress(value.server); return value; });
+  router.configure(runtime.networkMode ?? 'auto', runtime.proxy);
   const attempts: Attempt[] = [];
   let reservations = 0;
   let budgetStop: string | undefined;
@@ -81,30 +132,25 @@ export function liveSource(maxCalls: number, env: NodeJS.ProcessEnv = process.en
     }
   }
   const transport = observedTransport(runtime.transport ?? globalThis.fetch, attempts, maxCalls, guard, format);
-  const selected = configuredProvider(env, transport);
+  const budgetFile = runtime.budgetFile ?? (isolated ? isolatedUsageFile() : env.LLM_USAGE_FILE || PLAY_USAGE_FILE);
+  const selected = configuredProvider(settings, transport, { budget: new ObservedBudget(config, budgetFile), network: router });
   if (!selected.provider) return undefined;
-  // V1's factory selects/validates the adapter but has no budget injection argument.
-  // Recreate that selected adapter with its shared constructor contract so the eval
-  // guard runs BEFORE reservation (including retries), and fake tests use isolated
-  // budget files. Do not patch server globals or bypass factory configuration gates.
-  const Adapter = selected.provider.constructor as new (
-    config: ProviderConfig & { baseUrl: string }, transport: typeof fetch, budget: CallBudget, key: string
-  ) => InterpretationProvider;
-  const provider = new Adapter({ ...config, baseUrl: env.OPENAI_COMPAT_BASE_URL ?? '' }, transport,
-    new ObservedBudget(config, runtime.budgetFile ?? isolatedUsageFile()),
-    (format === 'gemini' ? env.GEMINI_API_KEY : env.OPENAI_COMPAT_API_KEY) ?? '');
-  const secretGuard = new SecretGuard((format === 'gemini' ? env.GEMINI_API_KEY : env.OPENAI_COMPAT_API_KEY) ?? '');
+  const provider = selected.provider;
   return {
     secretGuard,
+    counterPolicy: isolated || runtime.budgetFile ? 'isolated-test' : 'shared-play-daily',
+    networkPolicy: format === 'gemini' ? runtime.networkMode ?? 'auto' : 'provider-managed',
+    maxOutputTokens: format === 'gemini' ? config.maxOutputTokens ?? GAME_MAX_TOKENS : undefined,
     model: `${format}/${config.model}`, timeoutMs: selected.timeoutMs,
     async sample(_fixture, input) {
       const first = attempts.length, reserved = reservations;
+      network = undefined;
       let raw: unknown, error: string | undefined;
       try { raw = await provider.interpret(input, AbortSignal.timeout(config.timeoutMs)); secretGuard.assertSafe(raw); }
       catch (e) { raw = undefined; error = budgetStop ?? errorCode(e); }
       const observed = attempts.slice(first);
       if (error && observed.length && !observed.at(-1)!.error) observed.at(-1)!.error = error;
-      return { raw, error, attempts: structuredClone(observed), reservations: reservations - reserved };
+      return { raw, error, attempts: structuredClone(observed), reservations: reservations - reserved, network };
     },
   };
 }

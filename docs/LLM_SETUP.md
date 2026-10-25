@@ -105,7 +105,7 @@ Gemini의 `maxOutputTokens`는 **사고 + 보이는 출력의 합계**다. 사�
 
 매 시도 직전에 일일·세션을 각각 1회 예약한다. 성공·실패·전송 후 취소도 1회이며 재시도는 매번 추가 1회다. 연결 시험은 재시도가 없어 최대 1회, 인증 설정 부족이나 상한 도달로 전송 전 차단되면 0회다. 결과/usage 기록은 다시 차감하지 않는다. 화면 설정 경로는 서버 수명 동안 같은 예산을 공유하고, CLI Provider는 인스턴스 수명 동안 세션을 유지한다. 일일은 UTC 날짜가 바뀌면 새 날짜의 첫 예약부터 다시 센다. 조회만으로 파일을 변경하지 않는다.
 
-실제 플레이 기본 파일은 `artifacts/llm-usage.json`이며 `LLM_USAGE_FILE`로 다른 파일을 지정할 수 있다. `node --test tests/*.test.ts`는 Node 테스트 컨텍스트에서 프로세스별 임시 파일을 자동 선택하고, 기존 시험별 `budgetFile`도 유지한다. 검증·스크린샷·playthrough/soak는 `scripts/offline-runtime.ts`로 임시 경로·Mock을 지정한다. 평가는 호출 원천마다 임시 파일을 쓰며 별도 `budgetFile` 주입도 지원한다. 임시 파일은 정상 종료 시 정리된다. 테스트/평가 횟수가 플레이 일일 카운터를 올리지 않는다. `node scripts/verify-all.ts`는 각 작업 전후 실제 기본 파일의 SHA-256을 비교하고 변경되면 실패한다. 증거는 `artifacts/usage-counter/hash-verification.json`이다.
+실제 플레이 기본 파일은 `artifacts/llm-usage.json`이며 `LLM_USAGE_FILE`로 다른 파일을 지정할 수 있다. `node --test tests/*.test.ts`는 Node 테스트 컨텍스트에서 프로세스별 임시 파일을 자동 선택하고, 기존 시험별 `budgetFile`도 유지한다. 검증·스크린샷·playthrough/soak는 `scripts/offline-runtime.ts`로 임시 경로·Mock을 지정한다. 035부터 실제 `--live` 평가는 게임과 같은 일일 파일을 공유한다(같은 `LLM_USAGE_FILE` 적용). 성공/실패 예약이 일일 수치에 포함되며 CLI 세션 상한은 게임 서버 세션과 별개다. 가짜 transport·Node 테스트·test 출처의 평가만 임시 파일을 쓰며 별도 `budgetFile` 주입도 지원한다. 임시 파일은 정상 종료 시 정리된다. 테스트/오프라인 평가는 플레이 일일 카운터를 올리지 않는다. 복사용 명령·네트워크 옵션·정책은 [EVAL.md](EVAL.md) 맨 앞을 따른다. `node scripts/verify-all.ts`는 각 작업 전후 실제 기본 파일의 SHA-256을 비교하고 변경되면 실패한다. 증거는 `artifacts/usage-counter/hash-verification.json`이다.
 
 ## 첫 화면에서 Gemini 설정 (027)
 
@@ -132,7 +132,7 @@ Gemini의 `maxOutputTokens`는 **사고 + 보이는 출력의 합계**다. 사�
 | `LLM_RETRIES` | 추가 시도 횟수. 기본 0, 허용 0~100 |
 | `LLM_DAILY_CALL_LIMIT` | UTC 일일 예약 상한. 기본 0 (차단), 허용 0~10000 |
 | `LLM_SESSION_CALL_LIMIT` | Provider 인스턴스/서버 세션 예약 상한. 기본 0 (차단), 허용 0~10000 |
-| `LLM_USAGE_FILE` | 실제 서버의 일일 카운터 파일 경로. 기본 `artifacts/llm-usage.json`; 테스트·검증·평가는 격리 경로 사용 |
+| `LLM_USAGE_FILE` | 실제 서버의 일일 카운터 파일 경로. 기본 `artifacts/llm-usage.json`; 실제 라이브 평가는 공유, 테스트·검증·오프라인 평가는 격리 |
 
 주소는 HTTPS를 사용한다. 로컬 호환 서버는 loopback HTTP만 허용한다. 주소 안의 사용자명·비밀번호·쿼리·fragment와 리다이렉트는 거부한다. 키는 인증 헤더로만 전달한다. Chat Completions의 `response_format: json_schema`, `strict: true`를 선택했다. 호환 서버의 지원 여부는 별도 확인해야 한다. strict 스키마 호환 범위를 넓히기 위해 `uniqueItems`는 전송 스키마에서 제거하고 로컬 검증에서 계속 강제한다. [공식 OpenAI 구조화 출력 문서](https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=chat).
 

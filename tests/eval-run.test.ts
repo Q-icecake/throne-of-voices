@@ -109,7 +109,7 @@ test('eval CLI no mode and absent-key live execute zero calls; invalid flags fai
   for (const args of [['--mock', '--live'], ['--mock', '--max-calls', '0'], ['--mock', '--split', 'oops'], ['--scripted'], ['--unknown']])
     assert.equal(run(...args).status, 2);
 });
-test('eval actual provider bridge accounts for retries, failed tokens, and budget stops using fake transport only', () => {
+test('eval actual provider bridge accounts for zero retries, failed tokens, and next-case budget stops using fake transport only', () => {
   const code = `
     import assert from 'node:assert/strict';
     import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
@@ -130,11 +130,16 @@ test('eval actual provider bridge accounts for retries, failed tokens, and budge
       const source=liveSource(scenario==='call'?1:3,process.env,limits,{transport,budgetFile:join(dir,scenario+'.json')});
       assert.ok(source);
       const result=await source.sample(fixture,inputFor(fixture));
-      assert.equal(calls,scenario==='retry'?2:1);
+      assert.equal(calls,1);
       assert.equal(result.attempts.length,calls);
       assert.equal(result.reservations,calls);
       assert.equal(result.attempts[0].inputTokens,scenario==='unknown'?null:12);
-      assert.equal(result.error,({retry:'PROVIDER_ERROR',call:'CALL_LIMIT',tokens:'TOKEN_BUDGET',cost:'COST_BUDGET',unknown:'USAGE_UNKNOWN'})[scenario]);
+      assert.equal(result.error,'PROVIDER_ERROR');
+      const next=await source.sample(fixture,inputFor(fixture));
+      assert.equal(calls,scenario==='retry'?2:1);
+      assert.equal(next.reservations,scenario==='retry'?1:0);
+      assert.equal(next.attempts.length,next.reservations);
+      assert.equal(next.error,({retry:'PROVIDER_ERROR',call:'CALL_LIMIT',tokens:'TOKEN_BUDGET',cost:'COST_BUDGET',unknown:'USAGE_UNKNOWN'})[scenario]);
     }
     // Child has no NODE_TEST_CONTEXT or LLM_USAGE_FILE: explicit budget must also isolate diagnostics.
     const diagnostics=readFileSync(join(dir,'llm-diagnostics.jsonl'),'utf8').trim().split('\\n').map(line=>JSON.parse(line));

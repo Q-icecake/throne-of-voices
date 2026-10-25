@@ -8,6 +8,8 @@ import type { ProviderInput } from '../../server/llm/types.ts';
 import { loadCases } from './fixtures.ts';
 import { mockSource, scriptedSource } from './sources.ts';
 import { errorCode, liveSource } from './provider-bridge.ts';
+import type { LiveRuntime } from './provider-bridge.ts';
+import type { NetworkMode } from '../../shared/contracts.ts';
 import { confusion, decode, score } from './score.ts';
 import type { EvalCase, Sample, Score, Source } from './types.ts';
 import type { SecretGuard } from '../../server/llm/secrets.ts';
@@ -39,6 +41,24 @@ export function totals(rows: Row[]) {
   const latencies = attempts.map(a => a.latencyMs).sort((a, b) => a - b);
   const percentile = (p: number) => latencies.length ? latencies[Math.max(0, Math.ceil(latencies.length * p) - 1)]! : null;
   const tokenSum = (key: 'inputTokens' | 'outputTokens') => attempts.reduce((sum, a) => sum + (a[key] ?? 0), 0);
+  const distribution = (values: string[]) => values.reduce<Record<string, number>>((counts, code) => {
+    counts[code] = (counts[code] ?? 0) + 1; return counts;
+  }, {});
+  // Exact-match case accuracy on command cases. Missing/malformed output is never a pass.
+  const accuracy = (stage: 'rawScore' | 'validatedScore') => {
+    const commands = rows.filter(row => row.suite === 'command');
+    const valid = (row: Row) => row[stage].intent !== 'invalid' && !row[stage].issues.includes('schema');
+    const aligned = (row: Row) => valid(row) && !row[stage].issues.some(issue =>
+      /^actions\.(?:schema|extra|missing|forbidden)$|^actions\.\d+\.(?:missing|schema)$/.test(issue));
+    return {
+      denominator: commands.length,
+      intent: commands.filter(row => valid(row) && row[stage].intent === row.expectedIntent).length,
+      actions: commands.filter(row => aligned(row) && !row[stage].issues.some(issue =>
+        /^actions\.\d+\.(?:kind|target|assignee)$/.test(issue))).length,
+      conditions: commands.filter(row => aligned(row) && !row[stage].issues.some(issue =>
+        /^actions\.\d+\.(?:kind|target|assignee|conditions|restrictions|deadline)$/.test(issue))).length,
+    };
+  };
   return {
     cases: rows.length, attempts: attempts.length, retries: rows.reduce((sum, r) => sum + Math.max(0, r.sample.attempts.length - 1), 0),
     reservations: rows.reduce((sum, r) => sum + r.sample.reservations, 0),
@@ -52,6 +72,10 @@ export function totals(rows: Row[]) {
     rawSafetyCases: rows.filter(r => r.rawScore.safetyViolations.length).length,
     validatedSafetyCases: rows.filter(r => r.validatedScore.safetyViolations.length).length,
     errors: rows.filter(r => r.error).length,
+    errorCodes: distribution(rows.flatMap(r => r.error ? [r.error] : [])),
+    attemptErrorCodes: distribution(attempts.flatMap(a => a.error ? [a.error] : [])),
+    routes: distribution(rows.flatMap(r => r.sample.network ? [r.sample.network.route] : [])),
+    rawAccuracy: accuracy('rawScore'), validatedAccuracy: accuracy('validatedScore'),
     rawConfusion: confusion(rows.map(r => ({ expected: r.expectedIntent, actual: r.rawScore.intent }))),
     validatedConfusion: confusion(rows.map(r => ({ expected: r.expectedIntent, actual: r.validatedScore.intent }))),
   };
@@ -117,10 +141,10 @@ export async function promptVersion() {
   return `eval-v2:${hash.digest('hex')}`;
 }
 
-export async function main(args = process.argv.slice(2)): Promise<number> {
-  if (!args.length) { console.log('평가 미실행 · 외부 호출 0회. --mock 또는 --scripted tests/fixtures/eval-scripted-good.json 사용. --live는 키·모델·양수 호출 상한 설정 후 별도 실행.'); return 0; }
+export function parseOptions(args: string[]) {
   let mode: 'mock' | 'scripted' | 'live' | undefined, script: string | undefined;
   let split: 'dev' | 'final' = 'dev';
+  let limit: number | undefined, networkMode: NetworkMode = 'auto', proxy: string | undefined;
   const limits: Limits = { maxCalls: Infinity };
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -130,6 +154,12 @@ export async function main(args = process.argv.slice(2)): Promise<number> {
       if (mode === 'scripted') { script = args[++i]; if (!script || script.startsWith('--')) throw new Error('CLI_SCRIPT'); }
     } else if (arg === '--split') {
       const value = args[++i]; if (value !== 'dev' && value !== 'final') throw new Error('CLI_SPLIT'); split = value;
+    } else if (arg === '--limit') {
+      limit = Number(args[++i]); if (!Number.isSafeInteger(limit) || limit <= 0) throw new Error('CLI_LIMIT');
+    } else if (arg === '--network') {
+      const value = args[++i]; if (value !== 'auto' && value !== 'proxy' && value !== 'direct') throw new Error('CLI_NETWORK'); networkMode = value;
+    } else if (arg === '--proxy') {
+      proxy = args[++i]; if (!proxy || proxy.startsWith('--')) throw new Error('CLI_PROXY');
     } else {
       const keys = { '--max-calls': 'maxCalls', '--max-tokens': 'maxTokens', '--budget-usd': 'budgetUsd', '--input-price': 'inputPrice', '--output-price': 'outputPrice' } as const;
       const key = keys[arg as keyof typeof keys]; if (!key) throw new Error('CLI_OPTION');
@@ -138,33 +168,87 @@ export async function main(args = process.argv.slice(2)): Promise<number> {
     }
   }
   if (!mode) throw new Error('CLI_MODE');
+  if (limit !== undefined && split !== 'dev') throw new Error('CLI_LIMIT_DEV_ONLY');
   if (limits.budgetUsd !== undefined && (limits.inputPrice === undefined || limits.outputPrice === undefined)) throw new Error('CLI_PRICES');
+  return { mode, script, split, limit, limits, networkMode, proxy };
+}
+
+export function selectCases(fixtures: EvalCase[], limit?: number): EvalCase[] {
+  return limit === undefined ? fixtures : fixtures.slice(0, limit);
+}
+
+export function renderSummary(mode: string, split: string, model: string, version: string, fixtures: EvalCase[],
+  result: Awaited<ReturnType<typeof evaluate>>, policy = 'offline') {
+  const t = result.totals, n = result.rows.length;
+  const rate = (x: number, d = n) => d ? `${x}/${d} (${(100 * x / d).toFixed(1)}%)` : 'N/A';
+  const accuracy = (a: typeof t.rawAccuracy) =>
+    `intent ${rate(a.intent, a.denominator)}; actions ${rate(a.actions, a.denominator)}; conditions ${rate(a.conditions, a.denominator)}`;
+  const distribution = (values: Record<string, number>) => Object.entries(values).map(([code, count]) => `${code}: ${count}`).join(', ') || 'none';
+  const cases = fixtures.map(fixture => {
+    const row = result.rows.find(r => r.id === fixture.id);
+    return row ? `| ${row.id} | ${row.suite} | ${row.rawScore.pass ? 'PASS' : 'FAIL'} | ${row.validatedScore.pass ? 'PASS' : 'FAIL'} | ${row.sample.network?.route ?? 'N/A'} | ${row.error ?? '-'} | ${row.rawScore.issues.join(', ') || '-'} | ${row.validatedScore.issues.join(', ') || '-'} |` :
+      `| ${fixture.id} | ${fixture.suite} | SKIPPED | SKIPPED | N/A | ${result.stopped ?? '-'} | - | - |`;
+  });
+  return `# Eval ${mode} / ${split}\n\nModel: ${model}\nPrompt: ${version}\n\nCases: ${n}/${fixtures.length}; skipped: ${result.skipped.length}; stop: ${result.stopped ?? 'none'}
+Raw pass: ${rate(t.rawPass)}; validated pass: ${rate(t.validatedPass)}
+Command accuracy (exact case match; conditions include restrictions/deadlines and action identity):
+Raw: ${accuracy(t.rawAccuracy)}
+Validated: ${accuracy(t.validatedAccuracy)}
+Raw safety violations: ${rate(t.rawSafetyCases)}; validated: ${rate(t.validatedSafetyCases)}
+Rejected: ${result.rows.filter(r => r.validator === 'rejected').length}; corrected: ${result.rows.filter(r => r.validator === 'corrected').length}; errors: ${t.errors}
+External attempts: ${t.attempts}; retries: ${t.retries}; reservations: ${t.reservations}
+Attempt latency p50/p95: ${t.p50Ms ?? 'N/A'}/${t.p95Ms ?? 'N/A'} ms
+Known input/output tokens: ${t.inputTokensKnown}/${t.outputTokensKnown}; total: ${t.inputTokensKnown + t.outputTokensKnown}; missing usage attempts: ${t.missingUsageAttempts}
+Failed attempts: ${t.failedAttempts}; their known input/output tokens: ${t.failedInputTokensKnown}/${t.failedOutputTokensKnown}
+Case error codes: ${distribution(t.errorCodes)}
+Attempt error codes: ${distribution(t.attemptErrorCodes)}
+Network routes (selected cases): ${distribution(t.routes)}
+PAC unsupported cases: ${result.rows.filter(r => r.sample.network?.pacUnsupported).length}
+Daily counter policy: ${policy}
+
+| Case | Suite | Raw | Validated | Route | Error | Raw issues | Validated issues |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+${cases.join('\n')}
+
+Rejection is not a correctness pass. Unknown usage is not zero. Offline scores are harness evidence, not live model quality. See results.json for separate confusion matrices, fields, and case errors. Human review remains required.\n`;
+}
+
+export async function main(args = process.argv.slice(2), runtime: {
+  env?: NodeJS.ProcessEnv; live?: LiveRuntime; outputRoot?: string; log?: (value: string) => void;
+} = {}): Promise<number> {
+  const log = runtime.log ?? console.log, env = runtime.env ?? process.env;
+  if (!args.length) { log('평가 미실행 · 외부 호출 0회. --mock 또는 --scripted tests/fixtures/eval-scripted-good.json 사용. --live는 키·모델·양수 호출 상한 설정 후 별도 실행.'); return 0; }
+  const { mode, script, split, limit, limits, networkMode, proxy } = parseOptions(args);
   let source: Source | undefined;
   if (mode === 'mock') source = mockSource();
   if (mode === 'scripted') source = scriptedSource(JSON.parse(await readFile(resolve(script!), 'utf8')), split);
-  if (mode === 'live') source = liveSource(limits.maxCalls, process.env, limits);
-  if (!source) { console.log(liveConfigurationHelp(process.env.LLM_PROVIDER)); return 2; }
-  const fixtures = await loadCases(split);
+  if (mode === 'live') source = liveSource(limits.maxCalls, env, limits, { ...runtime.live, networkMode, proxy });
+  if (!source) { log(liveConfigurationHelp(env.LLM_PROVIDER)); return 2; }
+  const allFixtures = await loadCases(split), fixtures = selectCases(allFixtures, limit);
+  const plannedCalls = mode === 'live' ? Math.min(fixtures.length, limits.maxCalls) : 0;
+  log(`예정 호출 수 ${plannedCalls} (상한; 사례 ${fixtures.length}); 최대 토큰: 누적 관측 ${limits.maxTokens ?? '미설정'}, 요청별 출력 ${source.maxOutputTokens ?? '공급자 설정'}; 재시도 0; 네트워크 ${source.networkPolicy ?? 'offline'}; 일일 카운터 ${source.counterPolicy ?? 'offline'}.`);
+  // No confirmation prompt: invoking --live is the user's explicit execution choice.
   const result = await evaluate(fixtures, source, limits);
   const version = await promptVersion();
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const dir = resolve('artifacts/eval', `${stamp}-${mode}-${process.pid}`);
+  const dir = resolve(runtime.outputRoot ?? 'artifacts/eval', `${stamp}-${mode}-${process.pid}`);
   await mkdir(dir, { recursive: true });
   const report = { version: 2, createdAt: new Date().toISOString(), mode, split, model: source.model, promptVersion: version,
-    limits: { ...limits, maxCalls: Number.isFinite(limits.maxCalls) ? limits.maxCalls : null }, totalCases: fixtures.length,
+    limits: { ...limits, maxCalls: Number.isFinite(limits.maxCalls) ? limits.maxCalls : null, limit: limit ?? null }, totalCases: fixtures.length,
+    availableCases: allFixtures.length, plannedCalls, networkPolicy: source.networkPolicy ?? 'offline',
+    counterPolicy: source.counterPolicy ?? 'offline', maxOutputTokens: source.maxOutputTokens ?? null,
     fixtureHash: createHash('sha256').update(JSON.stringify(fixtures)).digest('hex'), ...result };
   const sheet = humanSheet(fixtures, result.rows, source.secretGuard);
   const columns = Object.keys(sheet[0] ?? { id: null, tone_1_5: null, naturalness_1_5: null, grounding_1_5: null, clarification_1_5: null, safety_1_5: null, notes: null });
   const t = result.totals, n = result.rows.length;
-  const rate = (x: number) => n ? `${(100 * x / n).toFixed(1)}%` : 'N/A';
-  const summary = `# Eval ${mode} / ${split}\n\nModel: ${source.model}\nPrompt: ${version}\n\nCases: ${n}/${fixtures.length}; skipped: ${result.skipped.length}; stop: ${result.stopped ?? 'none'}\nRaw pass: ${t.rawPass}/${n} (${rate(t.rawPass)}); validated pass: ${t.validatedPass}/${n} (${rate(t.validatedPass)})\nRaw safety violations: ${t.rawSafetyCases} (${rate(t.rawSafetyCases)}); validated: ${t.validatedSafetyCases} (${rate(t.validatedSafetyCases)})\nRejected: ${result.rows.filter(r => r.validator === 'rejected').length}; corrected: ${result.rows.filter(r => r.validator === 'corrected').length}; errors: ${t.errors}\nExternal attempts: ${t.attempts}; retries: ${t.retries}; reservations: ${t.reservations}\nAttempt latency p50/p95: ${t.p50Ms ?? 'N/A'}/${t.p95Ms ?? 'N/A'} ms\nKnown input/output tokens: ${t.inputTokensKnown}/${t.outputTokensKnown}; missing usage attempts: ${t.missingUsageAttempts}\nFailed attempts: ${t.failedAttempts}; their known input/output tokens: ${t.failedInputTokensKnown}/${t.failedOutputTokensKnown}\n\nRejection is not a correctness pass. Unknown usage is not zero. Offline scores are harness evidence, not live model quality. See results.json for separate confusion matrices, fields, and case errors. Human review remains required.\n`;
+  const summary = renderSummary(mode, split, source.model, version, fixtures, result, source.counterPolicy);
   // Check all exports before the first write, including metadata and human rows.
   source.secretGuard?.assertSafe({ report, sheet, summary });
   await writeFile(`${dir}/results.json`, JSON.stringify(report, null, 2) + '\n');
   await writeFile(`${dir}/summary.md`, summary);
   await writeFile(`${dir}/human-review.json`, JSON.stringify(sheet, null, 2) + '\n');
   await writeFile(`${dir}/human-review.csv`, '\ufeff' + [columns.map(csvCell).join(','), ...sheet.map(row => columns.map(k => csvCell(row[k as keyof typeof row])).join(','))].join('\r\n') + '\r\n');
-  console.log(summary + `\nArtifacts: ${dir}`);
+  log(summary + `\nArtifacts: ${dir}`);
   if (result.stopped || result.rows.some(r => r.sample.error)) return 2;
   return t.rawPass === n && t.validatedPass === n ? 0 : 1;
 }

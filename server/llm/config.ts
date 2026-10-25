@@ -3,6 +3,7 @@ import { GeminiProvider } from './gemini.ts';
 import { OpenAICompatibleProvider } from './openai-compatible.ts';
 import type { ThinkingMode } from './gemini-response.ts';
 import { NetworkRouter } from './network-routing.ts';
+import type { CallBudget } from './budget.ts';
 
 export interface ProviderConfig {
   model: string;
@@ -48,7 +49,8 @@ export function geminiGenerationSettings(env: NodeJS.ProcessEnv): Pick<ProviderC
   return result;
 }
 export interface ProviderSelection { provider?: InterpretationProvider; status: string; timeoutMs: number }
-export function configuredProvider(env: NodeJS.ProcessEnv = process.env, transport: typeof fetch = globalThis.fetch): ProviderSelection {
+export function configuredProvider(env: NodeJS.ProcessEnv = process.env, transport: typeof fetch = globalThis.fetch,
+  runtime: { budget?: CallBudget; network?: NetworkRouter } = {}): ProviderSelection {
   const mock = (status: string): ProviderSelection => ({ status, timeoutMs: 15000 });
   if (!env.LLM_PROVIDER || env.LLM_PROVIDER === 'mock') return mock('AI 미연결, Mock 사용 중');
   if (!['gemini', 'openai-compatible'].includes(env.LLM_PROVIDER)) return mock('AI 설정 오류, Mock 사용 중');
@@ -58,8 +60,8 @@ export function configuredProvider(env: NodeJS.ProcessEnv = process.env, transpo
   const config = gemini ? geminiConfig(env) : providerConfig(env, env.OPENAI_COMPAT_MODEL_ID ?? '');
   if (!config) return mock('AI 설정 오류, Mock 사용 중');
   try {
-    const provider = gemini ? new GeminiProvider({ ...config, retries: 0 }, transport, undefined, key, undefined, new NetworkRouter(env)) :
-      new OpenAICompatibleProvider({ ...config, baseUrl: env.OPENAI_COMPAT_BASE_URL ?? '' }, transport, undefined, key);
+    const provider = gemini ? new GeminiProvider({ ...config, retries: 0 }, transport, runtime.budget, key, undefined, runtime.network ?? new NetworkRouter(env)) :
+      new OpenAICompatibleProvider({ ...config, baseUrl: env.OPENAI_COMPAT_BASE_URL ?? '' }, transport, runtime.budget, key);
     return { provider, status: provider.status, timeoutMs: config.timeoutMs };
   } catch { return mock('AI 설정 오류, Mock 사용 중'); }
 }
