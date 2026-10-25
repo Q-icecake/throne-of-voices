@@ -225,3 +225,28 @@ E029/E039/E049의 채점 오류는 `intent`와 행동 누락, E087/E089는 `inte
 실행 증거: `artifacts/eval/integration-021/offline-runs.json`, `default.log`, `mock.log`, `scripted-good.log`, `mismatches.json`. 기본 실행은 키가 없는 allowlist 환경에서 종료 0·외부 호출 0회. Mock은 **47/80 → 48/80**, 종료 1이며, gold 역시 위 품질 불일치로 종료 1이다. 두 평가의 원문/후단 결과·요약·사람 평가 시트 경로는 `offline-runs.json`에 기록했다. 테스트의 가짜 키 `fake-test-only`와 기존 모델 `test-only`는 V1 반사 보호의 8자 조각 `testonly`가 겹쳐 생성 시 거절되었다. 모델만 `eval-model`로 바꾸었고 원래 회계/중단 단언은 모두 유지했다. 별도 시험은 기존 충돌 조합이 factory에서 계속 거절됨도 확인한다.
 
 기존 227개 시험을 수정·삭제하지 않고 평가 자가 시험 49개(채점·fixture 33, 실행·계측 16)를 추가했다. 전체 시험·타입 검사·Vite 빌드와 실제 mock/scripted 실행 결과는 `DEV_LOG.md` 및 `.codex-runs/v02-eval-report.md`에 기록한다. 개발 세트의 기존 서버 검증기 불일치는 후속 V1/프롬프트 작업에서 검토할 사항이며 이 작업에서 서버를 수정하지 않는다. 라이브 모델·실제 한국어 품질·실제 비용/토큰/지연·최종 세트 점수는 미검증이다.
+## Ollama 모델 비교 (038)
+
+다음 명령은 **사용자가 실제 로컬 비교를 별도로 실행할 때만** 사용한다. 이번 구현 검증에서는 실제 Ollama·외부 모델을 호출하지 않았다. 같은 PowerShell에서 설치된 모델 ID를 지정한다. 키와 Google 일일/세션/RPM 설정이 필요 없으며 기본 dev **명령60+NPC20=80건 전체**를 실행한다.
+
+```powershell
+$env:OLLAMA_MODEL_ID = 'qwen3:4b'
+$env:OLLAMA_TIMEOUT_MS = '60000' # 최대 120000
+node scripts/eval-llm.ts --provider ollama --split dev
+# 또는 환경변수 선택:
+$env:LLM_PROVIDER = 'ollama'
+node scripts/eval-llm.ts --live --split dev
+
+# 사용자가 이미 설치한 다른 모델 ID로 바꿔 같은 세트를 다시 실행
+$env:OLLAMA_MODEL_ID = '설치된-다른-모델-ID'
+node scripts/eval-llm.ts --provider ollama --split dev
+
+# 각 실행이 출력한 Artifacts 폴더 2개 이상을 인수로 전달
+node scripts/eval/compare.ts 'artifacts/eval/첫-실행-폴더' 'artifacts/eval/둘째-실행-폴더' --out 'artifacts/ollama-comparison.md'
+```
+
+`--provider ollama`만으로 로컬 실행 모드가 선택되며 `--live --provider ollama`도 가능하다. `LLM_PROVIDER=ollama`를 사용하는 경우 기존 `--live` 진입을 유지한다. 인수 없는 CLI는 기존대로 호출0회다. `--limit`, dev `--ids`, 선택적 `--max-calls`, 토큰/비용 예산은 그대로 적용할 수 있으나 Ollama에는 호출 상한을 필수로 요구하지 않는다. `--network direct`는 가능하고 프록시 지정은 차단한다. 환경 VPN/프록시는 사용하지 않으며 서버/CLI별 직렬1개, 기본60초·최대120초, 재시도0이다. Google 제한값이 잘못되거나 일일 상한0이어도 로컬 실행에는 영향을 주지 않는다.
+
+v3 결과의 `provider`, `model`, `networkPolicy:direct`, `counterPolicy:unlimited-local`, `pacing:null` 및 기존 지연 p50/p95·네이티브 토큰을 기록한다. Google usage 파일을 읽어 예약/차감하거나 초기화하지 않는다. modelRaw/adapterOutput/validated의 독립 채점과 안전 경계는 그대로 유지한다. 비교기는 동일 fixtureHash/promptVersion/split/선택 건수의 v3 결과만 비교하며 모델 원본과 검증 후 각각 의도·행동·조건 정확도, 안전 위반 사례 수, 오류, 요청 지연 p50/p95(ms)를 표로 출력한다. 조건은 금지·기한과 행동 정체성을 포함한 완전 일치다. 부분 실행은 분모와 주의를 표시하며 분모가 다른 점수를 직접 비교하지 않는다. 모델 원본 미수신은 통과가 아니다.
+
+`node scripts/verify-ollama.ts`는 가짜 native 응답으로 같은80건을 두 모델 이름에 대해 돌리고 `artifacts/ollama/{offline-runs.json,comparison.md,fake-eval-*}`를 남긴다. 이는 평가 연결과 비교 도구의 증거이며 qwen3 또는 큰 모델의 실제 품질·속도·GPU 지원 점수가 아니다. 최종 holdout은 이번에도 채점하지 않는다.

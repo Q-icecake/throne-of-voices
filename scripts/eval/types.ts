@@ -27,10 +27,11 @@ export interface Sample {
   error?: string; attempts: Attempt[]; reservations: number; network?: EvalNetwork;
 }
 export interface Source {
+  provider?: string;
   model: string; timeoutMs: number;
   /** Private credential guard shared with evaluation/export boundaries. */
   secretGuard?: SecretGuard;
-  counterPolicy?: 'shared-play-daily' | 'isolated-test';
+  counterPolicy?: 'shared-play-daily' | 'isolated-test' | 'unlimited-local';
   networkPolicy?: NetworkMode | 'provider-managed';
   maxOutputTokens?: number;
   sample(fixture: EvalCase, input: ProviderInput): Promise<Sample>;

@@ -17,7 +17,7 @@ import zhaoArt from './assets/zhang-zhao.svg';
 import yuArt from './assets/zhou-yu.svg';
 import suArt from './assets/lu-su.svg';
 import hongArt from './assets/zhang-hong.svg';
-import { enterStartScreen } from './start-screen.ts';
+import { enterStartScreen, gameRequestTimeoutMs } from './start-screen.ts';
 
 await enterStartScreen();
 
@@ -56,7 +56,7 @@ async function api<T>(path: string, body?: unknown): Promise<T> {
   const response = await fetch(path, {
     method: body === undefined ? 'GET' : 'POST',
     ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }),
-    signal: AbortSignal.timeout(path === '/api/command' || path === '/api/talk' ? 20000 : 5000),
+    signal: AbortSignal.timeout(path === '/api/command' || path === '/api/talk' ? gameRequestTimeoutMs : 5000),
   });
   if (!response.ok) throw new Error(`로컬 서버 오류 (${response.status}). 서버 실행 상태를 확인하고 다시 시도하세요. 입력은 보존되었습니다.`);
   return await response.json() as T;

@@ -1,5 +1,37 @@
 # LLM 연결 설정 (v0.2)
 
+## 로컬 Ollama (038)
+
+기본 `LLM_PROVIDER=mock`과 Gemini 흐름은 유지한다. Ollama는 키가 없으며 Google RPM/TPM pacer·UTC 일일/세션 카운터를 사용하지 않는다. 설정 화면에서 **Ollama(로컬)** 선택 → 주소 확인 → **모델 목록 불러오기** → 설치된 모델 선택 → 설정 적용 → 연결 시험 1회 → **AI로 시작**. 시험하지 않고도 모델을 설정하면 시작할 수 있다. 모델 목록은 브라우저 대신 서버가 `GET /api/tags`로 조회하며 선택/저장만으로 모델 추론을 호출하지 않는다. 앱은 모델을 자동으로 내려받지 않는다.
+
+사용자가 로컬에서 준비할 명령(이번 작업에서는 실행하지 않음):
+
+```powershell
+ollama --version
+ollama list
+# 원하는 모델을 직접 선택하여 설치. 다운로드 시간·디스크 사용은 모델에 따라 다름.
+ollama pull qwen3:4b
+```
+
+| 설정 | 기본값 | 규칙 |
+| --- | --- | --- |
+| `LLM_PROVIDER` | `mock` | `ollama`를 명시하면 로컬 공급자 사용 |
+| `OLLAMA_MODEL_ID` | 없음 | 설치된 모델 이름 그대로. 예: `qwen3:4b`, `조직/모델:태그`의 실제 영문 ID |
+| `OLLAMA_BASE_URL` | `http://127.0.0.1:11434` | HTTP/HTTPS의 `127.0.0.1`, `localhost`, `[::1]`만 허용. 경로/인증/쿼리/fragment/원격 주소 거절. localhost는 127.0.0.1로 고정 |
+| `OLLAMA_TIMEOUT_MS` | `60000` | 양의 정수, 최대 `120000`. 설정 화면은 초 단위 1–120. 서버·연결 시험·평가·게임 deadline에 적용 |
+
+모든 요청은 명시적 직접 `undici.Agent`를 사용하여 환경/시스템/입력 프록시와 전역 fetch 프록시를 우회한다. VPN/레지스트리/계정 설정을 바꾸지 않는다. OS의 TUN/VPN이 loopback을 처리하는 방식 자체를 앱이 바꿀 수는 없다. 서버 하나의 모델 목록·시험·재생성한 게임 공급자는 같은 큐를 공유하여 동시 요청을 1개로 제한하며 큐 대기도 timeout에 포함한다. CLI는 자체 직렬 실행이고 별도 서버/프로세스와의 OS 전체 잠금은 아니다. 자동 재시도·원격 fallback·모델 pull은 없다.
+
+네이티브 `/api/chat`, `stream:false`, JSON Schema 객체 `format`을 선택했다. 이유는 이 계약이 별도 OpenAI 변환 없이 `message.content`, `done`, `done_reason`, `prompt_eval_count`, `eval_count`를 직접 제공하기 때문이다. 구현 주석의 [Ollama chat 계약](https://docs.ollama.com/api/chat), [구조화 출력 계약](https://docs.ollama.com/capabilities/structured-outputs)을 참조하되, **이번 검증은 외부 문서 접속/설치 버전 서버 조회/실제 Ollama 호출 없이 가짜 응답 계약으로만 수행**했다. 제공된 설치 버전 `0.40.8`의 schema/think 지원은 라이브 미검증이다. 지원하지 않아 400을 받으면 요청 형식 오류로 1회 종료하며 형식을 바꿔 재시도하지 않는다. 사용자가 설치 버전을 직접 확인해야 한다.
+
+`think:false`, qwen3 사용자 메시지 끝의 `/no_think`로 사고 비활성화를 요청한다. 별도 `message.thinking`은 JSON 결과로 사용하지 않으며, content 맨 앞의 완결된 `<think>…</think>`만 제거한다. 미완결 사고·길이 종료·잘린 JSON·임의 prose/코드펜스는 보수적으로 거절한다. 모든 제안은 기존 서버 validator/엔진을 통과해야 하며 공급자가 게임 상태를 실행하지 않는다. 연결 시험은 짧은 `{"ok":true}` schema와 최대 256 출력 토큰, 게임은 최대 2048 출력 토큰이다. 사고 끄기/출력 지원과 실제 품질은 모델에 따라 다르다.
+
+기존 `artifacts/llm-diagnostics.jsonl`에 `provider:ollama`, 요청 모델, direct 경로, 지연, `prompt_eval_count`→inputTokens, `eval_count`→outputTokens를 기록한다. 미제공 토큰은 null이고 사고 토큰은 추정하지 않는다. 본문·프롬프트·thinking·원문 예외는 기록하지 않는다. `network/ECONNREFUSED`는 Ollama 미실행 또는 포트 불일치 안내, timeout/400/404/잘림/파싱/스키마 오류는 각각 구분한다. Gemini로 돌아가도 기존 Google 카운터와 pacer는 보존된다.
+
+GPU 확인은 **사용자가 별도 로컬 추론을 수행한 뒤** `ollama ps`의 PROCESSOR 열과 Windows 작업 관리자의 GPU compute/전용 메모리, Ollama 서버 로그의 GPU offload 정보를 대조한다. CPU/혼합이면 GPU 가속 성공으로 간주하지 않는다. RX 6600 XT 지원은 설치 버전/백엔드에 따라 달라 이 작업에서 보장하지 않는다. RAM 16GB 환경에서 더 큰 모델은 메모리 부족·CPU offload·긴 지연이 가능하므로 모델 크기와 timeout을 직접 조절한다.
+
+오프라인 검증: `node --test tests/ollama.test.ts`, `node scripts/verify-ollama.ts`, `node scripts/verify-all.ts`. 모의 transport만 사용하며 실제 Ollama 호출 0회. 두 해상도 설정/연결 거부 PNG와 모의 dev80 비교 결과는 `artifacts/ollama/`. 실제 비교 명령은 [EVAL.md](EVAL.md)의 038 절을 따른다.
+
 ## 분당 제한과 무료 등급 (037)
 
 RPM은 분당 요청 수, TPM은 분당 토큰 수, RPD는 일일 요청 수다. Google AI Studio에서 해당 프로젝트의 **비율 제한 / Rate limits** 화면을 열어 모델별 현재 한도를 확인한다. 모델·계정·등급에 따라 다르다. 사용자 제공 2026-10-25 화면의 Gemini 3.5 Flash Lite 무료 값은 **RPM 15, TPM 250K, RPD 500**이다. 이 작업에서 Google 계정을 조회하거나 라이브로 검증한 값은 아니다.
